@@ -1,6 +1,5 @@
 import React from 'react';
-import {Button, View} from 'react-native-ui-lib';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -9,6 +8,7 @@ import {userLogout} from '@app/redux/actions';
 import {HomeTabAStackParamList} from '@app/navigators/types';
 import {StoreRootState} from '@app/redux/store';
 import {GlobalStyles} from '@app/constants';
+import { Button } from 'react-native';
 
 const TabA = (): React.JSX.Element => {
   const userData = useSelector(

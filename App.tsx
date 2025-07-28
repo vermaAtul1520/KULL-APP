@@ -1,4 +1,4 @@
-import {Colors, Typography} from 'react-native-ui-lib';
+// import {Colors, Typography} from 'react-native-ui-lib';
 import React, {useEffect} from 'react';
 import {LogBox} from 'react-native';
 import RootContainer from '@app/navigators';
@@ -6,7 +6,7 @@ import {theme} from '@constants';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 // For dark theme support
-require('react-native-ui-lib/config').setConfig({appScheme: 'default'});
+// require('react-native-ui-lib/config').setConfig({appScheme: 'default'});
 
 LogBox.ignoreLogs([
   'The new TextField implementation does not support the',
@@ -15,9 +15,9 @@ LogBox.ignoreLogs([
 
 export default function App(): React.JSX.Element {
   useEffect(() => {
-    Colors.loadDesignTokens({primaryColor: theme?.primaryColor});
-    Colors.loadColors(theme?.colors);
-    Typography.loadTypographies(theme?.fonts);
+    // Colors.loadDesignTokens({primaryColor: theme?.primaryColor});
+    // Colors.loadColors(theme?.colors);
+    // Typography.loadTypographies(theme?.fonts);
   }, []);
 
   return (

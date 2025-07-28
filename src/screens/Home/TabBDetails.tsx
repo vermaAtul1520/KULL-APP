@@ -1,7 +1,8 @@
-import {Text, View} from 'react-native-ui-lib';
 
 import React from 'react';
 import {GlobalStyles} from '@app/constants';
+import { View } from 'react-native';
+import { Text } from 'react-native';
 
 export default function TabBDetails(): React.JSX.Element {
   return (

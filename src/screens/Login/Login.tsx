@@ -1,6 +1,6 @@
 import React from 'react';
-import {StyleSheet} from 'react-native';
-import {Button, Colors, View} from 'react-native-ui-lib';
+import {Button, StyleSheet, View} from 'react-native';
+// import {Button, Colors, View} from 'react-native-ui-lib';
 import {FormProvider, useForm} from 'react-hook-form';
 import {useDispatch} from 'react-redux';
 import {Icons, RHFTextField} from '@app/components';
@@ -21,7 +21,7 @@ const Login = (): React.JSX.Element => {
       <Icons
         iconSet="Ionicons"
         name="person-outline"
-        color={Colors.$iconPrimary}
+        // color={Colors.$iconPrimary}
         size={16}
         style={styles.inputLeftIcon}
       />
@@ -30,7 +30,7 @@ const Login = (): React.JSX.Element => {
       <Icons
         iconSet="Ionicons"
         name="lock-closed-outline"
-        color={Colors.$iconPrimary}
+        // color={Colors.$iconPrimary}
         size={16}
         style={styles.inputLeftIcon}
       />

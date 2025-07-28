@@ -1,9 +1,9 @@
 import React from 'react';
-import {View, Text} from 'react-native-ui-lib';
+import { Text, View } from 'react-native';
 
 const NewsScreen = () => {
   return (
-    <View flex center>
+    <View>
       <Text>News Screen</Text>
     </View>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Picker, PickerModes, TextField} from 'react-native-ui-lib';
+// import {Picker, PickerModes, TextField} from 'react-native-ui-lib';
 import {useController} from 'react-hook-form';
 import {GlobalStyles} from '@app/constants';
 import {PickerItemType, PickerPropType} from './types';

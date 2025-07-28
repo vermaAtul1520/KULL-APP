@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, ScrollView} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, ScrollView, Image} from 'react-native';
 import {DrawerContentScrollView} from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -26,10 +26,13 @@ const DrawerContent = (props: any) => {
       {/* User Profile Section */}
       <View style={styles.userProfile}>
         <View style={styles.avatar}>
-          <Icon name="account" size={40} color="#7dd3c0" />
+        <Image
+          source={{uri: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg'}}
+          style={styles.profileImage}
+        />
         </View>
-        <Text style={styles.userName}>Rajan Kumar</Text>
-        <Text style={styles.userEmail}>rajankumar75315@gmail.com</Text>
+        <Text style={styles.userName}>Innovgeist</Text>
+        <Text style={styles.userEmail}>Innovgeist@gmail.com</Text>
       </View>
 
       {/* Menu Items */}
@@ -121,6 +124,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 15,
     fontWeight: 'bold',
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
 });
 

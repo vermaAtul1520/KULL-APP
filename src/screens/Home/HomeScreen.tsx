@@ -1,8 +1,8 @@
 import React, {useEffect, useRef} from 'react';
-import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions} from 'react-native';
-import {Colors, Text, View, Image, Card} from 'react-native-ui-lib';
+import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Animated} from 'react-native';
+import { Image } from 'react-native';
 
 const {width} = Dimensions.get('window');
 
@@ -23,51 +23,51 @@ const HomeScreen = () => {
   const bannerData = [
     {
       id: 1,
-      title: 'India dekh raha hai',
-      liveText: 'LIVE',
-      backgroundColor: '#FFD700',
+      // title: 'India dekh raha hai',
+      // liveText: 'LIVE',
+      // backgroundColor: '#FFD700',
       textColor: '#000',
-      image: 'https://via.placeholder.com/400x120/FFD700/000000?text=Idea+4G',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 2,
-      title: 'Election Updates',
-      liveText: 'LIVE',
-      backgroundColor: '#FF6B6B',
+      // title: 'Election Updates',
+      // liveText: 'LIVE',
+      // backgroundColor: '#FF6B6B',
       textColor: '#FFF',
-      image: 'https://via.placeholder.com/400x120/FF6B6B/FFFFFF?text=Election+2024',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 3,
-      title: 'Samaj Seva',
-      liveText: 'NEW',
-      backgroundColor: '#4ECDC4',
+      // title: 'Samaj Seva',
+      // liveText: 'NEW',
+      // backgroundColor: '#4ECDC4',
       textColor: '#000',
-      image: 'https://via.placeholder.com/400x120/4ECDC4/000000?text=Samaj+Seva',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 4,
-      title: 'Breaking News',
-      liveText: 'LIVE',
-      backgroundColor: '#45B7D1',
+      // title: 'Breaking News',
+      // liveText: 'LIVE',
+      // backgroundColor: '#45B7D1',
       textColor: '#FFF',
-      image: 'https://via.placeholder.com/400x120/45B7D1/FFFFFF?text=Breaking+News',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 5,
-      title: 'Community Events',
-      liveText: 'ACTIVE',
-      backgroundColor: '#96CEB4',
+      // title: 'Community Events',
+      // liveText: 'ACTIVE',
+      // backgroundColor: '#96CEB4',
       textColor: '#000',
-      image: 'https://via.placeholder.com/400x120/96CEB4/000000?text=Community+Events',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 6,
-      title: 'Daily Updates',
-      liveText: 'LIVE',
-      backgroundColor: '#FFEAA7',
+      // title: 'Daily Updates',
+      // liveText: 'LIVE',
+      // backgroundColor: '#FFEAA7',
       textColor: '#000',
-      image: 'https://via.placeholder.com/400x120/FFEAA7/000000?text=Daily+Updates',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
   ];
 
@@ -138,7 +138,7 @@ const HomeScreen = () => {
       role: 'Financial Analyst',
       age: 45,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/3498db/ffffff?text=RV',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 14,
@@ -146,7 +146,7 @@ const HomeScreen = () => {
       role: 'Administrative',
       age: 49,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/e74c3c/ffffff?text=NR',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 15,
@@ -154,7 +154,7 @@ const HomeScreen = () => {
       role: 'Teacher',
       age: 32,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/2ecc71/ffffff?text=PS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 16,
@@ -162,7 +162,7 @@ const HomeScreen = () => {
       role: 'Engineer',
       age: 28,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/f39c12/ffffff?text=AS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 17,
@@ -170,7 +170,7 @@ const HomeScreen = () => {
       role: 'Engineer',
       age: 28,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/f39c12/ffffff?text=AS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 18,
@@ -178,7 +178,7 @@ const HomeScreen = () => {
       role: 'Engineer',
       age: 28,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/f39c12/ffffff?text=AS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 19,
@@ -186,7 +186,7 @@ const HomeScreen = () => {
       role: 'Engineer',
       age: 28,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/f39c12/ffffff?text=AS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
     {
       id: 20,
@@ -194,7 +194,7 @@ const HomeScreen = () => {
       role: 'Engineer',
       age: 28,
       fatherName: '',
-      avatar: 'https://via.placeholder.com/60x60/f39c12/ffffff?text=AS',
+      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     },
   ];
 
@@ -321,10 +321,10 @@ const HomeScreen = () => {
         source={{uri: item.image}}
         style={styles.bannerImage}
         resizeMode="cover">
-        <View style={styles.bannerContent}>
+        {/* <View style={styles.bannerContent}>
           <Text style={[styles.bannerTitle, {color: item.textColor}]}>{item.title}</Text>
           <Text style={styles.liveText}>{item.liveText}</Text>
-        </View>
+        </View> */}
       </ImageBackground>
     </View>
   );
@@ -394,19 +394,21 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#7dd3c0',
+    backgroundColor: '#f5f5dc',
   },
   headerBanner: {
-    backgroundColor: '#7dd3c0',
+    backgroundColor: '#f5f5dc',
   },
   bannerSlide: {
-    height: 180,
-    padding: 8
+    height: 200,
+    padding: 8,
+    // borderRadius: 20
   },
   bannerImage: {
-    height: 120,
+    height: 240,
     justifyContent: 'center',
     alignItems: 'center',
+    // borderRadius: 30
   },
   bannerContent: {
     flexDirection: 'row',
@@ -427,7 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   turnoutInfo: {
-    backgroundColor: '#ffc0cb',
+    backgroundColor: '#f5f5dc',
     paddingVertical: 8,
     paddingHorizontal: 16,
     // alignSelf: 'center'

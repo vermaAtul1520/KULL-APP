@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet} from 'react-native';
-import {Checkbox, Colors} from 'react-native-ui-lib';
+// import {Checkbox, Colors} from 'react-native-ui-lib';
 import {useController} from 'react-hook-form';
 import {CheckboxPropType} from './types';
 

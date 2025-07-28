@@ -1,6 +1,5 @@
 import React from 'react';
-import {Button, Text, View} from 'react-native-ui-lib';
-import {StyleSheet} from 'react-native';
+import {Button, StyleSheet, Text} from 'react-native';
 import {FormProvider, useForm} from 'react-hook-form';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
@@ -18,6 +17,7 @@ import {UserDataType} from './types';
 import {ConstantValues} from '@app/constants';
 import {GlobalStyles} from '@app/constants';
 import {userLogin} from '@app/redux/actions';
+import { View } from 'react-native';
 
 const TabADetails = (): React.JSX.Element => {
   const userData = useSelector(
