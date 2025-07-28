@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.blue,
   },
   joinButton: {
-    borderColor: AppColors.green,
+    borderColor: AppColors.teal,
   },
   buttonIcon: {
     width: moderateScale(50),

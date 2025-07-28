@@ -263,7 +263,7 @@
 
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import {Pressable, useColorScheme, View} from 'react-native';
+import {Image, Pressable, useColorScheme, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {
@@ -297,6 +297,11 @@ import CommunityChoiceScreen from '@app/screens/Login/CommunityChoiceScreen';
 import RequestCommunityScreen from '@app/screens/Login/RequestCommunityScreen';
 import JoinCommunityScreen from '@app/screens/Login/JoinCommunityScreen';
 import HomeIcon from '@app/assets/images/homeIcon.svg';
+import PostIcon from '@app/assets/images/posts.svg';
+import NewsIcon from '@app/assets/images/news.svg';
+import PeopleIcon from '@app/assets/images/people.svg';
+import DonationIcon from '@app/assets/images/donation.svg';
+
 // Custom Colors
 const AppColors = {
   primary: '#7dd3c0',
@@ -382,6 +387,15 @@ const DrawerButton = (): React.JSX.Element => {
 const CustomHeaderTitle = () => (
   <View style={styles.headerTitleContainer}>
     <Text style={styles.headerTitleText}>KULL-APP</Text>
+    {/* <Image
+      source={require('../assets/images/kull-logo-2-Photoroom.png')}
+      style={{
+          height: 60,
+          width: 60,
+          // backgroundColor: 'red', 
+          resizeMode: 'contain',
+      }}
+    /> */}
   </View>
 );
 
@@ -397,6 +411,7 @@ const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
   },
 });
 
+// 
 const RenderTabBarIcon = ({
   focused,
   color,
@@ -408,18 +423,25 @@ const RenderTabBarIcon = ({
   size: number;
   route: any;
 }): React.JSX.Element => {
-  const iconMap: Record<string, string> = {
-    Home: 'home',
-    Post: 'post',
-    News: 'newspaper',
-    MyPeople: 'account-group',
-    Donation: 'hand-coin',
-  };
-
-  const iconName = iconMap[route.name] || 'circle';
-
-  return <Icon name={iconName} size={size} color={color} />;
+  const iconSize = size || 24;
+  
+  switch (route.name) {
+    case 'Home':
+      return <HomeIcon width={iconSize} height={iconSize} color={color} />;
+    // case 'Post':
+    //   return <PostIcon width={iconSize} height={iconSize} color={color} />;
+    case 'News':
+      return <NewsIcon width={iconSize} height={iconSize} color={color} />;
+    case 'MyPeople':
+      return <PeopleIcon width={iconSize} height={iconSize} color={color} />;
+    case 'Donation':
+      return <DonationIcon width={iconSize} height={iconSize} color={color} />;
+    default:
+      // Fallback to MaterialCommunityIcons if no SVG found
+      return <Icon name="circle" size={iconSize} color={color} />;
+  }
 };
+
 
 // Auth Stack Navigator
 const AuthStack = (): React.JSX.Element => {
@@ -464,7 +486,7 @@ const HomeTab = (): React.JSX.Element => {
           RenderTabBarIcon({focused, color, size, route}),
       })}>
       <Screen name="Home" component={HomeScreen} />
-      <Screen name="Post" component={PostScreen} />
+      {/* <Screen name="Post" component={PostScreen} /> */}
       <Screen name="News" component={NewsScreen} />
       <Screen name="MyPeople" component={MyPeopleScreen} />
       <Screen name="Donation" component={DonationScreen} />

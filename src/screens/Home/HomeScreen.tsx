@@ -3,8 +3,25 @@ import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dim
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Animated} from 'react-native';
 import { Image } from 'react-native';
+import  KingIcon from '@app/assets/images/king.svg';
+import HeadlinesIcon from '@app/assets/images/headlines.svg';
 
 const {width} = Dimensions.get('window');
+
+const AppColors = {
+  primary: '#7dd3c0',
+  black: '#000000',
+  white: '#ffffff',
+  gray: '#666666',
+  dark: '#2a2a2a',
+  teal: '#1e6b5c',
+  cream: '#f5f5dc',
+  blue: '#4169e1',
+  lightGray: '#f0f0f0',
+  orange: '#ff8c00',
+  red: '#dc143c',
+  green: '#228b22',
+};
 
 const HomeScreen = () => {
   const flatListRef = useRef(null);
@@ -241,9 +258,9 @@ const HomeScreen = () => {
       id: 'news',
       renderItem: () => (
         <View style={styles.newsSliderContainer}>
-          <View style={styles.sectionHeader}>
-            <Icon name="newspaper" size={20} color="#FFD700" />
-            <Text style={styles.sectionTitle}>News Headlines</Text>
+          <View style={[styles.sectionHeader, {marginLeft: 12}]}>
+            <HeadlinesIcon size={20} color="#fff" />
+            <Text style={[styles.sectionTitle, {color: '#fff'}]}>News Headlines</Text>
           </View>
           <Animated.FlatList
             data={newsHeadlines}
@@ -286,7 +303,7 @@ const HomeScreen = () => {
       renderItem: () => (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Icon name="crown" size={24} color="#FFD700" />
+            <KingIcon size={24} color="black" />
             <Text style={styles.sectionTitle}>Samaj Ke Taj</Text>
           </View>
           <View style={styles.profileGrid}>
@@ -402,7 +419,7 @@ const styles = StyleSheet.create({
   bannerSlide: {
     height: 200,
     padding: 8,
-    // borderRadius: 20
+    borderRadius: 20
   },
   bannerImage: {
     height: 240,
@@ -451,11 +468,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    // marginLeft: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#2a2a2a',
+    fontFamily: 'italic',
     marginLeft: 8,
   },
   profileGrid: {

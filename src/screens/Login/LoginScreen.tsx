@@ -399,7 +399,7 @@ const LoginScreen: React.FC = () => {
       return;
     }
 
-    if (email === 'Innovgeist@gmail.com' && password === 'Innovgeist@1234') {
+    if (email === 'innovgeist@gmail.com' && password === 'Innovgeist@1234') {
       login();
       Alert.alert('Success', 'Login successful!');
     } else {
