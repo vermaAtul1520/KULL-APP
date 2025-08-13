@@ -12,154 +12,126 @@ import {
   Alert,
   Dimensions,
   SafeAreaView,
+  TextInput,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@app/constants/constant';
+import { useAuth } from '@app/navigators';
 
 const {width, height} = Dimensions.get('window');
 
+// API Interfaces
+interface Creator {
+  _id: string;
+}
+
+interface Donation {
+  _id: string;
+  title: string;
+  organization: string;
+  accountNumber: string;
+  description: string;
+  date: string;
+  category: string;
+  urgency: string;
+  qrCode: string;
+  beneficiaries: string;
+  location: string;
+  organizationType: string;
+  registrationNumber: string;
+  contactEmail: string;
+  contactPhone: string;
+  images: string[];
+  createdBy?: Creator;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface DonationsAPIResponse {
+  success: boolean;
+  data: Donation[];
+}
+
+interface FilterState {
+  category: string;
+  urgency: string;
+  organizationType: string;
+}
+
 const DonationScreen = () => {
-  const [donations, setDonations] = useState([]);
+  const { user, token } = useAuth();
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [filteredDonations, setFilteredDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Search and Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    category: '',
+    urgency: '',
+    organizationType: '',
+  });
+  const [tempFilters, setTempFilters] = useState<FilterState>({
+    category: '',
+    urgency: '',
+    organizationType: '',
+  });
 
-  // Dummy API URL - replace with your actual API endpoint
-  const API_BASE_URL = 'https://your-api-domain.com/api';
+  // Filter options
+  const categories = ['All', 'Health', 'Education', 'Food', 'Environment', 'Other'];
+  const urgencyLevels = ['All', 'High', 'Medium', 'Low'];
+  const organizationTypes = ['All', 'NGO', 'Trust', 'Foundation', 'Government', 'Private'];
 
-  // Dummy data for development/testing
-  const dummyDonations = [
-    {
-      id: 1,
-      title: "Help Children's Hospital",
-      organization: "Children's Health Foundation",
-      accountNumber: "1234567890",
-      description: "We are raising funds for the Children's Hospital to help them upgrade their medical equipment and provide better care for young patients.",
-      date: "2023-12-01",
-      category: "Healthcare",
-      urgency: "High",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=hospital@paytm&pn=Children%20Hospital&am=&cu=INR",
-      beneficiaries: "500+ children",
-      location: "Mumbai, Maharashtra",
-      organizationType: "NGO",
-      registrationNumber: "NGO/2020/001234",
-      contactEmail: "donate@childrenhospital.org",
-      contactPhone: "+91-9876543210",
-      images: [
-        "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400",
-        "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400"
-      ]
-    },
-    {
-      id: 2,
-      title: "Support Local Food Bank",
-      organization: "Community Food Bank",
-      accountNumber: "0987654321",
-      description: "Our local food bank is running low on supplies. Your donation can help them feed more families in need during these challenging times.",
-      date: "2023-11-20",
-      category: "Food Security",
-      urgency: "Medium",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=foodbank@paytm&pn=Community%20Food%20Bank&am=&cu=INR",
-      beneficiaries: "1000+ families",
-      location: "Delhi, India",
-      organizationType: "Trust",
-      registrationNumber: "TRUST/2019/005678",
-      contactEmail: "help@communityfoodbank.org",
-      contactPhone: "+91-9876543211",
-      images: [
-        "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=400",
-        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400"
-      ]
-    },
-    {
-      id: 3,
-      title: "Education for Rural Children",
-      organization: "Rural Education Foundation",
-      accountNumber: "1122334455",
-      description: "Supporting education infrastructure in rural areas. Help us build schools and provide quality education to underprivileged children.",
-      date: "2023-12-15",
-      category: "Education",
-      urgency: "Medium",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=education@paytm&pn=Rural%20Education&am=&cu=INR",
-      beneficiaries: "2000+ children",
-      location: "Rajasthan, India",
-      organizationType: "Foundation",
-      registrationNumber: "FOUND/2018/009876",
-      contactEmail: "info@ruraleducation.org",
-      contactPhone: "+91-9876543212",
-      images: [
-        "https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400",
-        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400"
-      ]
-    },
-    {
-      id: 4,
-      title: "Clean Water Initiative",
-      organization: "Water For All Foundation",
-      accountNumber: "5566778899",
-      description: "Providing clean drinking water to remote villages. Your contribution will help install water purification systems and wells.",
-      date: "2023-11-10",
-      category: "Environment",
-      urgency: "High",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=water@paytm&pn=Water%20Foundation&am=&cu=INR",
-      beneficiaries: "50+ villages",
-      location: "Uttar Pradesh, India",
-      organizationType: "NGO",
-      registrationNumber: "NGO/2021/002345",
-      contactEmail: "contact@waterforall.org",
-      contactPhone: "+91-9876543213",
-      images: [
-        "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400",
-        "https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400"
-      ]
-    },
-    {
-      id: 5,
-      title: "Senior Citizen Care",
-      organization: "Elderly Care Society",
-      accountNumber: "9988776655",
-      description: "Supporting elderly people with healthcare, food, and shelter. Help us provide dignity and care to our senior citizens.",
-      date: "2023-12-05",
-      category: "Healthcare",
-      urgency: "Low",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=elderly@paytm&pn=Elderly%20Care&am=&cu=INR",
-      beneficiaries: "300+ seniors",
-      location: "Bangalore, Karnataka",
-      organizationType: "Society",
-      registrationNumber: "SOC/2020/007890",
-      contactEmail: "care@elderlycare.org",
-      contactPhone: "+91-9876543214",
-      images: [
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400",
-        "https://images.unsplash.com/photo-1521791055366-0d553872125f?w=400"
-      ]
-    }
-  ];
+  // API Functions
+  const getAuthHeaders = async () => {
+    const userToken = await AsyncStorage.getItem('userToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken || token}`,
+    };
+  };
 
-  // API call to fetch donations
   const fetchDonations = async () => {
     try {
       setLoading(true);
       
-      // Replace this with actual API call
-      // const response = await fetch(`${API_BASE_URL}/donations`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': 'Bearer your-token-here', // if needed
-      //   },
-      // });
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/donations/`, {
+        method: 'GET',
+        headers,
+      });
+
+      console.log('response', response);
       
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
       
-      // const data = await response.json();
-      // setDonations(data.donations || data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
-      // For demo purposes, using dummy data with simulated API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setDonations(dummyDonations);
+      const responseText = await response.text();
+      console.log('Raw donations response:', responseText);
+      
+      let data: DonationsAPIResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        throw new Error('Invalid response format');
+      }
+      
+      if (data.success && data.data) {
+        setDonations(data.data);
+        setFilteredDonations(data.data);
+        console.log('Fetched donations:', data.data.length);
+      } else {
+        throw new Error('Invalid API response structure');
+      }
       
     } catch (error) {
       console.error('Error fetching donations:', error);
@@ -171,8 +143,6 @@ const DonationScreen = () => {
           {text: 'Cancel', style: 'cancel'}
         ]
       );
-      // Fallback to dummy data
-      setDonations(dummyDonations);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -183,16 +153,91 @@ const DonationScreen = () => {
     fetchDonations();
   }, []);
 
+  // Search and Filter Logic
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [searchQuery, activeFilters, donations]);
+
+  const applyFiltersAndSearch = () => {
+    let filtered = [...donations];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(donation => 
+        donation.title.toLowerCase().includes(query) ||
+        donation.organization.toLowerCase().includes(query) ||
+        donation.category.toLowerCase().includes(query) ||
+        donation.urgency.toLowerCase().includes(query) ||
+        donation.description.toLowerCase().includes(query) ||
+        donation.location.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply category filter
+    if (activeFilters.category && activeFilters.category !== 'All') {
+      filtered = filtered.filter(donation => 
+        donation.category.toLowerCase() === activeFilters.category.toLowerCase()
+      );
+    }
+
+    // Apply urgency filter
+    if (activeFilters.urgency && activeFilters.urgency !== 'All') {
+      filtered = filtered.filter(donation => 
+        donation.urgency.toLowerCase() === activeFilters.urgency.toLowerCase()
+      );
+    }
+
+    // Apply organization type filter
+    if (activeFilters.organizationType && activeFilters.organizationType !== 'All') {
+      filtered = filtered.filter(donation => 
+        donation.organizationType.toLowerCase() === activeFilters.organizationType.toLowerCase()
+      );
+    }
+
+    setFilteredDonations(filtered);
+  };
+
+  const clearFilters = () => {
+    setActiveFilters({
+      category: '',
+      urgency: '',
+      organizationType: '',
+    });
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = () => {
+    return searchQuery.trim() !== '' || 
+           (activeFilters.category && activeFilters.category !== 'All') ||
+           (activeFilters.urgency && activeFilters.urgency !== 'All') ||
+           (activeFilters.organizationType && activeFilters.organizationType !== 'All');
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchDonations();
   };
 
-  const getUrgencyColor = (urgency) => {
-    switch (urgency) {
-      case 'High': return '#FF6B6B';
-      case 'Medium': return '#FFD93D';
-      case 'Low': return '#6BCF7F';
+  // Helper Functions
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency?.toLowerCase()) {
+      case 'high': return '#FF6B6B';
+      case 'medium': return '#FFD93D';
+      case 'low': return '#6BCF7F';
       default: return '#999';
     }
   };
@@ -237,6 +282,12 @@ const DonationScreen = () => {
   const FilterIcon = ({ size = 24, color = "#2a2a2a" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" fill={color}/>
+    </Svg>
+  );
+
+  const SearchIcon = ({ size = 20, color = "#666" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
     </Svg>
   );
 
@@ -294,17 +345,26 @@ const DonationScreen = () => {
     </Svg>
   );
 
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'Healthcare': return MedicalIcon;
-      case 'Education': return EducationIcon;
-      case 'Food Security': return FoodIcon;
-      case 'Environment': return EnvironmentIcon;
-      default: return HeartIcon;
+  const getCategoryIcon = (category: string) => {
+    const categoryLower = category?.toLowerCase();
+    switch (categoryLower) {
+      case 'health':
+      case 'healthcare':
+      case 'medical':
+        return MedicalIcon;
+      case 'education':
+        return EducationIcon;
+      case 'food':
+      case 'food security':
+        return FoodIcon;
+      case 'environment':
+        return EnvironmentIcon;
+      default:
+        return HeartIcon;
     }
   };
 
-  const openDonationModal = (donation) => {
+  const openDonationModal = (donation: Donation) => {
     setSelectedDonation(donation);
     setModalVisible(true);
   };
@@ -314,7 +374,111 @@ const DonationScreen = () => {
     setSelectedDonation(null);
   };
 
-  const renderDonationCard = ({item}) => {
+  const openFilterModal = () => {
+    setTempFilters(activeFilters);
+    setFilterModalVisible(true);
+  };
+
+  const closeFilterModal = () => {
+    setFilterModalVisible(false);
+  };
+
+  const applyFilters = (filters: FilterState) => {
+    setActiveFilters(filters);
+    closeFilterModal();
+  };
+
+  const renderFilterOption = (title: string, options: string[], currentValue: string, onSelect: (value: string) => void) => (
+    <View style={styles.filterSection}>
+      <Text style={styles.filterSectionTitle}>{title}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterOptionsScroll}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option}
+            style={[
+              styles.filterOption,
+              (currentValue === option || (option === 'All' && !currentValue)) && styles.filterOptionActive
+            ]}
+            onPress={() => onSelect(option === 'All' ? '' : option)}
+          >
+            <Text style={[
+              styles.filterOptionText,
+              (currentValue === option || (option === 'All' && !currentValue)) && styles.filterOptionTextActive
+            ]}>
+              {option}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderFilterModal = () => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={closeFilterModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Donations</Text>
+              <TouchableOpacity onPress={closeFilterModal} style={styles.closeButton}>
+                <CloseIcon size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.filterModalBody}>
+              {renderFilterOption(
+                'Category',
+                categories,
+                tempFilters.category,
+                (value) => setTempFilters(prev => ({ ...prev, category: value }))
+              )}
+              
+              {renderFilterOption(
+                'Urgency',
+                urgencyLevels,
+                tempFilters.urgency,
+                (value) => setTempFilters(prev => ({ ...prev, urgency: value }))
+              )}
+              
+              {renderFilterOption(
+                'Organization Type',
+                organizationTypes,
+                tempFilters.organizationType,
+                (value) => setTempFilters(prev => ({ ...prev, organizationType: value }))
+              )}
+            </ScrollView>
+            
+            <View style={styles.filterModalFooter}>
+              <TouchableOpacity 
+                style={styles.clearFiltersButton} 
+                onPress={() => {
+                  setTempFilters({ category: '', urgency: '', organizationType: '' });
+                  clearFilters();
+                  closeFilterModal();
+                }}
+              >
+                <Text style={styles.clearFiltersText}>Clear All</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.applyFiltersButton} 
+                onPress={() => applyFilters(tempFilters)}
+              >
+                <Text style={styles.applyFiltersText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderDonationCard = ({item}: {item: Donation}) => {
     const CategoryIconComponent = getCategoryIcon(item.category);
     
     return (
@@ -347,7 +511,7 @@ const DonationScreen = () => {
             <GroupIcon size={14} color="#666" />
             <Text style={styles.beneficiariesText}>{item.beneficiaries}</Text>
           </View>
-          <Text style={styles.dateText}>{item.date}</Text>
+          <Text style={styles.dateText}>{formatDate(item.date)}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -382,6 +546,9 @@ const DonationScreen = () => {
                       source={{uri: selectedDonation.qrCode}} 
                       style={styles.qrImage}
                       resizeMode="contain"
+                      onError={() => {
+                        console.log('QR Code failed to load:', selectedDonation.qrCode);
+                      }}
                     />
                   </View>
                   <Text style={styles.qrSubtext}>
@@ -409,7 +576,7 @@ const DonationScreen = () => {
                     </View>
                     <View style={styles.detailItem}>
                       <CalendarIcon size={16} color="#666" />
-                      <Text style={styles.detailText}>{selectedDonation.date}</Text>
+                      <Text style={styles.detailText}>{formatDate(selectedDonation.date)}</Text>
                     </View>
                     <View style={styles.detailItem}>
                       <GroupIcon size={16} color="#666" />
@@ -437,6 +604,25 @@ const DonationScreen = () => {
                       <Text style={styles.contactText}>Reg: {selectedDonation.registrationNumber}</Text>
                     </View>
                   </View>
+
+                  {/* Images Section */}
+                  {selectedDonation.images && selectedDonation.images.length > 0 && (
+                    <View style={styles.imagesSection}>
+                      <Text style={styles.imagesTitle}>Gallery</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {selectedDonation.images.map((imageUrl, index) => (
+                          <Image
+                            key={index}
+                            source={{ uri: imageUrl }}
+                            style={styles.galleryImage}
+                            onError={() => {
+                              console.log('Image failed to load:', imageUrl);
+                            }}
+                          />
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
             </ScrollView>
@@ -462,15 +648,86 @@ const DonationScreen = () => {
           <ArrowLeftIcon size={24} color="#2a2a2a" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Donations</Text>
-        <TouchableOpacity style={styles.filterButton}>
+        <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
           <FilterIcon size={24} color="#2a2a2a" />
+          {hasActiveFilters() && <View style={styles.filterIndicator} />}
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <SearchIcon size={20} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by title, organization, category..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#999"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchButton}>
+              <CloseIcon size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Active Filters Display */}
+      {hasActiveFilters() && (
+        <View style={styles.activeFiltersContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {searchQuery.trim() !== '' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>Search: "{searchQuery}"</Text>
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeFilters.category && activeFilters.category !== 'All' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{activeFilters.category}</Text>
+                <TouchableOpacity onPress={() => setActiveFilters(prev => ({ ...prev, category: '' }))}>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeFilters.urgency && activeFilters.urgency !== 'All' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{activeFilters.urgency} urgency</Text>
+                <TouchableOpacity onPress={() => setActiveFilters(prev => ({ ...prev, urgency: '' }))}>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeFilters.organizationType && activeFilters.organizationType !== 'All' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{activeFilters.organizationType}</Text>
+                <TouchableOpacity onPress={() => setActiveFilters(prev => ({ ...prev, organizationType: '' }))}>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <TouchableOpacity style={styles.clearAllFiltersChip} onPress={clearFilters}>
+              <Text style={styles.clearAllFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Results Count */}
+      <View style={styles.resultsContainer}>
+        <Text style={styles.resultsText}>
+          {filteredDonations.length} donation{filteredDonations.length !== 1 ? 's' : ''} found
+          {hasActiveFilters() && ` (filtered from ${donations.length})`}
+        </Text>
+      </View>
+
       <FlatList
-        data={donations}
+        data={filteredDonations}
         renderItem={renderDonationCard}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -478,15 +735,24 @@ const DonationScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <HeartIcon size={64} color="#ccc" />
-            <Text style={styles.emptyText}>No donations available</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchDonations}>
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyText}>
+              {hasActiveFilters() ? 'No donations match your search criteria' : 'No donations available'}
+            </Text>
+            {hasActiveFilters() ? (
+              <TouchableOpacity style={styles.retryButton} onPress={clearFilters}>
+                <Text style={styles.retryText}>Clear Filters</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.retryButton} onPress={fetchDonations}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
 
       {renderDonationModal()}
+      {renderFilterModal()}
     </SafeAreaView>
   );
 };
@@ -516,7 +782,171 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: 8,
+    position: 'relative',
   },
+  filterIndicator: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF6B6B',
+  },
+  
+  // Search Bar Styles
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f5f5dc',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#2a2a2a',
+    marginLeft: 8,
+    paddingVertical: 4,
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+
+  // Active Filters Styles
+  activeFiltersContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f5f5dc',
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e3f2fd',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  activeFilterText: {
+    fontSize: 12,
+    color: '#1976d2',
+    marginRight: 4,
+  },
+  clearAllFiltersChip: {
+    backgroundColor: '#ffebee',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  clearAllFiltersText: {
+    fontSize: 12,
+    color: '#d32f2f',
+    fontWeight: '600',
+  },
+
+  // Results Count Styles
+  resultsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f5f5dc',
+  },
+  resultsText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+
+  // Filter Modal Styles
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: height * 0.8,
+    minHeight: height * 0.6,
+  },
+  filterModalBody: {
+    flex: 1,
+    padding: 20,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2a2a2a',
+    marginBottom: 12,
+  },
+  filterOptionsScroll: {
+    flexDirection: 'row',
+  },
+  filterOption: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  filterOptionActive: {
+    backgroundColor: '#2a2a2a',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  filterOptionTextActive: {
+    color: '#fff',
+  },
+  filterModalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    gap: 12,
+  },
+  clearFiltersButton: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  clearFiltersText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+  applyFiltersButton: {
+    flex: 1,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  applyFiltersText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -620,6 +1050,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 16,
     marginBottom: 24,
+    textAlign: 'center',
   },
   retryButton: {
     backgroundColor: '#2a2a2a',
@@ -743,6 +1174,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     padding: 16,
     borderRadius: 12,
+    marginBottom: 20,
   },
   contactTitle: {
     fontSize: 16,
@@ -761,788 +1193,22 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  imagesSection: {
+    marginTop: 4,
+  },
+  imagesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2a2a2a',
+    marginBottom: 12,
+  },
+  galleryImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0',
+  },
 });
 
 export default DonationScreen;
-
-
-
-
-
-
-
-// import React, {useState, useEffect} from 'react';
-// import {
-//   View,
-//   Text,
-//   FlatList,
-//   TouchableOpacity,
-//   StyleSheet,
-//   Modal,
-//   Image,
-//   ScrollView,
-//   ActivityIndicator,
-//   Alert,
-//   Dimensions,
-//   SafeAreaView,
-// } from 'react-native';
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-// const {width, height} = Dimensions.get('window');
-
-// const DonationScreen = () => {
-//   const [donations, setDonations] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [selectedDonation, setSelectedDonation] = useState(null);
-//   const [modalVisible, setModalVisible] = useState(false);
-//   const [refreshing, setRefreshing] = useState(false);
-
-//   // Dummy API URL - replace with your actual API endpoint
-//   const API_BASE_URL = 'https://your-api-domain.com/api';
-
-//   // Dummy data for development/testing
-//   const dummyDonations = [
-//     {
-//       id: 1,
-//       title: "Help Children's Hospital",
-//       organization: "Children's Health Foundation",
-//       accountNumber: "1234567890",
-//       description: "We are raising funds for the Children's Hospital to help them upgrade their medical equipment and provide better care for young patients.",
-//       date: "2023-12-01",
-//       targetAmount: 500000,
-//       raisedAmount: 275000,
-//       category: "Healthcare",
-//       urgency: "High",
-//       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=hospital@paytm&pn=Children%20Hospital&am=&cu=INR",
-//       beneficiaries: "500+ children",
-//       location: "Mumbai, Maharashtra",
-//       organizationType: "NGO",
-//       registrationNumber: "NGO/2020/001234",
-//       contactEmail: "donate@childrenhospital.org",
-//       contactPhone: "+91-9876543210",
-//       images: [
-//         "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400",
-//         "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400"
-//       ]
-//     },
-//     {
-//       id: 2,
-//       title: "Support Local Food Bank",
-//       organization: "Community Food Bank",
-//       accountNumber: "0987654321",
-//       description: "Our local food bank is running low on supplies. Your donation can help them feed more families in need during these challenging times.",
-//       date: "2023-11-20",
-//       targetAmount: 200000,
-//       raisedAmount: 125000,
-//       category: "Food Security",
-//       urgency: "Medium",
-//       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=foodbank@paytm&pn=Community%20Food%20Bank&am=&cu=INR",
-//       beneficiaries: "1000+ families",
-//       location: "Delhi, India",
-//       organizationType: "Trust",
-//       registrationNumber: "TRUST/2019/005678",
-//       contactEmail: "help@communityfoodbank.org",
-//       contactPhone: "+91-9876543211",
-//       images: [
-//         "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=400",
-//         "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400"
-//       ]
-//     },
-//     {
-//       id: 3,
-//       title: "Education for Rural Children",
-//       organization: "Rural Education Foundation",
-//       accountNumber: "1122334455",
-//       description: "Supporting education infrastructure in rural areas. Help us build schools and provide quality education to underprivileged children.",
-//       date: "2023-12-15",
-//       targetAmount: 750000,
-//       raisedAmount: 320000,
-//       category: "Education",
-//       urgency: "Medium",
-//       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=education@paytm&pn=Rural%20Education&am=&cu=INR",
-//       beneficiaries: "2000+ children",
-//       location: "Rajasthan, India",
-//       organizationType: "Foundation",
-//       registrationNumber: "FOUND/2018/009876",
-//       contactEmail: "info@ruraleducation.org",
-//       contactPhone: "+91-9876543212",
-//       images: [
-//         "https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400",
-//         "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400"
-//       ]
-//     },
-//     {
-//       id: 4,
-//       title: "Clean Water Initiative",
-//       organization: "Water For All Foundation",
-//       accountNumber: "5566778899",
-//       description: "Providing clean drinking water to remote villages. Your contribution will help install water purification systems and wells.",
-//       date: "2023-11-10",
-//       targetAmount: 400000,
-//       raisedAmount: 180000,
-//       category: "Environment",
-//       urgency: "High",
-//       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=water@paytm&pn=Water%20Foundation&am=&cu=INR",
-//       beneficiaries: "50+ villages",
-//       location: "Uttar Pradesh, India",
-//       organizationType: "NGO",
-//       registrationNumber: "NGO/2021/002345",
-//       contactEmail: "contact@waterforall.org",
-//       contactPhone: "+91-9876543213",
-//       images: [
-//         "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400",
-//         "https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400"
-//       ]
-//     },
-//     {
-//       id: 5,
-//       title: "Senior Citizen Care",
-//       organization: "Elderly Care Society",
-//       accountNumber: "9988776655",
-//       description: "Supporting elderly people with healthcare, food, and shelter. Help us provide dignity and care to our senior citizens.",
-//       date: "2023-12-05",
-//       targetAmount: 300000,
-//       raisedAmount: 95000,
-//       category: "Healthcare",
-//       urgency: "Low",
-//       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=elderly@paytm&pn=Elderly%20Care&am=&cu=INR",
-//       beneficiaries: "300+ seniors",
-//       location: "Bangalore, Karnataka",
-//       organizationType: "Society",
-//       registrationNumber: "SOC/2020/007890",
-//       contactEmail: "care@elderlycare.org",
-//       contactPhone: "+91-9876543214",
-//       images: [
-//         "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400",
-//         "https://images.unsplash.com/photo-1521791055366-0d553872125f?w=400"
-//       ]
-//     }
-//   ];
-
-//   // API call to fetch donations
-//   const fetchDonations = async () => {
-//     try {
-//       setLoading(true);
-      
-//       // Replace this with actual API call
-//       // const response = await fetch(`${API_BASE_URL}/donations`, {
-//       //   method: 'GET',
-//       //   headers: {
-//       //     'Content-Type': 'application/json',
-//       //     'Authorization': 'Bearer your-token-here', // if needed
-//       //   },
-//       // });
-      
-//       // if (!response.ok) {
-//       //   throw new Error(`HTTP error! status: ${response.status}`);
-//       // }
-      
-//       // const data = await response.json();
-//       // setDonations(data.donations || data);
-      
-//       // For demo purposes, using dummy data with simulated API delay
-//       await new Promise(resolve => setTimeout(resolve, 1000));
-//       setDonations(dummyDonations);
-      
-//     } catch (error) {
-//       console.error('Error fetching donations:', error);
-//       Alert.alert(
-//         'Error', 
-//         'Failed to load donations. Please check your internet connection and try again.',
-//         [
-//           {text: 'Retry', onPress: fetchDonations},
-//           {text: 'Cancel', style: 'cancel'}
-//         ]
-//       );
-//       // Fallback to dummy data
-//       setDonations(dummyDonations);
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchDonations();
-//   }, []);
-
-//   const onRefresh = () => {
-//     setRefreshing(true);
-//     fetchDonations();
-//   };
-
-//   const formatCurrency = (amount) => {
-//     return new Intl.NumberFormat('en-IN', {
-//       style: 'currency',
-//       currency: 'INR',
-//       maximumFractionDigits: 0,
-//     }).format(amount);
-//   };
-
-//   const getProgressPercentage = (raised, target) => {
-//     return Math.min((raised / target) * 100, 100);
-//   };
-
-//   const getUrgencyColor = (urgency) => {
-//     switch (urgency) {
-//       case 'High': return '#FF6B6B';
-//       case 'Medium': return '#FFD93D';
-//       case 'Low': return '#6BCF7F';
-//       default: return '#999';
-//     }
-//   };
-
-//   const getCategoryIcon = (category) => {
-//     switch (category) {
-//       case 'Healthcare': return 'medical-bag';
-//       case 'Education': return 'school';
-//       case 'Food Security': return 'food';
-//       case 'Environment': return 'leaf';
-//       default: return 'heart';
-//     }
-//   };
-
-//   const openDonationModal = (donation) => {
-//     setSelectedDonation(donation);
-//     setModalVisible(true);
-//   };
-
-//   const closeDonationModal = () => {
-//     setModalVisible(false);
-//     setSelectedDonation(null);
-//   };
-
-//   const renderDonationCard = ({item}) => {
-//     const progressPercentage = getProgressPercentage(item.raisedAmount, item.targetAmount);
-    
-//     return (
-//       <TouchableOpacity 
-//         style={styles.donationCard} 
-//         onPress={() => openDonationModal(item)}
-//         activeOpacity={0.8}
-//       >
-//         <View style={styles.cardHeader}>
-//           <View style={styles.titleContainer}>
-//             <Icon 
-//               name={getCategoryIcon(item.category)} 
-//               size={20} 
-//               color="#2a2a2a" 
-//             />
-//             <Text style={styles.donationTitle} numberOfLines={2}>
-//               {item.title}
-//             </Text>
-//           </View>
-//           <View style={[styles.urgencyBadge, {backgroundColor: getUrgencyColor(item.urgency)}]}>
-//             <Text style={styles.urgencyText}>{item.urgency}</Text>
-//           </View>
-//         </View>
-        
-//         <Text style={styles.organizationName}>{item.organization}</Text>
-//         <Text style={styles.accountNumber}>Ac No: {item.accountNumber}</Text>
-        
-//         <Text style={styles.description} numberOfLines={3}>
-//           {item.description}
-//         </Text>
-        
-//         <View style={styles.progressContainer}>
-//           <View style={styles.progressInfo}>
-//             <Text style={styles.progressText}>
-//               {formatCurrency(item.raisedAmount)} raised of {formatCurrency(item.targetAmount)}
-//             </Text>
-//             <Text style={styles.progressPercentage}>
-//               {progressPercentage.toFixed(0)}%
-//             </Text>
-//           </View>
-//           <View style={styles.progressBar}>
-//             <View 
-//               style={[styles.progressFill, {width: `${progressPercentage}%`}]} 
-//             />
-//           </View>
-//         </View>
-        
-//         <View style={styles.cardFooter}>
-//           <View style={styles.beneficiariesContainer}>
-//             <Icon name="account-group" size={14} color="#666" />
-//             <Text style={styles.beneficiariesText}>{item.beneficiaries}</Text>
-//           </View>
-//           <Text style={styles.dateText}>{item.date}</Text>
-//         </View>
-//       </TouchableOpacity>
-//     );
-//   };
-
-//   const renderDonationModal = () => {
-//     if (!selectedDonation) return null;
-
-//     const progressPercentage = getProgressPercentage(
-//       selectedDonation.raisedAmount, 
-//       selectedDonation.targetAmount
-//     );
-
-//     return (
-//       <Modal
-//         animationType="slide"
-//         transparent={true}
-//         visible={modalVisible}
-//         onRequestClose={closeDonationModal}
-//       >
-//         <View style={styles.modalOverlay}>
-//           <View style={styles.modalContent}>
-//             <View style={styles.modalHeader}>
-//               <Text style={styles.modalTitle}>Donation Details</Text>
-//               <TouchableOpacity onPress={closeDonationModal} style={styles.closeButton}>
-//                 <Icon name="close" size={24} color="#666" />
-//               </TouchableOpacity>
-//             </View>
-            
-//             <ScrollView showsVerticalScrollIndicator={false}>
-//               <View style={styles.modalBody}>
-//                 {/* QR Code Section */}
-//                 <View style={styles.qrSection}>
-//                   <Text style={styles.qrTitle}>Scan to Donate</Text>
-//                   <View style={styles.qrContainer}>
-//                     <Image 
-//                       source={{uri: selectedDonation.qrCode}} 
-//                       style={styles.qrImage}
-//                       resizeMode="contain"
-//                     />
-//                   </View>
-//                   <Text style={styles.qrSubtext}>
-//                     Scan this QR code with any UPI app to donate
-//                   </Text>
-//                 </View>
-
-//                 {/* Donation Info */}
-//                 <View style={styles.infoSection}>
-//                   <Text style={styles.modalDonationTitle}>{selectedDonation.title}</Text>
-//                   <Text style={styles.modalOrganization}>{selectedDonation.organization}</Text>
-                  
-//                   <View style={styles.accountInfo}>
-//                     <Icon name="bank" size={16} color="#666" />
-//                     <Text style={styles.accountText}>Account: {selectedDonation.accountNumber}</Text>
-//                   </View>
-
-//                   <Text style={styles.modalDescription}>{selectedDonation.description}</Text>
-
-//                   {/* Progress */}
-//                   <View style={styles.modalProgressContainer}>
-//                     <View style={styles.progressInfo}>
-//                       <Text style={styles.modalProgressText}>
-//                         {formatCurrency(selectedDonation.raisedAmount)} raised of {formatCurrency(selectedDonation.targetAmount)}
-//                       </Text>
-//                       <Text style={styles.modalProgressPercentage}>
-//                         {progressPercentage.toFixed(0)}%
-//                       </Text>
-//                     </View>
-//                     <View style={styles.progressBar}>
-//                       <View 
-//                         style={[styles.progressFill, {width: `${progressPercentage}%`}]} 
-//                       />
-//                     </View>
-//                   </View>
-
-//                   {/* Details Grid */}
-//                   <View style={styles.detailsGrid}>
-//                     <View style={styles.detailItem}>
-//                       <Icon name="map-marker" size={16} color="#666" />
-//                       <Text style={styles.detailText}>{selectedDonation.location}</Text>
-//                     </View>
-//                     <View style={styles.detailItem}>
-//                       <Icon name="calendar" size={16} color="#666" />
-//                       <Text style={styles.detailText}>{selectedDonation.date}</Text>
-//                     </View>
-//                     <View style={styles.detailItem}>
-//                       <Icon name="account-group" size={16} color="#666" />
-//                       <Text style={styles.detailText}>{selectedDonation.beneficiaries}</Text>
-//                     </View>
-//                     <View style={styles.detailItem}>
-//                       <Icon name="certificate" size={16} color="#666" />
-//                       <Text style={styles.detailText}>{selectedDonation.organizationType}</Text>
-//                     </View>
-//                   </View>
-
-//                   {/* Contact Info */}
-//                   <View style={styles.contactSection}>
-//                     <Text style={styles.contactTitle}>Contact Information</Text>
-//                     <View style={styles.contactItem}>
-//                       <Icon name="email" size={16} color="#666" />
-//                       <Text style={styles.contactText}>{selectedDonation.contactEmail}</Text>
-//                     </View>
-//                     <View style={styles.contactItem}>
-//                       <Icon name="phone" size={16} color="#666" />
-//                       <Text style={styles.contactText}>{selectedDonation.contactPhone}</Text>
-//                     </View>
-//                     <View style={styles.contactItem}>
-//                       <Icon name="file-document" size={16} color="#666" />
-//                       <Text style={styles.contactText}>Reg: {selectedDonation.registrationNumber}</Text>
-//                     </View>
-//                   </View>
-//                 </View>
-//               </View>
-//             </ScrollView>
-//           </View>
-//         </View>
-//       </Modal>
-//     );
-//   };
-
-//   if (loading) {
-//     return (
-//       <View style={styles.loadingContainer}>
-//         <ActivityIndicator size="large" color="#2a2a2a" />
-//         <Text style={styles.loadingText}>Loading donations...</Text>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <View style={styles.header}>
-//         <TouchableOpacity style={styles.backButton}>
-//           <Icon name="arrow-left" size={24} color="#2a2a2a" />
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>Donations</Text>
-//         <TouchableOpacity style={styles.filterButton}>
-//           <Icon name="filter-variant" size={24} color="#2a2a2a" />
-//         </TouchableOpacity>
-//       </View>
-
-//       <FlatList
-//         data={donations}
-//         renderItem={renderDonationCard}
-//         keyExtractor={(item) => item.id.toString()}
-//         showsVerticalScrollIndicator={false}
-//         refreshing={refreshing}
-//         onRefresh={onRefresh}
-//         contentContainerStyle={styles.listContainer}
-//         ListEmptyComponent={
-//           <View style={styles.emptyContainer}>
-//             <Icon name="heart-outline" size={64} color="#ccc" />
-//             <Text style={styles.emptyText}>No donations available</Text>
-//             <TouchableOpacity style={styles.retryButton} onPress={fetchDonations}>
-//               <Text style={styles.retryText}>Retry</Text>
-//             </TouchableOpacity>
-//           </View>
-//         }
-//       />
-
-//       {renderDonationModal()}
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#f5f5dc',
-//   },
-//   header: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'space-between',
-//     paddingHorizontal: 16,
-//     paddingVertical: 12,
-//     backgroundColor: '#f5f5dc',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#e0e0e0',
-//   },
-//   backButton: {
-//     padding: 8,
-//   },
-//   headerTitle: {
-//     fontSize: 20,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//   },
-//   filterButton: {
-//     padding: 8,
-//   },
-//   loadingContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#f5f5dc',
-//   },
-//   loadingText: {
-//     marginTop: 16,
-//     fontSize: 16,
-//     color: '#666',
-//   },
-//   listContainer: {
-//     padding: 16,
-//   },
-//   donationCard: {
-//     backgroundColor: '#fff',
-//     borderRadius: 16,
-//     padding: 16,
-//     marginBottom: 16,
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 2,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 3.84,
-//     elevation: 5,
-//   },
-//   cardHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'flex-start',
-//     marginBottom: 8,
-//   },
-//   titleContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     flex: 1,
-//     marginRight: 8,
-//   },
-//   donationTitle: {
-//     fontSize: 16,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//     marginLeft: 8,
-//     flex: 1,
-//   },
-//   urgencyBadge: {
-//     paddingHorizontal: 8,
-//     paddingVertical: 4,
-//     borderRadius: 12,
-//   },
-//   urgencyText: {
-//     fontSize: 12,
-//     fontWeight: '600',
-//     color: '#fff',
-//   },
-//   organizationName: {
-//     fontSize: 14,
-//     fontWeight: '600',
-//     color: '#666',
-//     marginBottom: 4,
-//   },
-//   accountNumber: {
-//     fontSize: 13,
-//     color: '#888',
-//     marginBottom: 12,
-//   },
-//   description: {
-//     fontSize: 14,
-//     color: '#555',
-//     lineHeight: 20,
-//     marginBottom: 16,
-//   },
-//   progressContainer: {
-//     marginBottom: 16,
-//   },
-//   progressInfo: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     marginBottom: 8,
-//   },
-//   progressText: {
-//     fontSize: 13,
-//     color: '#666',
-//     fontWeight: '500',
-//   },
-//   progressPercentage: {
-//     fontSize: 13,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//   },
-//   progressBar: {
-//     height: 6,
-//     backgroundColor: '#e0e0e0',
-//     borderRadius: 3,
-//   },
-//   progressFill: {
-//     height: '100%',
-//     backgroundColor: '#4CAF50',
-//     borderRadius: 3,
-//   },
-//   cardFooter: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//   },
-//   beneficiariesContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   beneficiariesText: {
-//     fontSize: 12,
-//     color: '#666',
-//     marginLeft: 4,
-//   },
-//   dateText: {
-//     fontSize: 12,
-//     color: '#888',
-//   },
-//   emptyContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     paddingTop: 100,
-//   },
-//   emptyText: {
-//     fontSize: 16,
-//     color: '#666',
-//     marginTop: 16,
-//     marginBottom: 24,
-//   },
-//   retryButton: {
-//     backgroundColor: '#2a2a2a',
-//     paddingHorizontal: 24,
-//     paddingVertical: 12,
-//     borderRadius: 8,
-//   },
-//   retryText: {
-//     color: '#fff',
-//     fontSize: 14,
-//     fontWeight: '600',
-//   },
-
-//   // Modal Styles
-//   modalOverlay: {
-//     flex: 1,
-//     backgroundColor: 'rgba(0,0,0,0.5)',
-//     justifyContent: 'flex-end',
-//   },
-//   modalContent: {
-//     backgroundColor: '#fff',
-//     borderTopLeftRadius: 20,
-//     borderTopRightRadius: 20,
-//     maxHeight: height * 0.9,
-//   },
-//   modalHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     paddingHorizontal: 20,
-//     paddingTop: 20,
-//     paddingBottom: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#e0e0e0',
-//   },
-//   modalTitle: {
-//     fontSize: 18,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//   },
-//   closeButton: {
-//     padding: 4,
-//   },
-//   modalBody: {
-//     padding: 20,
-//   },
-//   qrSection: {
-//     alignItems: 'center',
-//     marginBottom: 24,
-//     paddingVertical: 20,
-//     backgroundColor: '#f8f8f8',
-//     borderRadius: 12,
-//   },
-//   qrTitle: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: '#2a2a2a',
-//     marginBottom: 16,
-//   },
-//   qrContainer: {
-//     backgroundColor: '#fff',
-//     padding: 16,
-//     borderRadius: 12,
-//     marginBottom: 12,
-//   },
-//   qrImage: {
-//     width: 180,
-//     height: 180,
-//   },
-//   qrSubtext: {
-//     fontSize: 12,
-//     color: '#666',
-//     textAlign: 'center',
-//   },
-//   infoSection: {
-//     flex: 1,
-//   },
-//   modalDonationTitle: {
-//     fontSize: 20,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//     marginBottom: 8,
-//   },
-//   modalOrganization: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: '#666',
-//     marginBottom: 8,
-//   },
-//   accountInfo: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 16,
-//   },
-//   accountText: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginLeft: 8,
-//   },
-//   modalDescription: {
-//     fontSize: 15,
-//     color: '#555',
-//     lineHeight: 22,
-//     marginBottom: 20,
-//   },
-//   modalProgressContainer: {
-//     marginBottom: 24,
-//   },
-//   modalProgressText: {
-//     fontSize: 14,
-//     color: '#666',
-//     fontWeight: '500',
-//   },
-//   modalProgressPercentage: {
-//     fontSize: 16,
-//     fontWeight: '700',
-//     color: '#2a2a2a',
-//   },
-//   detailsGrid: {
-//     marginBottom: 24,
-//   },
-//   detailItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 12,
-//   },
-//   detailText: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginLeft: 8,
-//     flex: 1,
-//   },
-//   contactSection: {
-//     backgroundColor: '#f8f8f8',
-//     padding: 16,
-//     borderRadius: 12,
-//   },
-//   contactTitle: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: '#2a2a2a',
-//     marginBottom: 12,
-//   },
-//   contactItem: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 8,
-//   },
-//   contactText: {
-//     fontSize: 13,
-//     color: '#666',
-//     marginLeft: 8,
-//     flex: 1,
-//   },
-// });
-
-// export default DonationScreen;

@@ -112,12 +112,12 @@ const CommunityChoiceScreen: React.FC = () => {
           <Text style={styles.backButtonText}>← Back to Welcome</Text>
         </TouchableOpacity> */}
         <View style={styles.header}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.loginButton}
           onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.loginText}>Login</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       </View>
     </SafeAreaView>

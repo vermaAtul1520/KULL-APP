@@ -1,422 +1,3 @@
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   StyleSheet,
-//   SafeAreaView,
-//   ScrollView,
-//   Alert,
-// } from 'react-native';
-// import { useNavigation } from '@react-navigation/native';
-// import { Picker } from '@react-native-picker/picker';
-
-// const AppColors = {
-//   primary: '#7dd3c0',
-//   black: '#000000',
-//   white: '#ffffff',
-//   gray: '#666666',
-//   dark: '#2a2a2a',
-//   teal: '#1e6b5c',
-//   cream: '#f5f5dc',
-//   blue: '#4169e1',
-//   lightGray: '#f0f0f0',
-//   orange: '#ff8c00',
-//   red: '#dc143c',
-//   green: '#228b22',
-// };
-
-// interface FormData {
-//   cast: string;
-//   cGotNo: string;
-//   name: string;
-//   position: string;
-//   fatherName: string;
-//   address: string;
-//   pinCode: string;
-//   phoneNo: string;
-//   alternativePhone: string;
-//   email: string;
-//   profession: string;
-//   estimatedMembers: string;
-//   thoughtOfMaking: string;
-//   maritalStatus: string;
-//   gotra: string;
-// }
-
-// const RequestCommunityScreen: React.FC = () => {
-//   const navigation = useNavigation();
-  
-//   const [formData, setFormData] = useState<FormData>({
-//     cast: '',
-//     cGotNo: '',
-//     name: '',
-//     position: '',
-//     fatherName: '',
-//     address: '',
-//     pinCode: '',
-//     phoneNo: '',
-//     alternativePhone: '',
-//     email: '',
-//     profession: '',
-//     estimatedMembers: '',
-//     thoughtOfMaking: '',
-//     maritalStatus: 'single',
-//     gotra: '',
-//   });
-
-//   const updateFormData = (field: keyof FormData, value: string) => {
-//     setFormData(prev => ({ ...prev, [field]: value }));
-//   };
-
-//   const handleSubmit = () => {
-//     // Basic validation
-//     const requiredFields = [
-//       'cast', 'cGotNo', 'name', 'position', 'fatherName', 
-//       'address', 'pinCode', 'phoneNo', 'email', 'profession', 
-//       'estimatedMembers', 'thoughtOfMaking', 'gotra'
-//     ];
-    
-//     const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
-    
-//     if (missingFields.length > 0) {
-//       Alert.alert('Error', 'Please fill in all required fields');
-//       return;
-//     }
-
-//     // Here you would normally send the data to your API
-//     Alert.alert(
-//       'Success', 
-//       'Community request submitted successfully!',
-//       [
-//         {
-//           text: 'OK',
-//           onPress: () => navigation.goBack(),
-//         },
-//       ]
-//     );
-//   };
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <View style={styles.header}>
-//         <TouchableOpacity
-//           style={styles.backButton}
-//           onPress={() => navigation.goBack()}
-//         >
-//           <Text style={styles.backButtonText}>← Back</Text>
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>Request Community</Text>
-//         <View style={styles.placeholder} />
-//       </View>
-
-//       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-//         <View style={styles.formContainer}>
-          
-//           {/* Cast */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Cast *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.cast}
-//               onChangeText={(value) => updateFormData('cast', value)}
-//               placeholder="Enter your cast"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* CGotNO */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>CGotNO *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.cGotNo}
-//               onChangeText={(value) => updateFormData('cGotNo', value)}
-//               placeholder="Enter CGotNO"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Name */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Name *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.name}
-//               onChangeText={(value) => updateFormData('name', value)}
-//               placeholder="Enter your full name"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Position */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Position in Community *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.position}
-//               onChangeText={(value) => updateFormData('position', value)}
-//               placeholder="Your position/role in community"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Father Name */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Father's Name *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.fatherName}
-//               onChangeText={(value) => updateFormData('fatherName', value)}
-//               placeholder="Enter father's name"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Address */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Address *</Text>
-//             <TextInput
-//               style={[styles.input, styles.textArea]}
-//               value={formData.address}
-//               onChangeText={(value) => updateFormData('address', value)}
-//               placeholder="Enter your full address"
-//               placeholderTextColor={AppColors.gray}
-//               multiline={true}
-//               numberOfLines={3}
-//             />
-//           </View>
-
-//           {/* Pin Code */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Pin Code *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.pinCode}
-//               onChangeText={(value) => updateFormData('pinCode', value)}
-//               placeholder="Enter pin code"
-//               placeholderTextColor={AppColors.gray}
-//               keyboardType="numeric"
-//               maxLength={6}
-//             />
-//           </View>
-
-//           {/* Phone Number */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Phone Number *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.phoneNo}
-//               onChangeText={(value) => updateFormData('phoneNo', value)}
-//               placeholder="Enter phone number"
-//               placeholderTextColor={AppColors.gray}
-//               keyboardType="phone-pad"
-//               maxLength={10}
-//             />
-//           </View>
-
-//           {/* Alternative Phone */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Alternative Phone</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.alternativePhone}
-//               onChangeText={(value) => updateFormData('alternativePhone', value)}
-//               placeholder="Enter alternative phone number"
-//               placeholderTextColor={AppColors.gray}
-//               keyboardType="phone-pad"
-//               maxLength={10}
-//             />
-//           </View>
-
-//           {/* Email */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Email Address *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.email}
-//               onChangeText={(value) => updateFormData('email', value)}
-//               placeholder="Enter email address"
-//               placeholderTextColor={AppColors.gray}
-//               keyboardType="email-address"
-//               autoCapitalize="none"
-//             />
-//           </View>
-
-//           {/* Profession */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Profession/Working *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.profession}
-//               onChangeText={(value) => updateFormData('profession', value)}
-//               placeholder="Enter your profession"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Estimated Members */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Estimated Members in Community *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.estimatedMembers}
-//               onChangeText={(value) => updateFormData('estimatedMembers', value)}
-//               placeholder="Estimated number of members"
-//               placeholderTextColor={AppColors.gray}
-//               keyboardType="numeric"
-//             />
-//           </View>
-
-//           {/* Thought of Making */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Thought of Making Community *</Text>
-//             <TextInput
-//               style={[styles.input, styles.textArea]}
-//               value={formData.thoughtOfMaking}
-//               onChangeText={(value) => updateFormData('thoughtOfMaking', value)}
-//               placeholder="Why do you want to create this community?"
-//               placeholderTextColor={AppColors.gray}
-//               multiline={true}
-//               numberOfLines={4}
-//             />
-//           </View>
-
-//           {/* Marital Status */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Marital Status *</Text>
-//             <View style={styles.pickerContainer}>
-//               <Picker
-//                 selectedValue={formData.maritalStatus}
-//                 onValueChange={(value) => updateFormData('maritalStatus', value)}
-//                 style={styles.picker}
-//               >
-//                 <Picker.Item label="Single" value="single" />
-//                 <Picker.Item label="Married" value="married" />
-//               </Picker>
-//             </View>
-//           </View>
-
-//           {/* Gotra */}
-//           <View style={styles.inputGroup}>
-//             <Text style={styles.label}>Gotra *</Text>
-//             <TextInput
-//               style={styles.input}
-//               value={formData.gotra}
-//               onChangeText={(value) => updateFormData('gotra', value)}
-//               placeholder="Enter your gotra"
-//               placeholderTextColor={AppColors.gray}
-//             />
-//           </View>
-
-//           {/* Submit Button */}
-//           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-//             <Text style={styles.submitButtonText}>Submit Request</Text>
-//           </TouchableOpacity>
-//         </View>
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     marginTop: 50,
-//     flex: 1,
-//     backgroundColor: AppColors.cream,
-//   },
-//   header: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'space-between',
-//     paddingHorizontal: 20,
-//     paddingVertical: 15,
-//     backgroundColor: AppColors.white,
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 2,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 3.84,
-//     elevation: 5,
-//   },
-//   backButton: {
-//     padding: 5,
-//   },
-//   backButtonText: {
-//     fontSize: 16,
-//     color: AppColors.teal,
-//     fontWeight: '600',
-//   },
-//   headerTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     color: AppColors.black,
-//   },
-//   placeholder: {
-//     width: 40,
-//   },
-//   scrollView: {
-//     flex: 1,
-//   },
-//   formContainer: {
-//     padding: 20,
-//   },
-//   inputGroup: {
-//     marginBottom: 20,
-//   },
-//   label: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: AppColors.black,
-//     marginBottom: 8,
-//   },
-//   input: {
-//     backgroundColor: AppColors.white,
-//     borderRadius: 10,
-//     paddingHorizontal: 15,
-//     paddingVertical: 12,
-//     fontSize: 16,
-//     color: AppColors.black,
-//     borderWidth: 1,
-//     borderColor: AppColors.lightGray,
-//   },
-//   textArea: {
-//     minHeight: 80,
-//     textAlignVertical: 'top',
-//   },
-//   pickerContainer: {
-//     backgroundColor: AppColors.white,
-//     borderRadius: 10,
-//     borderWidth: 1,
-//     borderColor: AppColors.lightGray,
-//   },
-//   picker: {
-//     height: 50,
-//     color: AppColors.black,
-//   },
-//   submitButton: {
-//     backgroundColor: AppColors.teal,
-//     borderRadius: 25,
-//     paddingVertical: 15,
-//     marginTop: 20,
-//     marginBottom: 40,
-//   },
-//   submitButtonText: {
-//     color: AppColors.white,
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     textAlign: 'center',
-//   },
-// });
-
-// export default RequestCommunityScreen;
-
-
-
-
 import React, { useState } from 'react';
 import {
   View,
@@ -430,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import { BASE_URL } from '@app/constants/constant';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -466,6 +48,9 @@ interface FormData {
 
 const RequestCommunityScreen: React.FC = () => {
   const navigation = useNavigation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     cast: '',
@@ -489,52 +74,84 @@ const RequestCommunityScreen: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const [loading, setLoading] = useState(false);
+  // Define required fields for each page
+  const getRequiredFieldsForPage = (page: number) => {
+    switch (page) {
+      case 1:
+        return ['cast', 'cGotNo', 'name', 'position', 'fatherName'];
+      case 2:
+        return ['address', 'pinCode', 'phoneNo', 'email', 'profession'];
+      case 3:
+        return ['estimatedMembers', 'thoughtOfMaking', 'gotra'];
+      default:
+        return [];
+    }
+  };
 
-  const handleSubmit = async () => {
-    // Basic validation
-    const requiredFields = [
-      'cast', 'cGotNo', 'name', 'position', 'fatherName', 
-      'address', 'pinCode', 'phoneNo', 'email', 'profession', 
-      'estimatedMembers', 'thoughtOfMaking', 'gotra'
-    ];
-    
+  const validateCurrentPage = () => {
+    const requiredFields = getRequiredFieldsForPage(currentPage);
     const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
     
     if (missingFields.length > 0) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert('Error', 'Please fill in all required fields before proceeding');
+      return false;
+    }
+
+    // Additional validation for page 2
+    if (currentPage === 2) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        Alert.alert('Error', 'Please enter a valid email address');
+        return false;
+      }
+
+      if (formData.phoneNo.length !== 10) {
+        Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateCurrentPage()) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentPage(prev => prev - 1);
+  };
+
+  const handleSubmit = async () => {
+    if (!validateCurrentPage()) {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    // Phone validation
-    if (formData.phoneNo.length !== 10) {
-      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+    if (!termsAccepted) {
+      Alert.alert(
+        'Terms & Conditions Required', 
+        'You must accept the Terms & Conditions before submitting your community request. Please tick the checkbox to proceed.',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      // Prepare payload for API
       const payload = {
-        firstName: formData.name.split(' ')[0], // Extract first name
-        lastName: formData.name.split(' ').slice(1).join(' ') || formData.name, // Extract last name or use full name
+        firstName: formData.name.split(' ')[0],
+        lastName: formData.name.split(' ').slice(1).join(' ') || formData.name,
         email: formData.email,
         phone: `+91${formData.phoneNo}`,
-        password: 'temp123@', // You might want to add a password field or generate one
-        gender: 'not specified', // You might want to add gender field
+        password: 'temp123@',
+        gender: 'not specified',
         occupation: formData.profession,
-        religion: 'Hindu', // You might want to add religion field
-        motherTongue: 'Hindi', // You might want to add mother tongue field
+        religion: 'Hindu',
+        motherTongue: 'Hindi',
         interests: ['community building'],
-        // Additional fields specific to community request
         cast: formData.cast,
         cGotNo: formData.cGotNo,
         positionInCommunity: formData.position,
@@ -549,7 +166,7 @@ const RequestCommunityScreen: React.FC = () => {
         requestType: 'community_request'
       };
 
-      const response = await fetch('https://kull-backend.onrender.com/api/auth/signup', {
+      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -558,9 +175,6 @@ const RequestCommunityScreen: React.FC = () => {
       });
 
       const result = await response.json();
-
-      console.log('result', result, payload);
-      
 
       if (result.success) {
         Alert.alert(
@@ -584,6 +198,241 @@ const RequestCommunityScreen: React.FC = () => {
     }
   };
 
+  const renderProgressBar = () => {
+    const progress = (currentPage / 3) * 100;
+    
+    return (
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        </View>
+        <Text style={styles.progressText}>Step {currentPage} of 3</Text>
+      </View>
+    );
+  };
+
+  const renderPage1 = () => (
+    <View style={styles.formContainer}>
+      <Text style={styles.pageTitle}>Basic Information</Text>
+      
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Cast *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.cast}
+          onChangeText={(value) => updateFormData('cast', value)}
+          placeholder="Enter your cast"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>CGotNO *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.cGotNo}
+          onChangeText={(value) => updateFormData('cGotNo', value)}
+          placeholder="Enter CGotNO"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Name *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.name}
+          onChangeText={(value) => updateFormData('name', value)}
+          placeholder="Enter your full name"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Position in Community *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.position}
+          onChangeText={(value) => updateFormData('position', value)}
+          placeholder="Your position/role in community"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Father's Name *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.fatherName}
+          onChangeText={(value) => updateFormData('fatherName', value)}
+          placeholder="Enter father's name"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+    </View>
+  );
+
+  const renderPage2 = () => (
+    <View style={styles.formContainer}>
+      <Text style={styles.pageTitle}>Contact Information</Text>
+      
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Address *</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.address}
+          onChangeText={(value) => updateFormData('address', value)}
+          placeholder="Enter your full address"
+          placeholderTextColor={AppColors.gray}
+          multiline={true}
+          numberOfLines={3}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Pin Code *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.pinCode}
+          onChangeText={(value) => updateFormData('pinCode', value)}
+          placeholder="Enter pin code"
+          placeholderTextColor={AppColors.gray}
+          keyboardType="numeric"
+          maxLength={6}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Phone Number *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.phoneNo}
+          onChangeText={(value) => updateFormData('phoneNo', value)}
+          placeholder="Enter phone number"
+          placeholderTextColor={AppColors.gray}
+          keyboardType="phone-pad"
+          maxLength={10}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Alternative Phone</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.alternativePhone}
+          onChangeText={(value) => updateFormData('alternativePhone', value)}
+          placeholder="Enter alternative phone number"
+          placeholderTextColor={AppColors.gray}
+          keyboardType="phone-pad"
+          maxLength={10}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Email Address *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.email}
+          onChangeText={(value) => updateFormData('email', value)}
+          placeholder="Enter email address"
+          placeholderTextColor={AppColors.gray}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Profession/Working *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.profession}
+          onChangeText={(value) => updateFormData('profession', value)}
+          placeholder="Enter your profession"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+    </View>
+  );
+
+  const renderPage3 = () => (
+    <View style={styles.formContainer}>
+      <Text style={styles.pageTitle}>Community Details</Text>
+      
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Estimated Members in Community *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.estimatedMembers}
+          onChangeText={(value) => updateFormData('estimatedMembers', value)}
+          placeholder="Estimated number of members"
+          placeholderTextColor={AppColors.gray}
+          keyboardType="numeric"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Thought of Making Community *</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.thoughtOfMaking}
+          onChangeText={(value) => updateFormData('thoughtOfMaking', value)}
+          placeholder="Why do you want to create this community?"
+          placeholderTextColor={AppColors.gray}
+          multiline={true}
+          numberOfLines={4}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Marital Status *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.maritalStatus}
+            onValueChange={(value) => updateFormData('maritalStatus', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Single" value="single" />
+            <Picker.Item label="Married" value="married" />
+          </Picker>
+        </View>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Gotra *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.gotra}
+          onChangeText={(value) => updateFormData('gotra', value)}
+          placeholder="Enter your gotra"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      {/* Terms & Conditions */}
+      <View style={styles.termsContainer}>
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => setTermsAccepted(!termsAccepted)}
+        >
+          <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+            {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.termsText}>
+            I agree to the{' '}
+            <Text style={styles.termsLink}>Terms & Conditions</Text>
+            {' '}and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
+          </Text>
+        </TouchableOpacity>
+        {!termsAccepted && (
+          <Text style={styles.termsError}>
+            * You must accept the Terms & Conditions to proceed
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -597,215 +446,43 @@ const RequestCommunityScreen: React.FC = () => {
         <View style={styles.placeholder} />
       </View>
 
+      {renderProgressBar()}
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.formContainer}>
+        {currentPage === 1 && renderPage1()}
+        {currentPage === 2 && renderPage2()}
+        {currentPage === 3 && renderPage3()}
+
+        {/* Navigation Buttons */}
+        <View style={styles.navigationContainer}>
+          {currentPage > 1 && (
+            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+          )}
           
-          {/* Cast */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Cast *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.cast}
-              onChangeText={(value) => updateFormData('cast', value)}
-              placeholder="Enter your cast"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* CGotNO */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>CGotNO *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.cGotNo}
-              onChangeText={(value) => updateFormData('cGotNo', value)}
-              placeholder="Enter CGotNO"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Name */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.name}
-              onChangeText={(value) => updateFormData('name', value)}
-              placeholder="Enter your full name"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Position */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Position in Community *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.position}
-              onChangeText={(value) => updateFormData('position', value)}
-              placeholder="Your position/role in community"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Father Name */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Father's Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.fatherName}
-              onChangeText={(value) => updateFormData('fatherName', value)}
-              placeholder="Enter father's name"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Address */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Address *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.address}
-              onChangeText={(value) => updateFormData('address', value)}
-              placeholder="Enter your full address"
-              placeholderTextColor={AppColors.gray}
-              multiline={true}
-              numberOfLines={3}
-            />
-          </View>
-
-          {/* Pin Code */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pin Code *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.pinCode}
-              onChangeText={(value) => updateFormData('pinCode', value)}
-              placeholder="Enter pin code"
-              placeholderTextColor={AppColors.gray}
-              keyboardType="numeric"
-              maxLength={6}
-            />
-          </View>
-
-          {/* Phone Number */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.phoneNo}
-              onChangeText={(value) => updateFormData('phoneNo', value)}
-              placeholder="Enter phone number"
-              placeholderTextColor={AppColors.gray}
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-          </View>
-
-          {/* Alternative Phone */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Alternative Phone</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.alternativePhone}
-              onChangeText={(value) => updateFormData('alternativePhone', value)}
-              placeholder="Enter alternative phone number"
-              placeholderTextColor={AppColors.gray}
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-          </View>
-
-          {/* Email */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.email}
-              onChangeText={(value) => updateFormData('email', value)}
-              placeholder="Enter email address"
-              placeholderTextColor={AppColors.gray}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Profession */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Profession/Working *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.profession}
-              onChangeText={(value) => updateFormData('profession', value)}
-              placeholder="Enter your profession"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Estimated Members */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Estimated Members in Community *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.estimatedMembers}
-              onChangeText={(value) => updateFormData('estimatedMembers', value)}
-              placeholder="Estimated number of members"
-              placeholderTextColor={AppColors.gray}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Thought of Making */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thought of Making Community *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.thoughtOfMaking}
-              onChangeText={(value) => updateFormData('thoughtOfMaking', value)}
-              placeholder="Why do you want to create this community?"
-              placeholderTextColor={AppColors.gray}
-              multiline={true}
-              numberOfLines={4}
-            />
-          </View>
-
-          {/* Marital Status */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Marital Status *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.maritalStatus}
-                onValueChange={(value) => updateFormData('maritalStatus', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Single" value="single" />
-                <Picker.Item label="Married" value="married" />
-              </Picker>
-            </View>
-          </View>
-
-          {/* Gotra */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Gotra *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.gotra}
-              onChangeText={(value) => updateFormData('gotra', value)}
-              placeholder="Enter your gotra"
-              placeholderTextColor={AppColors.gray}
-            />
-          </View>
-
-          {/* Submit Button */}
-          <TouchableOpacity 
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <Text style={styles.submitButtonText}>
-              {loading ? 'Submitting...' : 'Submit Request'}
-            </Text>
-          </TouchableOpacity>
+          {currentPage < 3 ? (
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>Next</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={[
+                styles.submitButton, 
+                loading && styles.submitButtonDisabled,
+                !termsAccepted && styles.submitButtonDisabled
+              ]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={[
+                styles.submitButtonText,
+                !termsAccepted && styles.submitButtonTextDisabled
+              ]}>
+                {loading ? 'Submitting...' : 'Submit Request'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -849,11 +526,41 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
+  progressContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: AppColors.white,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: AppColors.lightGray,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: AppColors.teal,
+    borderRadius: 4,
+  },
+  progressText: {
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 14,
+    color: AppColors.gray,
+    fontWeight: '600',
+  },
   scrollView: {
     flex: 1,
   },
   formContainer: {
     padding: 20,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: AppColors.black,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   inputGroup: {
     marginBottom: 20,
@@ -888,12 +595,86 @@ const styles = StyleSheet.create({
     height: 50,
     color: AppColors.black,
   },
+  termsContainer: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: AppColors.teal,
+    borderRadius: 3,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: AppColors.teal,
+  },
+  checkmark: {
+    color: AppColors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    color: AppColors.black,
+  },
+  termsLink: {
+    color: AppColors.teal,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  termsError: {
+    color: AppColors.red,
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 30,
+    fontStyle: 'italic',
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    marginTop: 20,
+  },
+  previousButton: {
+    backgroundColor: AppColors.lightGray,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+  },
+  previousButtonText: {
+    color: AppColors.black,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nextButton: {
+    backgroundColor: AppColors.teal,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    marginLeft: 'auto',
+  },
+  nextButtonText: {
+    color: AppColors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   submitButton: {
     backgroundColor: AppColors.teal,
     borderRadius: 25,
     paddingVertical: 15,
-    marginTop: 20,
-    marginBottom: 40,
+    paddingHorizontal: 30,
+    marginLeft: 'auto',
   },
   submitButtonText: {
     color: AppColors.white,
@@ -903,6 +684,9 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     backgroundColor: AppColors.gray,
+  },
+  submitButtonTextDisabled: {
+    color: AppColors.lightGray,
   },
 });
 

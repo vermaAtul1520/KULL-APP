@@ -1,10 +1,13 @@
-import React, {useEffect, useRef} from 'react';
-import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text, ActivityIndicator, Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Animated} from 'react-native';
 import { Image } from 'react-native';
-import  KingIcon from '@app/assets/images/king.svg';
+import KingIcon from '@app/assets/images/king.svg';
 import HeadlinesIcon from '@app/assets/images/headlines.svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@app/constants/constant';
+import { useAuth } from '@app/navigators';
 
 const {width} = Dimensions.get('window');
 
@@ -23,132 +26,69 @@ const AppColors = {
   green: '#228b22',
 };
 
+// API Types
+interface SmaajKeTaajProfile {
+  id: number;
+  name: string;
+  role: string;
+  age: number;
+  fatherName: string;
+  avatar: string;
+}
+
+interface CommunityConfiguration {
+  _id: string;
+  community: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  smaajKeTaaj: SmaajKeTaajProfile[];
+  banner: string[];
+}
+
+interface ConfigurationAPIResponse {
+  success: boolean;
+  data: CommunityConfiguration;
+}
+
 const HomeScreen = () => {
-  const flatListRef = useRef(null);
-
+  const { user, token } = useAuth();
+  const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const mainFlatListRef = useRef(null);
+  const mainFlatListRef = useRef<FlatList>(null);
 
-  const newsHeadlines = [
+  // State for API data
+  const [profileData, setProfileData] = useState<SmaajKeTaajProfile[]>([]);
+  const [bannerData, setBannerData] = useState<{id: number, image: string, textColor: string}[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Hardcoded community ID - you can make this dynamic based on user's community
+  const COMMUNITY_ID = "687fcd98b40bf8cdac06ff97";
+
+  // Fallback data
+  const defaultNewsHeadlines = [
     {id: 1, text: 'Breaking: New policy announced for social welfare', category: 'Politics'},
     {id: 2, text: 'Community event this weekend - register now!', category: 'Events'},
     {id: 3, text: 'Education reforms to be implemented next month', category: 'Education'},
     {id: 4, text: 'Local business owner wins national award', category: 'Business'},
     {id: 5, text: 'Health department issues new guidelines', category: 'Health'},
   ];
-  
-  const bannerData = [
+
+  const defaultBannerData = [
     {
       id: 1,
-      // title: 'India dekh raha hai',
-      // liveText: 'LIVE',
-      // backgroundColor: '#FFD700',
       textColor: '#000',
       image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 2,
-      // title: 'Election Updates',
-      // liveText: 'LIVE',
-      // backgroundColor: '#FF6B6B',
       textColor: '#FFF',
       image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 3,
-      // title: 'Samaj Seva',
-      // liveText: 'NEW',
-      // backgroundColor: '#4ECDC4',
-      textColor: '#000',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 4,
-      // title: 'Breaking News',
-      // liveText: 'LIVE',
-      // backgroundColor: '#45B7D1',
-      textColor: '#FFF',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 5,
-      // title: 'Community Events',
-      // liveText: 'ACTIVE',
-      // backgroundColor: '#96CEB4',
-      textColor: '#000',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 6,
-      // title: 'Daily Updates',
-      // liveText: 'LIVE',
-      // backgroundColor: '#FFEAA7',
-      textColor: '#000',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
+    }
   ];
 
-  // const renderNewsHeadline = ({item, index}) => {
-  //   const inputRange = [
-  //     (index - 1) * width,
-  //     index * width,
-  //     (index + 1) * width,
-  //   ];
-    
-  //   const translateX = scrollX.interpolate({
-  //     inputRange,
-  //     outputRange: [width * 0.5, 0, -width * 0.5],
-  //   });
-
-  //   const opacity = scrollX.interpolate({
-  //     inputRange,
-  //     outputRange: [0.5, 1, 0.5],
-  //   });
-
-  //   return (
-  //     <TouchableOpacity 
-  //       activeOpacity={0.8}
-  //       onPress={() => console.log('News tapped:', item.id)}
-  //       style={styles.newsItem}
-  //     >
-  //       <Animated.View style={[
-  //         styles.newsContent,
-  //         {transform: [{translateX}], opacity}
-  //       ]}>
-  //         <Text style={styles.newsCategory}>{item.category}</Text>
-  //         <Text style={styles.newsText}>{item.text}</Text>
-  //       </Animated.View>
-  //     </TouchableOpacity>
-  //   );
-  // };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (flatListRef.current) {
-        flatListRef.current.scrollToIndex({
-          index: (Math.floor(Date.now() / 3000) % bannerData.length),
-          animated: true,
-        });
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // const renderBanner = ({item}) => (
-  //   <View style={[styles.bannerSlide, {width}]}>
-  //     <ImageBackground
-  //       source={{uri: item.image}}
-  //       style={styles.bannerImage}
-  //       resizeMode="cover">
-  //       <View style={styles.bannerContent}>
-  //         <Text style={[styles.bannerTitle, {color: item.textColor}]}>{item.title}</Text>
-  //         <Text style={styles.liveText}>{item.liveText}</Text>
-  //       </View>
-  //     </ImageBackground>
-  //   </View>
-  // );
-  const profileData = [
+  const defaultProfileData: SmaajKeTaajProfile[] = [
     {
       id: 11,
       name: 'Rajat Verma',
@@ -164,189 +104,138 @@ const HomeScreen = () => {
       age: 49,
       fatherName: '',
       avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 15,
-      name: 'Priya Sharma',
-      role: 'Teacher',
-      age: 32,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 16,
-      name: 'Amit Singh',
-      role: 'Engineer',
-      age: 28,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 17,
-      name: 'Amit Singh',
-      role: 'Engineer',
-      age: 28,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 18,
-      name: 'Amit Singh',
-      role: 'Engineer',
-      age: 28,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 19,
-      name: 'Amit Singh',
-      role: 'Engineer',
-      age: 28,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 20,
-      name: 'Amit Singh',
-      role: 'Engineer',
-      age: 28,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
+    }
   ];
 
-  const menuItems = [
-    {name: 'Occasions', icon: 'calendar-multiple', color: '#4CAF50'},
-    {name: 'Kartavya', icon: 'briefcase', color: '#2196F3'},
-    {name: 'Bhajan', icon: 'music', color: '#FF9800'},
-    {name: 'Laws and Decisions', icon: 'gavel', color: '#9C27B0'},
-    {name: 'City Search', icon: 'city', color: '#795548'},
-    {name: 'Organization Officer', icon: 'account-tie', color: '#607D8B'},
-    {name: 'Education', icon: 'school', color: '#3F51B5'},
-    {name: 'Employment', icon: 'briefcase-account', color: '#009688'},
-    {name: 'Social Upliftment', icon: 'human-handsup', color: '#FF5722'},
-    {name: 'Dukan', icon: 'store', color: '#E91E63'},
-  ];
+  // API Functions
+  const getAuthHeaders = async () => {
+    const userToken = await AsyncStorage.getItem('userToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken || token}`,
+    };
+  };
 
-  const sections = [
-    {
-      id: 'banner',
-      renderItem: () => (
-        <View style={styles.headerBanner}>
-          <FlatList
-            ref={flatListRef}
-            data={bannerData}
-            renderItem={renderBanner}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
-            onScrollToIndexFailed={(info) => {
-              const wait = new Promise(resolve => setTimeout(resolve, 500));
-              wait.then(() => {
-                flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-              });
-            }}
-          />
-          <View style={styles.turnoutInfo}>
-            <Text style={styles.turnoutText}>turnout recorded at 39.13% till 1 pm</Text>
-          </View>
-        </View>
-      )
-    },
-    {
-      id: 'news',
-      renderItem: () => (
-        <View style={styles.newsSliderContainer}>
-          <View style={[styles.sectionHeader, {marginLeft: 12}]}>
-            <HeadlinesIcon size={20} color="#fff" />
-            <Text style={[styles.sectionTitle, {color: '#fff'}]}>News Headlines</Text>
-          </View>
-          <Animated.FlatList
-            data={newsHeadlines}
-            renderItem={renderNewsHeadline}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
-            onScroll={Animated.event(
-              [{nativeEvent: {contentOffset: {x: scrollX}}}],
-              {useNativeDriver: true}
-            )}
-            scrollEventThrottle={16}
-          />
-          <View style={styles.newsPagination}>
-            {newsHeadlines.map((_, i) => {
-              const opacity = scrollX.interpolate({
-                inputRange: [
-                  (i - 1) * width,
-                  i * width,
-                  (i + 1) * width,
-                ],
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp',
-              });
-              
-              return (
-                <Animated.View
-                  key={i}
-                  style={[styles.newsDot, {opacity}]}
-                />
-              );
-            })}
-          </View>
-        </View>
-      )
-    },
-    {
-      id: 'profiles',
-      renderItem: () => (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <KingIcon size={24} color="black" />
-            <Text style={styles.sectionTitle}>Samaj Ke Taj</Text>
-          </View>
-          <View style={styles.profileGrid}>
-            {profileData.map((profile) => (
-              <TouchableOpacity key={profile.id} style={styles.profileCard}>
-                <View style={styles.profileImageContainer}>
-                  <Image
-                    source={{uri: profile.avatar}}
-                    style={styles.profileImage}
-                  />
-                  <View style={styles.profileBadge}>
-                    <Text style={styles.profileBadgeText}>{profile.id}</Text>
-                  </View>
-                </View>
-                <Text style={styles.profileName}>{profile.name}</Text>
-                <Text style={styles.profileRole}>{profile.role}</Text>
-                <Text style={styles.profileDetails}>Father Name:</Text>
-                <Text style={styles.profileAge}>Age: {profile.age}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )
-    },
-    // Add more sections here if needed
-  ];
+  const fetchCommunityConfiguration = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching community configuration for:', COMMUNITY_ID);
 
-  // Render functions remain the same
-  const renderBanner = ({item}) => (
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
+        method: 'GET',
+        headers,
+      });
+
+      console.log('Configuration API response status:', response.status);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('Configuration not found, using default data');
+          setProfileData(defaultProfileData);
+          setBannerData(defaultBannerData);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Raw configuration response:', responseText.substring(0, 200) + '...');
+
+      let data: ConfigurationAPIResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        setProfileData(defaultProfileData);
+        setBannerData(defaultBannerData);
+        return;
+      }
+
+      if (data.success && data.data) {
+        // Set Samaj Ke Taaj profiles
+        if (data.data.smaajKeTaaj && Array.isArray(data.data.smaajKeTaaj)) {
+          setProfileData(data.data.smaajKeTaaj);
+          console.log('Loaded Samaj Ke Taaj profiles:', data.data.smaajKeTaaj.length);
+        } else {
+          setProfileData(defaultProfileData);
+        }
+
+        // Set banner data
+        if (data.data.banner && Array.isArray(data.data.banner)) {
+          const banners = data.data.banner.map((imageUrl, index) => ({
+            id: index + 1,
+            image: imageUrl,
+            textColor: index % 2 === 0 ? '#000' : '#FFF'
+          }));
+          setBannerData(banners.length > 0 ? banners : defaultBannerData);
+          console.log('Loaded banners:', banners.length);
+        } else {
+          setBannerData(defaultBannerData);
+        }
+      } else {
+        console.log('Invalid API response, using default data');
+        setProfileData(defaultProfileData);
+        setBannerData(defaultBannerData);
+      }
+
+    } catch (error) {
+      console.error('Error fetching community configuration:', error);
+      
+      // Use fallback data
+      setProfileData(defaultProfileData);
+      setBannerData(defaultBannerData);
+
+      if (!refreshing) { // Only show alert if not refreshing
+        Alert.alert(
+          'Unable to Load Data',
+          'Using default content. Please check your connection and try refreshing.',
+          [{text: 'OK', style: 'default'}]
+        );
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCommunityConfiguration();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCommunityConfiguration();
+  };
+
+  // Auto-scroll banner effect
+  useEffect(() => {
+    if (bannerData.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (flatListRef.current) {
+        const nextIndex = (Math.floor(Date.now() / 3000) % bannerData.length);
+        flatListRef.current.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [bannerData.length]);
+
+  const renderBanner = ({item}: {item: {id: number, image: string, textColor: string}}) => (
     <View style={[styles.bannerSlide, {width}]}>
       <ImageBackground
         source={{uri: item.image}}
         style={styles.bannerImage}
         resizeMode="cover">
-        {/* <View style={styles.bannerContent}>
-          <Text style={[styles.bannerTitle, {color: item.textColor}]}>{item.title}</Text>
-          <Text style={styles.liveText}>{item.liveText}</Text>
-        </View> */}
       </ImageBackground>
     </View>
   );
 
-  const renderNewsHeadline = ({item, index}) => {
+  const renderNewsHeadline = ({item, index}: {item: any, index: number}) => {
     const inputRange = [
       (index - 1) * width,
       index * width,
@@ -380,19 +269,140 @@ const HomeScreen = () => {
     );
   };
 
-  // Auto-scroll banner effect remains the same
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (flatListRef.current) {
-        flatListRef.current.scrollToIndex({
-          index: (Math.floor(Date.now() / 3000) % bannerData.length),
-          animated: true,
-        });
-      }
-    }, 3000);
+  const renderProfileCard = (profile: SmaajKeTaajProfile) => (
+    <TouchableOpacity key={profile.id} style={styles.profileCard}>
+      <View style={styles.profileImageContainer}>
+        <Image
+          source={{uri: profile.avatar}}
+          style={styles.profileImage}
+        />
+        <View style={styles.profileBadge}>
+          <Text style={styles.profileBadgeText}>{profile.id}</Text>
+        </View>
+      </View>
+      <Text style={styles.profileName}>{profile.name}</Text>
+      <Text style={styles.profileRole}>{profile.role}</Text>
+      {profile.fatherName ? (
+        <Text style={styles.profileDetails}>Father: {profile.fatherName}</Text>
+      ) : (
+        <Text style={styles.profileDetails}>Father Name:</Text>
+      )}
+      <Text style={styles.profileAge}>Age: {profile.age}</Text>
+    </TouchableOpacity>
+  );
 
-    return () => clearInterval(interval);
-  }, []);
+  const sections = [
+    {
+      id: 'banner',
+      renderItem: () => (
+        <View style={styles.headerBanner}>
+          {bannerData.length > 0 ? (
+            <FlatList
+              ref={flatListRef}
+              data={bannerData}
+              renderItem={renderBanner}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id.toString()}
+              onScrollToIndexFailed={(info) => {
+                const wait = new Promise(resolve => setTimeout(resolve, 500));
+                wait.then(() => {
+                  flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
+                });
+              }}
+            />
+          ) : (
+            <View style={[styles.bannerSlide, {width}]}>
+              <View style={[styles.bannerImage, styles.placeholderBanner]}>
+                <Text style={styles.placeholderText}>Loading banners...</Text>
+              </View>
+            </View>
+          )}
+          <View style={styles.turnoutInfo}>
+            <Text style={styles.turnoutText}>turnout recorded at 39.13% till 1 pm</Text>
+          </View>
+        </View>
+      )
+    },
+    {
+      id: 'news',
+      renderItem: () => (
+        <View style={styles.newsSliderContainer}>
+          <View style={[styles.sectionHeader, {marginLeft: 12}]}>
+            <HeadlinesIcon size={20} color="#fff" />
+            <Text style={[styles.sectionTitle, {color: '#fff'}]}>News Headlines</Text>
+          </View>
+          <Animated.FlatList
+            data={defaultNewsHeadlines}
+            renderItem={renderNewsHeadline}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id.toString()}
+            onScroll={Animated.event(
+              [{nativeEvent: {contentOffset: {x: scrollX}}}],
+              {useNativeDriver: true}
+            )}
+            scrollEventThrottle={16}
+          />
+          <View style={styles.newsPagination}>
+            {defaultNewsHeadlines.map((_, i) => {
+              const opacity = scrollX.interpolate({
+                inputRange: [
+                  (i - 1) * width,
+                  i * width,
+                  (i + 1) * width,
+                ],
+                outputRange: [0.3, 1, 0.3],
+                extrapolate: 'clamp',
+              });
+              
+              return (
+                <Animated.View
+                  key={i}
+                  style={[styles.newsDot, {opacity}]}
+                />
+              );
+            })}
+          </View>
+        </View>
+      )
+    },
+    {
+      id: 'profiles',
+      renderItem: () => (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <KingIcon size={24} color="black" />
+            <Text style={styles.sectionTitle}>Samaj Ke Taj</Text>
+            <TouchableOpacity 
+              onPress={onRefresh} 
+              style={styles.refreshButton}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color="#2a2a2a" />
+              ) : (
+                <Icon name="refresh" size={20} color="#2a2a2a" />
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#2a2a2a" />
+              <Text style={styles.loadingText}>Loading profiles...</Text>
+            </View>
+          ) : (
+            <View style={styles.profileGrid}>
+              {profileData.map(renderProfileCard)}
+            </View>
+          )}
+        </View>
+      )
+    },
+  ];
 
   return (
     <View style={styles.container}>
@@ -403,6 +413,8 @@ const HomeScreen = () => {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         ListFooterComponent={<View style={{height: 20}} />}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </View>
   );
@@ -425,7 +437,14 @@ const styles = StyleSheet.create({
     height: 240,
     justifyContent: 'center',
     alignItems: 'center',
-    // borderRadius: 30
+  },
+  placeholderBanner: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 20,
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: 16,
   },
   bannerContent: {
     flexDirection: 'row',
@@ -449,12 +468,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5dc',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    // alignSelf: 'center'
   },
   turnoutText: {
     color: '#000',
     fontSize: 14,
-     alignSelf: 'center'
+    alignSelf: 'center'
   },
   scrollView: {
     flex: 1,
@@ -468,7 +486,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    // marginLeft: 8,
   },
   sectionTitle: {
     fontSize: 25,
@@ -476,6 +493,19 @@ const styles = StyleSheet.create({
     color: '#2a2a2a',
     fontFamily: 'italic',
     marginLeft: 8,
+    flex: 1,
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
   },
   profileGrid: {
     flexDirection: 'row',

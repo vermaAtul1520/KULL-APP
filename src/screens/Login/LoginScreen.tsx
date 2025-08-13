@@ -1,350 +1,3 @@
-// import React, { useState, useContext } from 'react';
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   StyleSheet,
-//   SafeAreaView,
-//   Alert,
-//   KeyboardAvoidingView,
-//   Platform,
-// } from 'react-native';
-// import { useNavigation } from '@react-navigation/native';
-// import { Image } from 'react-native';
-// import { useAuth } from '@app/navigators';
-
-// // You'll need to import your AuthContext from the main navigation file
-// // For now, I'll create a simple context usage
-
-// const AppColors = {
-//   primary: '#7dd3c0',
-//   black: '#000000',
-//   white: '#ffffff',
-//   gray: '#666666',
-//   dark: '#2a2a2a',
-//   teal: '#1e6b5c',
-//   cream: '#f5f5dc',
-//   blue: '#4169e1',
-//   lightGray: '#f0f0f0',
-//   orange: '#ff8c00',
-//   red: '#dc143c',
-//   green: '#228b22',
-// };
-
-// // const LoginScreen: React.FC = () => {
-// //   const navigation = useNavigation();
-// //   const [email, setEmail] = useState('');
-// //   const [password, setPassword] = useState('');
-// //   const [showPassword, setShowPassword] = useState(false);
-
-//   // This should be replaced with your actual auth context
-//   // const handleLogin = () => {
-//   //   if (!email || !password) {
-//   //     Alert.alert('Error', 'Please fill in all fields');
-//   //     return;
-//   //   }
-
-//   //   // For now, just simulate login success
-//   //   // Later, you'll integrate with your API
-
-//   //   if (email === 'atulverma1520@gmail.com' && password === 'Ak@4321') {
-//   //     navigation.navigate('Home');
-//   //   Alert.alert('Success', 'Login successful!', [
-//   //     {
-//   //       text: 'OK',
-//   //       onPress: () => {
-//   //         // This should call your actual login function that updates the auth context
-//   //         // For now, we'll just navigate back
-//   //         console.log('Login attempted with:', { email, password });
-//   //       },
-//   //     },
-//   //   ]);
-//   //   }
-//   // };
-
-//   const LoginScreen: React.FC = () => {
-//     const navigation = useNavigation();
-//     const { login } = useAuth(); // Get login function from AuthContext
-//     const [email, setEmail] = useState('');
-//     const [password, setPassword] = useState('');
-//     const [showPassword, setShowPassword] = useState(false);
-  
-//     const handleLogin = () => {
-//       if (!email || !password) {
-//         Alert.alert('Error', 'Please fill in all fields');
-//         return;
-//       }
-  
-//       // Check for specific admin credentials
-//       if (email === 'atulverma1520@gmail.com' && password === 'Ak@4321') {
-//         // Call login function to update auth state and navigate to home
-//         login();
-        
-//         Alert.alert('Success', 'Login successful!', [
-//           {
-//             text: 'OK',
-//             onPress: () => {
-//               console.log('Login successful with:', { email, password });
-//             },
-//           },
-//         ]);
-//       } else {
-//         Alert.alert('Error', 'Invalid credentials');
-//       }
-//     };
-
-//   return (
-//    <KeyboardAvoidingView
-//     style={{ flex: 1 }}
-//     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-//     keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 40}
-//     >
-//     <SafeAreaView style={styles.container}>
-//       <View style={styles.content}>
-//         {/* Logo Section */}
-//         <View style={styles.logoContainer}>
-//         <Image
-//           source={require('../../assets/images/kull-logo-2-Photoroom.png')}
-//           style={{
-//             height: 200,
-//             width: 300,
-//             // backgroundColor: 'red', 
-//             resizeMode: 'contain',
-//            }}
-//         />
-//         </View>
-
-//         {/* Login Form */}
-//         <View style={styles.formContainer}>
-//           <Text style={styles.welcomeText}>Welcome</Text>
-//           <Text style={styles.subtitleText}>Log in to your account</Text>
-
-//           <View style={styles.inputContainer}>
-//             <TextInput
-//               maxLength={30}
-//               style={styles.input}
-//               placeholder="Email"
-//               placeholderTextColor={AppColors.gray}
-//               value={email}
-//               onChangeText={text => setEmail(text)}
-//             />
-//           </View>
-
-//           <View style={styles.inputContainer}>
-//             <TextInput
-//               style={styles.input}
-//               placeholder="Password"
-//               placeholderTextColor={AppColors.gray}
-//               value={password}
-//               onChangeText={setPassword}
-//               secureTextEntry={!showPassword}
-//             />
-//             <TouchableOpacity
-//               style={styles.eyeButton}
-//               onPress={() => setShowPassword(!showPassword)}
-//             >
-//               <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
-//             </TouchableOpacity>
-//           </View>
-
-//           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-//             <Text style={styles.loginButtonText}>LOG IN</Text>
-//           </TouchableOpacity>
-
-//           <TouchableOpacity style={styles.forgotPassword}>
-//             <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Back Button */}
-//         <TouchableOpacity
-//           style={styles.backButton}
-//           onPress={() => navigation.goBack()}
-//         >
-//           <Text style={styles.backButtonText}>← Back</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </SafeAreaView>
-//     </KeyboardAvoidingView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: AppColors.cream,
-//   },
-//   content: {
-//     flex: 1,
-//     paddingHorizontal: 30,
-//     justifyContent: 'space-between',
-//     paddingTop: 60,
-//     paddingBottom: 30,
-//   },
-//   logoContainer: {
-//     alignItems: 'center',
-//     // marginBottom: 40,
-//   },
-//   logoPlaceholder: {
-//     width: 80,
-//     height: 80,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     marginBottom: 10,
-//   },
-//   tree: {
-//     position: 'relative',
-//     width: 60,
-//     height: 60,
-//   },
-//   trunk: {
-//     position: 'absolute',
-//     bottom: 0,
-//     left: '45%',
-//     width: 6,
-//     height: 18,
-//     backgroundColor: '#654321',
-//   },
-//   leaves: {
-//     position: 'absolute',
-//     top: 6,
-//     left: '20%',
-//     width: 36,
-//     height: 24,
-//   },
-//   leaf: {
-//     position: 'absolute',
-//     width: 12,
-//     height: 9,
-//     borderRadius: 6,
-//   },
-//   leaf1: {
-//     backgroundColor: AppColors.orange,
-//     top: 0,
-//     left: 0,
-//   },
-//   leaf2: {
-//     backgroundColor: AppColors.red,
-//     top: 3,
-//     left: 12,
-//   },
-//   leaf3: {
-//     backgroundColor: AppColors.green,
-//     top: 6,
-//     right: 0,
-//   },
-//   people: {
-//     position: 'absolute',
-//     top: 18,
-//     left: '25%',
-//     width: 30,
-//     height: 18,
-//   },
-//   person: {
-//     position: 'absolute',
-//     width: 8,
-//     height: 8,
-//     borderRadius: 4,
-//   },
-//   person1: {
-//     backgroundColor: AppColors.orange,
-//     top: 0,
-//     left: 0,
-//   },
-//   person2: {
-//     backgroundColor: AppColors.red,
-//     top: 3,
-//     left: 9,
-//   },
-//   person3: {
-//     backgroundColor: AppColors.green,
-//     top: 6,
-//     right: 0,
-//   },
-//   formContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     backgroundColor: AppColors.white,
-//     padding: 30,
-//     borderRadius: 20,
-//     marginVertical: 20,
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 2,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 3.84,
-//     elevation: 5,
-//   },
-//   welcomeText: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//     color: AppColors.teal,
-//     textAlign: 'center',
-//     marginBottom: 8,
-//   },
-//   subtitleText: {
-//     fontSize: 16,
-//     color: AppColors.gray,
-//     textAlign: 'center',
-//     marginBottom: 30,
-//   },
-//   inputContainer: {
-//     position: 'relative',
-//     marginBottom: 20,
-//   },
-//   input: {
-//     backgroundColor: AppColors.lightGray,
-//     borderRadius: 10,
-//     paddingHorizontal: 15,
-//     paddingVertical: 15,
-//     fontSize: 16,
-//     color: AppColors.black,
-//   },
-//   eyeButton: {
-//     position: 'absolute',
-//     right: 15,
-//     top: 15,
-//   },
-//   eyeText: {
-//     fontSize: 18,
-//   },
-//   loginButton: {
-//     backgroundColor: AppColors.teal,
-//     borderRadius: 25,
-//     paddingVertical: 15,
-//     marginTop: 10,
-//     marginBottom: 20,
-//   },
-//   loginButtonText: {
-//     color: AppColors.white,
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     textAlign: 'center',
-//   },
-//   forgotPassword: {
-//     alignItems: 'center',
-//   },
-//   forgotPasswordText: {
-//     color: AppColors.red,
-//     fontSize: 16,
-//     fontWeight: '600',
-//   },
-//   backButton: {
-//     alignItems: 'center',
-//     paddingVertical: 15,
-//   },
-//   backButtonText: {
-//     fontSize: 16,
-//     color: AppColors.teal,
-//     fontWeight: '600',
-//   },
-// });
-
-// export default LoginScreen;
-
 import React, { useState } from 'react';
 import {
   View,
@@ -362,6 +15,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'react-native';
 import { useAuth } from '@app/navigators';
+import PasswordHideIcon from '@app/assets/images/hideeye.svg';
+import PasswordShowIcon from '@app/assets/images/showeye.svg';
+import { BASE_URL } from '@app/constants/constant';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Scaling functions
 const { width, height } = Dimensions.get('window');
@@ -385,6 +42,31 @@ const AppColors = {
   green: '#228b22',
 };
 
+interface LoginResponse {
+  message: string;
+  token: string;
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    status: boolean;
+    communityStatus: string;
+    roleInCommunity: string;
+    interests: string[];
+    code: string;
+    createdAt: string;
+    __v: number;
+  };
+}
+
+interface LoginError {
+  message: string;
+  error?: string;
+}
+
+
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const { login } = useAuth();
@@ -392,20 +74,76 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (!email || !password) {
+  const loginAPI = async (emailOrPhone: string, password: string): Promise<LoginResponse> => {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        emailOrPhone,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    return data;
+  };
+
+
+  const handleLogin = async () => {
+    // Validation
+    if (!email|| !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    if (email === 'innovgeist@gmail.com' && password === 'Innovgeist@1234') {
-      login();
+    // Email validation (basic)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[+]?[\d\s\-()]+$/;
+    
+    if (!emailRegex.test(email) && !phoneRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email or phone number');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await loginAPI(email, password);
+      
+      // Store user data and token (you might want to use AsyncStorage or secure storage)
+      console.log('Login successful:', response);
+      
+      // You can store the token and user data here
+      await AsyncStorage.setItem('userToken', response.token);
+      await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+
+      login(response.user, response.token); // Update auth context
       Alert.alert('Success', 'Login successful!');
-    } else {
-      Alert.alert('Error', 'Invalid credentials');
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      Alert.alert(
+        'Login Failed', 
+        error.message || 'An error occurred during login. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const isValidInput = () => {
+    return email.trim().length > 0 && password.trim().length > 0;
+  };
+
 
   return (
     <>
@@ -467,7 +205,19 @@ const LoginScreen: React.FC = () => {
                 onPress={() => setShowPassword(!showPassword)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                {showPassword ? (
+                  <PasswordHideIcon 
+                    width={moderateScale(20)} 
+                    height={moderateScale(20)} 
+                    fill={AppColors.white}
+                  />
+                ) : (
+                  <PasswordShowIcon 
+                    width={moderateScale(20)} 
+                    height={moderateScale(20)} 
+                    fill={AppColors.white}
+                  />
+                )}
               </TouchableOpacity>
             </View>
 
