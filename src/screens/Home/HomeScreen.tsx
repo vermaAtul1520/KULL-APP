@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text, ActivityIndicator, Alert} from 'react-native';
+import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text, ActivityIndicator, Alert, Modal} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Animated} from 'react-native';
 import { Image } from 'react-native';
@@ -8,6 +8,7 @@ import HeadlinesIcon from '@app/assets/images/headlines.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import Svg, { Path } from 'react-native-svg';
 
 const {width} = Dimensions.get('window');
 
@@ -34,6 +35,10 @@ interface SmaajKeTaajProfile {
   age: number;
   fatherName: string;
   avatar: string;
+  contact?: string;
+  email?: string;
+  interests?: string[];
+  hobbies?: string[];
 }
 
 interface CommunityConfiguration {
@@ -62,9 +67,19 @@ const HomeScreen = () => {
   const [bannerData, setBannerData] = useState<{id: number, image: string, textColor: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Modal state for profile details
+  const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // Hardcoded community ID - you can make this dynamic based on user's community
   const COMMUNITY_ID = "687fcd98b40bf8cdac06ff97";
+
+  const CloseIcon = ({ size = 24, color = "#666" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    </Svg>
+  );
 
   // Fallback data
   const defaultNewsHeadlines = [
@@ -208,6 +223,17 @@ const HomeScreen = () => {
     fetchCommunityConfiguration();
   };
 
+  // Handle profile click
+  const handleProfileClick = (profile: SmaajKeTaajProfile) => {
+    setSelectedProfile(profile);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedProfile(null);
+  };
+
   // Auto-scroll banner effect
   useEffect(() => {
     if (bannerData.length === 0) return;
@@ -270,7 +296,11 @@ const HomeScreen = () => {
   };
 
   const renderProfileCard = (profile: SmaajKeTaajProfile) => (
-    <TouchableOpacity key={profile.id} style={styles.profileCard}>
+    <TouchableOpacity 
+      key={profile.id} 
+      style={styles.profileCard}
+      onPress={() => handleProfileClick(profile)}
+    >
       <View style={styles.profileImageContainer}>
         <Image
           source={{uri: profile.avatar}}
@@ -282,14 +312,105 @@ const HomeScreen = () => {
       </View>
       <Text style={styles.profileName}>{profile.name}</Text>
       <Text style={styles.profileRole}>{profile.role}</Text>
-      {profile.fatherName ? (
-        <Text style={styles.profileDetails}>Father: {profile.fatherName}</Text>
-      ) : (
-        <Text style={styles.profileDetails}>Father Name:</Text>
-      )}
       <Text style={styles.profileAge}>Age: {profile.age}</Text>
     </TouchableOpacity>
   );
+
+  const renderProfileDetailsModal = () => {
+    if (!selectedProfile) return null;
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Header with close button */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Profile Details</Text>
+                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                <CloseIcon size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Profile Image and Basic Info */}
+              <View style={styles.modalProfileSection}>
+                <Image
+                  source={{uri: selectedProfile.avatar}}
+                  style={styles.modalProfileImage}
+                />
+                <View style={styles.modalProfileBadge}>
+                  <Text style={styles.modalProfileBadgeText}>{selectedProfile.id}</Text>
+                </View>
+              </View>
+
+              {/* Basic Information */}
+              <View style={styles.modalInfoSection}>
+                <Text style={styles.modalProfileName}>{selectedProfile.name}</Text>
+                <Text style={styles.modalProfileRole}>{selectedProfile.role}</Text>
+                <Text style={styles.modalProfileAge}>Age: {selectedProfile.age}</Text>
+                
+                {selectedProfile.fatherName && (
+                  <Text style={styles.modalProfileDetail}>Father: {selectedProfile.fatherName}</Text>
+                )}
+              </View>
+
+              {/* Contact Information */}
+              {(selectedProfile.contact || selectedProfile.email) && (
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Contact Information</Text>
+                  {selectedProfile.contact && (
+                    <View style={styles.modalDetailRow}>
+                      <Icon name="phone" size={16} color="#7dd3c0" />
+                      <Text style={styles.modalDetailText}>{selectedProfile.contact}</Text>
+                    </View>
+                  )}
+                  {selectedProfile.email && (
+                    <View style={styles.modalDetailRow}>
+                      <Icon name="email" size={16} color="#7dd3c0" />
+                      <Text style={styles.modalDetailText}>{selectedProfile.email}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Interests */}
+              {selectedProfile.interests && selectedProfile.interests.length > 0 && (
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Interests</Text>
+                  <View style={styles.modalTagsContainer}>
+                    {selectedProfile.interests.map((interest, index) => (
+                      <View key={index} style={styles.modalTag}>
+                        <Text style={styles.modalTagText}>{interest}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Hobbies */}
+              {selectedProfile.hobbies && selectedProfile.hobbies.length > 0 && (
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Hobbies</Text>
+                  <View style={styles.modalTagsContainer}>
+                    {selectedProfile.hobbies.map((hobby, index) => (
+                      <View key={index} style={[styles.modalTag, styles.modalHobbyTag]}>
+                        <Text style={styles.modalTagText}>{hobby}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   const sections = [
     {
@@ -384,7 +505,7 @@ const HomeScreen = () => {
               {refreshing ? (
                 <ActivityIndicator size="small" color="#2a2a2a" />
               ) : (
-                <Icon name="refresh" size={20} color="#2a2a2a" />
+                <></>
               )}
             </TouchableOpacity>
           </View>
@@ -416,6 +537,9 @@ const HomeScreen = () => {
         refreshing={refreshing}
         onRefresh={onRefresh}
       />
+      
+      {/* Profile Details Modal */}
+      {renderProfileDetailsModal()}
     </View>
   );
 };
@@ -637,6 +761,137 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#7dd3c0',
     marginHorizontal: 4,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 20,
+    width: width * 0.9,
+    maxHeight: '80%',
+    padding: 0,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalProfileSection: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    position: 'relative',
+  },
+  modalProfileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  modalProfileBadge: {
+    position: 'absolute',
+    bottom: 15,
+    right: width * 0.5 - 70,
+    backgroundColor: '#7dd3c0',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalProfileBadgeText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalInfoSection: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  modalProfileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalProfileRole: {
+    fontSize: 18,
+    color: '#7dd3c0',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalProfileAge: {
+    fontSize: 16,
+    color: '#aaa',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalProfileDetail: {
+    fontSize: 16,
+    color: '#aaa',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  modalSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#7dd3c0',
+    marginBottom: 12,
+  },
+  modalDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalDetailText: {
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 12,
+  },
+  modalTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  modalTag: {
+    backgroundColor: '#3a3a3a',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    margin: 4,
+    borderWidth: 1,
+    borderColor: '#7dd3c0',
+  },
+  modalHobbyTag: {
+    borderColor: '#ff8c00',
+  },
+  modalTagText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });
 

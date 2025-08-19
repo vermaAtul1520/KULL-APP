@@ -1,12 +1,906 @@
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  Dimensions,
+  Image,
+  RefreshControl,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@app/constants/constant';
+import { useAuth } from '@app/navigators';
+
+const { width } = Dimensions.get('window');
+
+const AppColors = {
+  primary: '#7dd3c0',
+  black: '#000000',
+  white: '#ffffff',
+  gray: '#666666',
+  dark: '#2a2a2a',
+  teal: '#1e6b5c',
+  cream: '#f5f5dc',
+  blue: '#4169e1',
+  lightGray: '#f0f0f0',
+  orange: '#ff8c00',
+  red: '#dc143c',
+  green: '#228b22',
+};
+
+// API Types
+interface CommunityUser {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: boolean;
+  communityStatus: string;
+  roleInCommunity: string;
+  gender: string;
+  occupation: string;
+  religion: string;
+  motherTongue: string;
+  interests: string[];
+  cast: string;
+  cGotNo: string;
+  fatherName: string;
+  address: string;
+  pinCode: string;
+  alternativePhone: string;
+  estimatedMembers: number;
+  thoughtOfMaking: string;
+  maritalStatus: string;
+  gotra: string;
+  code: string;
+  createdAt: string;
+  __v: number;
+}
+
+interface UsersAPIResponse {
+  success: boolean;
+  count: number;
+  data: CommunityUser[];
+}
+
+interface FilterOptions {
+  gender: string;
+  maritalStatus: string;
+  occupation: string;
+  communityStatus: string;
+  roleInCommunity: string;
+  religion: string;
+  cast: string;
+}
 
 const MyPeopleScreen = () => {
+  const { user, token } = useAuth();
+  
+  // State management
+  const [users, setUsers] = useState<CommunityUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<CommunityUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState<CommunityUser | null>(null);
+  const [userModalVisible, setUserModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState<FilterOptions>({
+    gender: '',
+    maritalStatus: '',
+    occupation: '',
+    communityStatus: '',
+    roleInCommunity: '',
+    religion: '',
+    cast: '',
+  });
+  const [tempFilters, setTempFilters] = useState<FilterOptions>({ ...filters });
+
+  // Hardcoded community ID
+  const COMMUNITY_ID = "687fcd98b40bf8cdac06ff97";
+
+  // API Functions
+  const getAuthHeaders = async () => {
+    const userToken = await AsyncStorage.getItem('userToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken || token}`,
+    };
+  };
+
+  const fetchCommunityUsers = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching community users for:', COMMUNITY_ID);
+
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/users`, {
+        method: 'GET',
+        headers,
+      });
+
+      console.log('Users API response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: UsersAPIResponse = await response.json();
+      console.log('Loaded users count:', data.count);
+
+      if (data.success && data.data) {
+        setUsers(data.data);
+        setFilteredUsers(data.data);
+      } else {
+        setUsers([]);
+        setFilteredUsers([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching community users:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load community users. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      setUsers([]);
+      setFilteredUsers([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCommunityUsers();
+  }, []);
+
+  // Search and filter logic
+  useEffect(() => {
+    let filtered = users;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered?.filter(user => {
+        const fullName = `${user?.firstName} ${user?.lastName}`?.toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return (
+          fullName.includes(query) ||
+          user?.email?.toLowerCase().includes(query) ||
+          user?.occupation?.toLowerCase().includes(query) ||
+          user?.cGotNo?.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Apply filters
+    Object.keys(filters).forEach(key => {
+      const filterValue = filters[key as keyof FilterOptions];
+      if (filterValue) {
+        filtered = filtered.filter(user => {
+          const userValue = user[key as keyof CommunityUser];
+          return String(userValue).toLowerCase() === filterValue.toLowerCase();
+        });
+      }
+    });
+
+    setFilteredUsers(filtered);
+  }, [searchQuery, filters, users]);
+
+  // Handlers
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCommunityUsers();
+  };
+
+  const handleUserPress = (user: CommunityUser) => {
+    setSelectedUser(user);
+    setUserModalVisible(true);
+  };
+
+  const closeUserModal = () => {
+    setUserModalVisible(false);
+    setSelectedUser(null);
+  };
+
+  const openFilterModal = () => {
+    setTempFilters({ ...filters });
+    setFilterModalVisible(true);
+  };
+
+  const applyFilters = () => {
+    setFilters({ ...tempFilters });
+    setFilterModalVisible(false);
+  };
+
+  const clearFilters = () => {
+    const emptyFilters: FilterOptions = {
+      gender: '',
+      maritalStatus: '',
+      occupation: '',
+      communityStatus: '',
+      roleInCommunity: '',
+      religion: '',
+      cast: '',
+    };
+    setTempFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setFilterModalVisible(false);
+  };
+
+  const getActiveFilterCount = () => {
+    return Object.values(filters).filter(value => value !== '').length;
+  };
+
+  // Render functions
+  const renderUserCard = ({ item }: { item: CommunityUser }) => (
+    <TouchableOpacity style={styles.userCard} onPress={() => handleUserPress(item)}>
+      <View style={styles.userCardHeader}>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>
+            {item.firstName} {item.lastName}
+          </Text>
+          <Text style={styles.userRole}>{item.occupation}</Text>
+          <Text style={styles.userCode}>{item.cGotNo}</Text>
+        </View>
+        <View style={styles.statusContainer}>
+          <View style={[
+            styles.statusBadge,
+            { backgroundColor: item.communityStatus === 'pending' ? AppColors.orange : AppColors.green }
+          ]}>
+            <Text style={styles.statusText}>{item.communityStatus}</Text>
+          </View>
+        </View>
+      </View>
+      
+      <View style={styles.userDetails}>
+        <View style={styles.detailRow}>
+          <Icon name="email" size={14} color={AppColors.gray} />
+          <Text style={styles.detailText}>{item.email}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Icon name="map-marker" size={14} color={AppColors.gray} />
+          <Text style={styles.detailText}>{item.address}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Icon name="account-group" size={14} color={AppColors.gray} />
+          <Text style={styles.detailText}>{item.roleInCommunity}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderFilterModal = () => {
+    const filterOptions = {
+      gender: ['male', 'female', 'other'],
+      maritalStatus: ['single', 'married', 'divorced', 'widowed'],
+      communityStatus: ['pending', 'approved', 'rejected'],
+      roleInCommunity: ['member', 'admin', 'moderator'],
+      religion: ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain'],
+      cast: ['Brahmin', 'Kshatriya', 'Vaishya', 'Shudra', 'Other'],
+    };
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Users</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Icon name="close" size={24} color={AppColors.white} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.filterScrollView}>
+              {Object.keys(filterOptions).map((filterKey) => (
+                <View key={filterKey} style={styles.filterSection}>
+                  <Text style={styles.filterSectionTitle}>
+                    {filterKey.charAt(0).toUpperCase() + filterKey.slice(1).replace(/([A-Z])/g, ' $1')}
+                  </Text>
+                  <View style={styles.filterOptions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.filterOption,
+                        tempFilters[filterKey as keyof FilterOptions] === '' && styles.filterOptionSelected
+                      ]}
+                      onPress={() => setTempFilters({ ...tempFilters, [filterKey]: '' })}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        tempFilters[filterKey as keyof FilterOptions] === '' && styles.filterOptionTextSelected
+                      ]}>
+                        All
+                      </Text>
+                    </TouchableOpacity>
+                    {filterOptions[filterKey as keyof typeof filterOptions].map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        style={[
+                          styles.filterOption,
+                          tempFilters[filterKey as keyof FilterOptions] === option && styles.filterOptionSelected
+                        ]}
+                        onPress={() => setTempFilters({ ...tempFilters, [filterKey]: option })}
+                      >
+                        <Text style={[
+                          styles.filterOptionText,
+                          tempFilters[filterKey as keyof FilterOptions] === option && styles.filterOptionTextSelected
+                        ]}>
+                          {option.charAt(0).toUpperCase() + option.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.filterActions}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderUserDetailsModal = () => {
+    if (!selectedUser) return null;
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={userModalVisible}
+        onRequestClose={closeUserModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.userModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>User Details</Text>
+              <TouchableOpacity onPress={closeUserModal}>
+                <Icon name="close" size={24} color={AppColors.white} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.userDetailsScrollView}>
+              <View style={styles.userProfileSection}>
+                <Text style={styles.userFullName}>
+                  {selectedUser.firstName} {selectedUser.lastName}
+                </Text>
+                <Text style={styles.userOccupation}>{selectedUser.occupation}</Text>
+                <View style={[
+                  styles.statusBadge,
+                  { backgroundColor: selectedUser.communityStatus === 'pending' ? AppColors.orange : AppColors.green }
+                ]}>
+                  <Text style={styles.statusText}>{selectedUser.communityStatus}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailsSection}>
+                <Text style={styles.sectionTitle}>Personal Information</Text>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Father's Name:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.fatherName}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Gender:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.gender}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Marital Status:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.maritalStatus}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Religion:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.religion}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Cast:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.cast}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Gotra:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.gotra}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Mother Tongue:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.motherTongue}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailsSection}>
+                <Text style={styles.sectionTitle}>Contact Information</Text>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Email:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.email}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Phone:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.alternativePhone}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Address:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.address}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Pin Code:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.pinCode}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailsSection}>
+                <Text style={styles.sectionTitle}>Community Information</Text>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>CGOT Number:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.cGotNo}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Role in Community:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.roleInCommunity}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Estimated Members:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.estimatedMembers}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Thought of Making:</Text>
+                  <Text style={styles.detailValue}>{selectedUser.thoughtOfMaking}</Text>
+                </View>
+              </View>
+
+              {selectedUser.interests && selectedUser.interests.length > 0 && (
+                <View style={styles.detailsSection}>
+                  <Text style={styles.sectionTitle}>Interests</Text>
+                  <View style={styles.interestsContainer}>
+                    {selectedUser.interests.map((interest, index) => (
+                      <View key={index} style={styles.interestTag}>
+                        <Text style={styles.interestText}>{interest}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
-    <View>
-      <Text>My People Screen</Text>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My People</Text>
+        <Text style={styles.headerSubtitle}>
+          {filteredUsers.length} of {users.length} members
+        </Text>
+      </View>
+
+      {/* Search and Filter */}
+      <View style={styles.searchFilterContainer}>
+        <View style={styles.searchContainer}>
+          <Icon name="magnify" size={20} color={AppColors.gray} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, email, occupation..."
+            placeholderTextColor={AppColors.gray}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+              <Icon name="close" size={20} color={AppColors.gray} />
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
+          <Icon name="filter-variant" size={20} color={AppColors.white} />
+          {getActiveFilterCount() > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* User List */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={AppColors.primary} />
+          <Text style={styles.loadingText}>Loading community members...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredUsers}
+          renderItem={renderUserCard}
+          keyExtractor={(item) => item._id}
+          style={styles.userList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[AppColors.primary]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Icon name="account-group-outline" size={64} color={AppColors.gray} />
+              <Text style={styles.emptyTitle}>No members found</Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery || getActiveFilterCount() > 0
+                  ? 'Try adjusting your search or filters'
+                  : 'No community members available'}
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Modals */}
+      {renderFilterModal()}
+      {renderUserDetailsModal()}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: AppColors.cream,
+  },
+  header: {
+    padding: 20,
+    backgroundColor: AppColors.dark,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: AppColors.primary,
+  },
+  searchFilterContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: AppColors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.lightGray,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginRight: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+    color: AppColors.dark,
+  },
+  clearSearchIcon: {
+    padding: 4,
+  },
+  filterButton: {
+    backgroundColor: AppColors.primary,
+    borderRadius: 8,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: AppColors.red,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    color: AppColors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: AppColors.gray,
+  },
+  userList: {
+    flex: 1,
+    padding: 16,
+  },
+  userCard: {
+    backgroundColor: AppColors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  userCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.dark,
+    marginBottom: 4,
+  },
+  userRole: {
+    fontSize: 14,
+    color: AppColors.primary,
+    marginBottom: 2,
+  },
+  userCode: {
+    fontSize: 12,
+    color: AppColors.gray,
+  },
+  statusContainer: {
+    alignItems: 'flex-end',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: AppColors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  userDetails: {
+    borderTopWidth: 1,
+    borderTopColor: AppColors.lightGray,
+    paddingTop: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  detailText: {
+    fontSize: 14,
+    color: AppColors.gray,
+    marginLeft: 8,
+    flex: 1,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.gray,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: AppColors.gray,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterModalContent: {
+    backgroundColor: AppColors.dark,
+    borderRadius: 20,
+    width: width * 0.9,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  userModalContent: {
+    backgroundColor: AppColors.dark,
+    borderRadius: 20,
+    width: width * 0.9,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: AppColors.white,
+  },
+  filterScrollView: {
+    maxHeight: '70%',
+  },
+  filterSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: AppColors.primary,
+    marginBottom: 12,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  filterOption: {
+    backgroundColor: '#3a3a3a',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    margin: 4,
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  filterOptionSelected: {
+    backgroundColor: AppColors.primary,
+    borderColor: AppColors.primary,
+  },
+  filterOptionText: {
+    color: AppColors.white,
+    fontSize: 14,
+  },
+  filterOptionTextSelected: {
+    color: AppColors.dark,
+    fontWeight: 'bold',
+  },
+  filterActions: {
+    flexDirection: 'row',
+    padding: 20,
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: '#444',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  clearButtonText: {
+    color: AppColors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  applyButton: {
+    flex: 1,
+    backgroundColor: AppColors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  applyButtonText: {
+    color: AppColors.dark,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  userDetailsScrollView: {
+    maxHeight: '85%',
+  },
+  userProfileSection: {
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  userFullName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginBottom: 8,
+  },
+  userOccupation: {
+    fontSize: 16,
+    color: AppColors.primary,
+    marginBottom: 12,
+  },
+  detailsSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.primary,
+    marginBottom: 12,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: AppColors.gray,
+    width: 120,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: AppColors.white,
+    flex: 1,
+  },
+  interestsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  interestTag: {
+    backgroundColor: '#3a3a3a',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    margin: 4,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  interestText: {
+    color: AppColors.white,
+    fontSize: 12,
+  },
+});
 
 export default MyPeopleScreen;
