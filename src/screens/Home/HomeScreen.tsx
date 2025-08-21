@@ -62,6 +62,9 @@ const HomeScreen = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const mainFlatListRef = useRef<FlatList>(null);
 
+  console.log('token',token);
+  
+
   // State for API data
   const [profileData, setProfileData] = useState<SmaajKeTaajProfile[]>([]);
   const [bannerData, setBannerData] = useState<{id: number, image: string, textColor: string}[]>([]);
@@ -142,7 +145,7 @@ const HomeScreen = () => {
         headers,
       });
 
-      console.log('Configuration API response status:', response.status);
+      console.log('Configuration API response status:', response.status, response);
 
       if (!response.ok) {
         if (response.status === 404) {

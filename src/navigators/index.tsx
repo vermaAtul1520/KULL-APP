@@ -39,6 +39,16 @@ import NewsIcon from '@app/assets/images/news.svg';
 import PeopleIcon from '@app/assets/images/people.svg';
 import DonationIcon from '@app/assets/images/donation.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { OccasionsScreen } from '@app/screens/drawer/OccasionsScreen';
+import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
+import BhajanScreen from '@app/screens/drawer/BhajanScreen';
+import LawsScreen from '@app/screens/drawer/LawsScreen';
+import CitySearchScreen from '@app/screens/drawer/CitySearchScreen';
+import OrganizationOfficerScreen from '@app/screens/drawer/OrganizationOfficerScreen';
+import EducationScreen from '@app/screens/drawer/EducationScreen';
+import EmploymentScreen from '@app/screens/drawer/EmploymentScreen';
+import SocialUpliftmentScreen from '@app/screens/drawer/SocialUpliftmentScreen';
+import DukanScreen from '@app/screens/drawer/DukanScreen';
 
 // Custom Colors
 const AppColors = {
@@ -81,12 +91,17 @@ type AuthStackParamList = {
 };
 
 type RootDrawerParamList = {
-  Home: undefined;
-  Post: undefined;
-  News: undefined;
-  MyPeople: undefined;
-  Donation: undefined;
-  Profile: undefined;
+  HomeTab: undefined;
+  Occasions: undefined;
+  Kartavya: undefined;
+  Bhajan: undefined;
+  'Laws and Decisions': undefined;
+  'City Search': undefined;
+  'Organization Officer': undefined;
+  Education: undefined;
+  Employment: undefined;
+  'Social Upliftment': undefined;
+  Dukan: undefined;
 };
 
 type HomeTabParamList = {
@@ -239,17 +254,25 @@ const ProfileAvatar = (): React.JSX.Element => {
 const DrawerButton = (): React.JSX.Element => {
   const {toggleDrawer} = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   return (
-    <Pressable onPress={toggleDrawer}>
-      <Logo color={AppColors.primary} />
+    <Pressable onPress={toggleDrawer} style={styles.drawerButtonContainer}>
+      <Logo width={20} height={20} color={AppColors.black} />
     </Pressable>
   );
 };
 
-const CustomHeaderTitle = () => (
-  <View style={styles.headerTitleContainer}>
-    <Text style={styles.headerTitleText}>KULL-APP</Text>
-  </View>
-);
+const CustomHeaderTitle = () => {
+  const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+  
+  const navigateToHome = () => {
+    navigation.navigate('HomeTab');
+  };
+
+  return (
+    <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
+      <Text style={styles.headerTitleText}>KULL-APP</Text>
+    </Pressable>
+  );
+};
 
 const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
   headerLeft: () => <DrawerButton />,
@@ -261,6 +284,14 @@ const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
   headerTitleStyle: {
     color: AppColors.black,
     fontWeight: 'bold',
+  },
+  headerShadowVisible: false,
+  headerTitleAlign: 'center',
+  headerLeftContainerStyle: {
+    paddingLeft: 10,
+  },
+  headerRightContainerStyle: {
+    paddingRight: 10,
   },
 });
 
@@ -607,7 +638,8 @@ const DrawerNavigator = (): React.JSX.Element => {
     <Navigator
       drawerContent={(props) => <DrawerContent {...props} />}
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        ...drawerScreenOptions(),
         drawerStyle: {
           backgroundColor: AppColors.dark,
           width: 300,
@@ -615,7 +647,21 @@ const DrawerNavigator = (): React.JSX.Element => {
         drawerActiveTintColor: AppColors.primary,
         drawerInactiveTintColor: AppColors.white,
       }}>
-      <Screen name="HomeTab" component={HomeStack} />
+      <Screen 
+        name="HomeTab" 
+        component={HomeStack} 
+        options={{ headerShown: false }}
+      />
+      <Screen name="Occasions" component={OccasionsScreen} />
+      <Screen name="Kartavya" component={KartavyaScreen} />
+      <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Laws and Decisions" component={LawsScreen} />
+      <Screen name="City Search" component={CitySearchScreen} />
+      <Screen name="Organization Officer" component={OrganizationOfficerScreen} />
+      <Screen name="Education" component={EducationScreen} />
+      <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
+      <Screen name="Dukan" component={DukanScreen} />
     </Navigator>
   );
 };
@@ -672,13 +718,21 @@ export default (): React.JSX.Element => {
 
 const styles = StyleSheet.create({
   headerTitleContainer: {
-    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   headerTitleText: {
     fontWeight: 'bold',
     color: AppColors.black,
     fontSize: 18,
+    textAlign: 'center',
+  },
+  drawerButtonContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -694,12 +748,15 @@ const styles = StyleSheet.create({
   
   // Profile Avatar Styles
   profileAvatarContainer: {
-    marginRight: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileAvatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: AppColors.teal,
     justifyContent: 'center',
     alignItems: 'center',
@@ -708,7 +765,7 @@ const styles = StyleSheet.create({
   },
   profileAvatarText: {
     color: AppColors.white,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
   },
 
