@@ -1,217 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
   Alert,
-  Linking,
-  Dimensions,
   Modal,
+  ScrollView,
+  Dimensions,
+  RefreshControl,
+  StatusBar,
+  SafeAreaView,
+  Image,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
-// SVG Icon Components
-const BriefcaseIcon = ({ size = 20, color = "#666", filled = false }) => (
+const { width, height } = Dimensions.get('window');
+
+// Custom SVG Icons
+const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16m8 0H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
   </Svg>
 );
 
-const SearchIcon = ({ size = 20, color = "#666", filled = false }) => (
+const CloseIcon = ({ size = 24, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="11" cy="11" r="8" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M21 21l-4.35-4.35" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="11" cy="11" r="3" 
-            fill={filled ? "#fff" : "none"} 
-            stroke={filled ? "#fff" : color} 
-            strokeWidth="1.5"/>
+    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
   </Svg>
 );
 
-const ClockIcon = ({ size = 20, color = "#666", filled = false }) => (
+const PdfIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M12 6v6l4 2" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill={color}/>
   </Svg>
 );
 
-const LocationIcon = ({ size = 20, color = "#666", filled = false }) => (
+const ImageIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2"/>
-    <Circle cx="12" cy="10" r="3" 
-            fill={filled ? "#fff" : "none"} 
-            stroke={filled ? "#fff" : color} 
-            strokeWidth="2"/>
+    <Path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" fill={color}/>
   </Svg>
 );
 
-const CurrencyIcon = ({ size = 20, color = "#666", filled = false }) => (
+const BriefcaseIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6 3v18M18 3v18M8 21h8M8 3h8M12 3v18" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M17 9a5 5 0 0 0-5-2c-2 0-3 1-3 3s1 3 3 3 3 1 3 3-1 3-3 3a5 5 0 0 0-5-2" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16m8 0H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" fill={color}/>
   </Svg>
 );
 
-const TimeIcon = ({ size = 20, color = "#666", filled = false }) => (
+const BackIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M12 6v6l3 3" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
-const PdfIcon = ({ size = 20, color = "#666", filled = false }) => (
+const GridIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z" fill={color}/>
   </Svg>
 );
 
-const MessageIcon = ({ size = 20, color = "#666", filled = false }) => (
+const StarIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M8 9h8M8 13h6" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={color}/>
   </Svg>
 );
-
-const CalendarIcon = ({ size = 20, color = "#666", filled = false }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2"/>
-    <Path d="M16 2v4M8 2v4M3 10h18" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="8" cy="14" r="1" 
-            fill={filled ? "#fff" : color}/>
-    <Circle cx="12" cy="14" r="1" 
-            fill={filled ? "#fff" : color}/>
-    <Circle cx="16" cy="14" r="1" 
-            fill={filled ? "#fff" : color}/>
-  </Svg>
-);
-
-const CheckIcon = ({ size = 20, color = "#666", filled = false }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M9 12l2 2 4-4" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-  </Svg>
-);
-
-const CloseIcon = ({ size = 20, color = "#666", filled = false }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M15 9l-6 6M9 9l6 6" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-  </Svg>
-);
-
-const EmptyIcon = ({ size = 60, color = "#666", filled = false }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="11" cy="11" r="8" 
-            fill={filled ? color : "none"} 
-            stroke={color} 
-            strokeWidth="2"/>
-    <Path d="M21 21l-4.35-4.35" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M8 11h6M11 8v6" 
-          stroke={filled ? "#fff" : color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-  </Svg>
-);
-
-const TagIcon = ({ size = 20, color = "#666", filled = false }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" 
-          fill={filled ? color : "none"} 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="7" cy="7" r="1" 
-            fill={filled ? "#fff" : color}/>
-  </Svg>
-);
-
-const { width } = Dimensions.get('window');
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -221,887 +78,823 @@ const AppColors = {
   dark: '#2a2a2a',
   teal: '#1e6b5c',
   cream: '#f5f5dc',
-  lightGray: '#f8f9fa',
+  blue: '#4169e1',
+  lightGray: '#f0f0f0',
+  orange: '#ff8c00',
+  red: '#dc143c',
+  green: '#228b22',
   border: '#e5e7eb',
   success: '#10b981',
   warning: '#f59e0b',
-  danger: '#ef4444',
-  blue: '#3b82f6',
+  purple: '#8b5cf6',
 };
 
+// Job Post Interface
 interface JobPost {
   id: string;
   title: string;
   company: string;
   location: string;
-  type: 'offer' | 'need';
+  description: string;
   category: string;
+  type: 'pdf' | 'image' | 'posting';
+  url: string;
+  thumbnailUrl?: string;
   salary: string;
   experience: string;
-  description: string;
-  requirements: string[];
+  jobType: 'offer' | 'need';
   postedBy: string;
-  postedDate: string;
-  contact: string;
-  pdfUrl?: string;
-  isUrgent: boolean;
-  deadline?: string;
+  language: string;
+  isUrgent?: boolean;
 }
 
+// Dummy data with PDF and image support
 const jobPosts: JobPost[] = [
   {
     id: '1',
-    title: 'Senior Software Developer',
+    title: 'Senior Software Developer Position',
     company: 'TechCorp Solutions',
     location: 'Mumbai, Maharashtra',
-    type: 'offer',
+    description: 'We are looking for a skilled software developer to join our dynamic team. You will be responsible for developing web applications using React.js, Node.js, and modern technologies. Must have 3-5 years experience.',
     category: 'IT & Software',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
     salary: '₹12-18 LPA',
     experience: '3-5 years',
-    description: 'We are looking for a skilled software developer to join our dynamic team. You will be responsible for developing web applications using modern technologies.',
-    requirements: ['React.js/Node.js', 'JavaScript/TypeScript', 'MongoDB/PostgreSQL', 'Git version control'],
+    jobType: 'offer',
     postedBy: 'Rajesh Kumar',
-    postedDate: '2025-03-15',
-    contact: 'rajesh@techcorp.com',
-    pdfUrl: 'https://example.com/job-details-1.pdf',
-    isUrgent: true,
-    deadline: '2025-03-30'
+    language: 'English',
+    isUrgent: true
   },
   {
     id: '2',
-    title: 'Accountant Required',
-    company: 'Community Member',
+    title: 'Accountant Job Requirements',
+    company: 'Community Business',
     location: 'Delhi NCR',
-    type: 'need',
+    description: 'Looking for an experienced accountant for our family business. Must be familiar with GST, taxation, and financial reporting. Immediate joining preferred.',
     category: 'Finance & Accounting',
+    type: 'image',
+    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     salary: '₹4-7 LPA',
     experience: '2-4 years',
-    description: 'Looking for an experienced accountant for our family business. Must be familiar with GST, taxation, and financial reporting.',
-    requirements: ['B.Com/M.Com', 'Tally ERP experience', 'GST knowledge', 'Excel proficiency'],
+    jobType: 'need',
     postedBy: 'Priya Sharma',
-    postedDate: '2025-03-14',
-    contact: '+91 98765 43210',
-    isUrgent: false
+    language: 'Hindi'
   },
   {
     id: '3',
-    title: 'Marketing Executive',
+    title: 'Marketing Executive Opportunity',
     company: 'Growth Marketing Agency',
     location: 'Bangalore, Karnataka',
-    type: 'offer',
+    description: 'Join our marketing team to drive digital campaigns and boost brand awareness. Experience in social media marketing and content creation preferred.',
     category: 'Marketing & Sales',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
     salary: '₹5-8 LPA',
     experience: '1-3 years',
-    description: 'Join our marketing team to drive digital campaigns and boost brand awareness. Experience in social media marketing preferred.',
-    requirements: ['Digital Marketing', 'Social Media', 'Content Creation', 'Analytics'],
+    jobType: 'offer',
     postedBy: 'Amit Patel',
-    postedDate: '2025-03-13',
-    contact: 'careers@growthagency.com',
-    pdfUrl: 'https://example.com/marketing-job.pdf',
-    isUrgent: false
+    language: 'English'
   },
   {
     id: '4',
-    title: 'Need Graphic Designer',
-    company: 'Freelance Project',
+    title: 'Graphic Designer Required',
+    company: 'Creative Studio',
     location: 'Remote/Work from Home',
-    type: 'need',
+    description: 'Looking for a creative graphic designer for branding projects. Need someone who can create logos, brochures, and digital assets using Adobe Creative Suite.',
     category: 'Design & Creative',
-    salary: '₹25,000-40,000/project',
+    type: 'image',
+    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    salary: '₹25K-40K/project',
     experience: '1-2 years',
-    description: 'Looking for a creative graphic designer for branding project. Need someone who can create logos, brochures, and digital assets.',
-    requirements: ['Adobe Creative Suite', 'Logo Design', 'Brand Identity', 'Print Design'],
+    jobType: 'need',
     postedBy: 'Sunita Singh',
-    postedDate: '2025-03-12',
-    contact: 'sunita.designs@gmail.com',
-    isUrgent: true,
-    deadline: '2025-03-25'
+    language: 'English',
+    isUrgent: true
   },
   {
     id: '5',
-    title: 'Data Analyst',
+    title: 'Data Analyst Role Available',
     company: 'Analytics Pro Ltd',
     location: 'Pune, Maharashtra',
-    type: 'offer',
+    description: 'Seeking a data analyst to help derive insights from large datasets and create meaningful reports for business decisions. Python and SQL expertise required.',
     category: 'Data & Analytics',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
     salary: '₹8-12 LPA',
     experience: '2-4 years',
-    description: 'Seeking a data analyst to help derive insights from large datasets and create meaningful reports for business decisions.',
-    requirements: ['Python/R', 'SQL', 'Power BI/Tableau', 'Statistics'],
+    jobType: 'offer',
     postedBy: 'Vikash Kumar',
-    postedDate: '2025-03-11',
-    contact: 'hr@analyticspro.com',
-    pdfUrl: 'https://example.com/data-analyst-role.pdf',
-    isUrgent: false
+    language: 'English'
   },
   {
     id: '6',
-    title: 'Teacher Needed',
+    title: 'Math Teacher Needed Urgently',
     company: 'Community School',
     location: 'Chennai, Tamil Nadu',
-    type: 'need',
+    description: 'Our community school needs a dedicated teacher for mathematics and science subjects for classes 6-10. B.Ed qualification required.',
     category: 'Education & Training',
+    type: 'image',
+    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     salary: '₹3-5 LPA',
     experience: '1-3 years',
-    description: 'Our community school needs a dedicated teacher for mathematics and science subjects for classes 6-10.',
-    requirements: ['B.Ed/M.Ed', 'Math/Science background', 'Communication skills', 'Passion for teaching'],
+    jobType: 'need',
     postedBy: 'School Committee',
-    postedDate: '2025-03-10',
-    contact: '+91 87654 32109',
-    isUrgent: true,
-    deadline: '2025-03-20'
+    language: 'Tamil',
+    isUrgent: true
+  },
+  {
+    id: '7',
+    title: 'Sales Manager Position',
+    company: 'Retail Chain Ltd',
+    location: 'Hyderabad, Telangana',
+    description: 'Looking for an experienced sales manager to lead our retail operations. Must have team management experience and strong communication skills.',
+    category: 'Marketing & Sales',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
+    salary: '₹6-10 LPA',
+    experience: '3-6 years',
+    jobType: 'offer',
+    postedBy: 'HR Department',
+    language: 'English'
+  },
+  {
+    id: '8',
+    title: 'Web Developer Wanted',
+    company: 'StartUp Hub',
+    location: 'Gurgaon, Haryana',
+    description: 'Join our startup team as a web developer. Work with latest technologies including React, Node.js, and cloud platforms. Equity offered.',
+    category: 'IT & Software',
+    type: 'image',
+    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    salary: '₹4-8 LPA + Equity',
+    experience: '1-3 years',
+    jobType: 'offer',
+    postedBy: 'Tech Lead',
+    language: 'English'
   }
 ];
 
-const categories = ['All', 'IT & Software', 'Finance & Accounting', 'Marketing & Sales', 'Design & Creative', 'Data & Analytics', 'Education & Training'];
+const getJobTypeColor = (jobType: string) => {
+  return jobType === 'offer' ? AppColors.success : AppColors.blue;
+};
 
-export default function EmploymentScreen() {
-  const [selectedTab, setSelectedTab] = useState<'all' | 'offers' | 'needs'>('all');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+const EmploymentScreen = () => {
+  const [filteredJobs, setFilteredJobs] = useState<JobPost[]>(jobPosts);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
-  const [showJobModal, setShowJobModal] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
-  const filteredJobs = jobPosts.filter(job => {
-    const tabFilter = selectedTab === 'all' || 
-                     (selectedTab === 'offers' && job.type === 'offer') ||
-                     (selectedTab === 'needs' && job.type === 'need');
-    
-    const categoryFilter = selectedCategory === 'All' || job.category === selectedCategory;
-    
-    return tabFilter && categoryFilter;
-  });
+  // Filter jobs based on search only
+  useEffect(() => {
+    filterJobs();
+  }, [searchQuery]);
 
-  const openPDF = async (pdfUrl: string, title: string) => {
-    try {
-      await Linking.openURL(pdfUrl);
-    } catch (error) {
-      Alert.alert('Error', 'Unable to open PDF. Please try again later.');
+  const filterJobs = () => {
+    let filtered = jobPosts;
+
+    // Apply search filter only
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(job => {
+        const query = searchQuery.toLowerCase();
+        return (
+          job.title.toLowerCase().includes(query) ||
+          job.description.toLowerCase().includes(query) ||
+          job.category.toLowerCase().includes(query) ||
+          job.company.toLowerCase().includes(query) ||
+          job.location.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    setFilteredJobs(filtered);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
+  const openJob = (job: JobPost) => {
+    setSelectedJob(job);
+    if (job.type === 'image') {
+      setImageModalVisible(true);
+    } else if (job.type === 'pdf') {
+      setPdfModalVisible(true);
+    } else {
+      Alert.alert('Job Details', `${job.title}\n\n${job.description}\n\nSalary: ${job.salary}\nExperience: ${job.experience}\nContact: ${job.postedBy}`, [
+        { text: 'Close', style: 'cancel' }
+      ]);
     }
   };
 
-  const contactEmployer = (contact: string, title: string) => {
-    Alert.alert(
-      'Contact Employer',
-      `Job: ${title}\nContact: ${contact}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call', onPress: () => Linking.openURL(`tel:${contact.replace(/[^\d+]/g, '')}`) },
-        { text: 'Email', onPress: () => Linking.openURL(`mailto:${contact}`) }
-      ]
+  const closeModals = () => {
+    setImageModalVisible(false);
+    setPdfModalVisible(false);
+    setSelectedJob(null);
+  };
+
+  // PDF Modal Component
+  const PdfModal = () => {
+    const getPdfViewerUrl = (pdfUrl: string) => {
+      return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
+    };
+
+    return (
+      <Modal
+        visible={pdfModalVisible}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={closeModals}
+      >
+        <View style={styles.pdfModalContainer}>
+          <StatusBar backgroundColor={AppColors.teal} barStyle="light-content" />
+          <View style={styles.pdfModalHeader}>
+            <View style={styles.pdfHeaderContent}>
+              <View style={styles.titleContainer}>
+                <Text style={styles.pdfModalTitle} numberOfLines={1}>
+                  {selectedJob?.title}
+                </Text>
+                <Text style={styles.viewerLabel}>💼 Job Posting</Text>
+              </View>
+              <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
+                <CloseIcon size={24} color={AppColors.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          <View style={styles.pdfContent}>
+            {selectedJob && (
+              <WebView
+                source={{ uri: getPdfViewerUrl(selectedJob.url) }}
+                style={styles.webView}
+                startInLoadingState={true}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                renderLoading={() => (
+                  <View style={styles.loadingContainer}>
+                    <View style={styles.loadingSpinner}>
+                      <Text style={styles.loadingEmoji}>📄</Text>
+                    </View>
+                    <Text style={styles.loadingText}>Loading Job Details...</Text>
+                  </View>
+                )}
+                onError={() => {
+                  Alert.alert('Error', 'Unable to load job details');
+                }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     );
   };
 
-  const JobCard = ({ job }: { job: JobPost }) => (
-    <TouchableOpacity
-      style={[
-        styles.jobCard,
-        job.type === 'offer' ? styles.offerCard : styles.needCard,
-        job.isUrgent && styles.urgentCard
-      ]}
-      onPress={() => {
-        setSelectedJob(job);
-        setShowJobModal(true);
-      }}
-      activeOpacity={0.8}
-    >
-      {job.isUrgent && (
-        <View style={styles.urgentBadge}>
-          <ClockIcon size={10} color={AppColors.white} />
-          <Text style={styles.urgentText}>URGENT</Text>
-        </View>
-      )}
-
-      <View style={styles.jobHeader}>
-        <View style={styles.jobTitleSection}>
-          <Text style={styles.jobTitle} numberOfLines={2}>{job.title}</Text>
-          <Text style={styles.companyName}>{job.company}</Text>
-        </View>
-        <View style={[
-          styles.typeIndicator,
-          { backgroundColor: job.type === 'offer' ? AppColors.success : AppColors.blue }
-        ]}>
-          {job.type === 'offer' ? (
-            <BriefcaseIcon size={14} color={AppColors.white} />
-          ) : (
-            <SearchIcon size={14} color={AppColors.white} />
-          )}
-        </View>
-      </View>
-
-      <View style={styles.jobDetails}>
-        <View style={styles.detailRow}>
-          <LocationIcon size={12} color={AppColors.gray} />
-          <Text style={styles.detailText}>{job.location}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <CurrencyIcon size={12} color={AppColors.gray} />
-          <Text style={styles.detailText}>{job.salary}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <TimeIcon size={12} color={AppColors.gray} />
-          <Text style={styles.detailText}>{job.experience}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.jobDescription} numberOfLines={2}>
-        {job.description}
-      </Text>
-
-      <View style={styles.jobFooter}>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{job.category}</Text>
-        </View>
-        <View style={styles.jobActions}>
-          {job.pdfUrl && (
-            <TouchableOpacity
-              style={styles.pdfButton}
-              onPress={() => openPDF(job.pdfUrl!, job.title)}
-            >
-              <PdfIcon size={14} color={AppColors.danger} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={styles.contactButton}
-            onPress={() => contactEmployer(job.contact, job.title)}
-          >
-            <MessageIcon size={14} color={AppColors.primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.postInfo}>
-        <Text style={styles.postedBy}>By {job.postedBy}</Text>
-        <Text style={styles.postedDate}>{new Date(job.postedDate).toLocaleDateString()}</Text>
-      </View>
-
-      {job.deadline && (
-        <View style={styles.deadlineInfo}>
-          <CalendarIcon size={10} color={AppColors.warning} />
-          <Text style={styles.deadlineText}>
-            Deadline: {new Date(job.deadline).toLocaleDateString()}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
-  const JobDetailModal = () => (
+  // Image Modal Component
+  const ImageModal = () => (
     <Modal
-      visible={showJobModal}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={() => setShowJobModal(false)}
+      visible={imageModalVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={closeModals}
     >
-      {selectedJob && (
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Job Details</Text>
-            <TouchableOpacity
-              onPress={() => setShowJobModal(false)}
-              style={styles.closeButton}
-            >
-              <CloseIcon size={24} color={AppColors.dark} />
+      <View style={styles.modalOverlay}>
+        <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
+        <View style={styles.modalHeader}>
+          <View style={styles.modalHeaderContent}>
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              {selectedJob?.title}
+            </Text>
+            <TouchableOpacity onPress={closeModals} style={styles.closeButton}>
+              <CloseIcon size={24} color={AppColors.white} />
             </TouchableOpacity>
           </View>
-
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.jobDetailHeader}>
-              <Text style={styles.jobDetailTitle}>{selectedJob.title}</Text>
-              <Text style={styles.jobDetailCompany}>{selectedJob.company}</Text>
-              <View style={[
-                styles.typeIndicatorLarge,
-                { backgroundColor: selectedJob.type === 'offer' ? AppColors.success : AppColors.blue }
-              ]}>
-                <Text style={styles.typeText}>
-                  {selectedJob.type === 'offer' ? 'JOB OFFER' : 'JOB NEEDED'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.jobDetailSection}>
-              <Text style={styles.sectionTitle}>Job Information</Text>
-              <View style={styles.infoGrid}>
-                <View style={styles.infoItem}>
-                  <LocationIcon size={16} color={AppColors.primary} />
-                  <Text style={styles.infoLabel}>Location</Text>
-                  <Text style={styles.infoValue}>{selectedJob.location}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <CurrencyIcon size={16} color={AppColors.primary} />
-                  <Text style={styles.infoLabel}>Salary</Text>
-                  <Text style={styles.infoValue}>{selectedJob.salary}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <TimeIcon size={16} color={AppColors.primary} />
-                  <Text style={styles.infoLabel}>Experience</Text>
-                  <Text style={styles.infoValue}>{selectedJob.experience}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <TagIcon size={16} color={AppColors.primary} />
-                  <Text style={styles.infoLabel}>Category</Text>
-                  <Text style={styles.infoValue}>{selectedJob.category}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.jobDetailSection}>
-              <Text style={styles.sectionTitle}>Description</Text>
-              <Text style={styles.descriptionText}>{selectedJob.description}</Text>
-            </View>
-
-            <View style={styles.jobDetailSection}>
-              <Text style={styles.sectionTitle}>Requirements</Text>
-              {selectedJob.requirements.map((req, index) => (
-                <View key={index} style={styles.requirementItem}>
-                  <CheckIcon size={14} color={AppColors.success} />
-                  <Text style={styles.requirementText}>{req}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.jobDetailSection}>
-              <Text style={styles.sectionTitle}>Contact Information</Text>
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactLabel}>Posted by: {selectedJob.postedBy}</Text>
-                <Text style={styles.contactValue}>{selectedJob.contact}</Text>
-                {selectedJob.deadline && (
-                  <Text style={styles.deadlineInfo}>
-                    Application Deadline: {new Date(selectedJob.deadline).toLocaleDateString()}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              {selectedJob.pdfUrl && (
-                <TouchableOpacity
-                  style={styles.pdfButtonLarge}
-                  onPress={() => openPDF(selectedJob.pdfUrl!, selectedJob.title)}
-                >
-                  <PdfIcon size={20} color={AppColors.white} />
-                  <Text style={styles.pdfButtonText}>View PDF Details</Text>
-                </TouchableOpacity>
-              )}
-              
-              <TouchableOpacity
-                style={styles.contactButtonLarge}
-                onPress={() => contactEmployer(selectedJob.contact, selectedJob.title)}
-              >
-                <MessageIcon size={20} color={AppColors.white} />
-                <Text style={styles.contactButtonText}>Contact Now</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
         </View>
-      )}
+        
+        <View style={styles.imageModalContent}>
+          {selectedJob && (
+            <Image
+              source={{ uri: selectedJob.url }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+        
+        <View style={styles.modalFooter}>
+          <Text style={styles.modalFooterText}>
+            {selectedJob?.company} • {selectedJob?.location}
+          </Text>
+        </View>
+      </View>
     </Modal>
   );
 
+  // Type Filter Component - REMOVED
+
+  // Job Card Component
+  const JobCard = ({ item }: { item: JobPost }) => (
+    <TouchableOpacity
+      style={styles.jobCard}
+      onPress={() => openJob(item)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.jobHeader}>
+        <View style={[styles.typeIndicator, { backgroundColor: getJobTypeColor(item.jobType) }]}>
+          {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
+          {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
+          {item.type === 'posting' && <BriefcaseIcon size={24} color={AppColors.white} />}
+        </View>
+        {item.isUrgent && (
+          <View style={styles.urgentBadge}>
+            <StarIcon size={12} color={AppColors.white} />
+            <Text style={styles.urgentText}>URGENT</Text>
+          </View>
+        )}
+      </View>
+
+      {item.type === 'image' && item.thumbnailUrl && (
+        <View style={styles.imagePreview}>
+          <Image 
+            source={{ uri: item.thumbnailUrl }} 
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
+        </View>
+      )}
+      
+      <View style={styles.jobInfo}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={styles.companyName}>{item.company}</Text>
+        <Text style={styles.jobDescription} numberOfLines={3}>
+          {item.description}
+        </Text>
+        
+        <View style={styles.jobFooter}>
+          <View style={styles.jobMeta}>
+            <Text style={styles.locationText}>{item.location}</Text>
+            <Text style={styles.salaryText}>{item.salary}</Text>
+          </View>
+          <View style={styles.badgeContainer}>
+            <View style={[styles.typeBadge, { backgroundColor: getJobTypeColor(item.jobType) }]}>
+              <Text style={styles.typeBadgeText}>
+                {item.jobType === 'offer' ? 'OFFER' : 'NEED'}
+              </Text>
+            </View>
+            <View style={[styles.categoryBadge, { backgroundColor: AppColors.primary }]}>
+              <Text style={styles.categoryBadgeText}>{item.category}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={AppColors.primary} />
+        <Text style={styles.loadingText}>Loading job opportunities...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Header Stats */}
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+      
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.white} />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Employment</Text>
+          <Text style={styles.headerSubtitle}>{filteredJobs.length} opportunities available</Text>
+        </View>
+      </View>
+
+      {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <BriefcaseIcon size={18} color={AppColors.success} />
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.type === 'offer').length}</Text>
-          <Text style={styles.statLabel}>Job Offers</Text>
-        </View>
-        <View style={[styles.statCard, styles.middleStatCard]}>
-          <SearchIcon size={18} color={AppColors.blue} />
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.type === 'need').length}</Text>
-          <Text style={styles.statLabel}>Job Needs</Text>
+          <Text style={styles.statNumber}>{jobPosts.length}</Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
-          <ClockIcon size={18} color={AppColors.warning} />
+          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'offer').length}</Text>
+          <Text style={styles.statLabel}>Offers</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'need').length}</Text>
+          <Text style={styles.statLabel}>Needs</Text>
+        </View>
+        <View style={styles.statCard}>
           <Text style={styles.statNumber}>{jobPosts.filter(j => j.isUrgent).length}</Text>
           <Text style={styles.statLabel}>Urgent</Text>
         </View>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'all' && styles.activeTab]}
-          onPress={() => setSelectedTab('all')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'all' && styles.activeTabText]}>
-            All Jobs
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'offers' && styles.activeTab]}
-          onPress={() => setSelectedTab('offers')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'offers' && styles.activeTabText]}>
-            Offers
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'needs' && styles.activeTab]}
-          onPress={() => setSelectedTab('needs')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'needs' && styles.activeTabText]}>
-            Needs
-          </Text>
-        </TouchableOpacity>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchIcon size={20} color={AppColors.gray} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search jobs, companies, locations..."
+          placeholderTextColor={AppColors.gray}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+            <CloseIcon size={20} color={AppColors.gray} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Category Filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryContainer}
-        contentContainerStyle={styles.categoryContent}
-      >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.categoryButton,
-              selectedCategory === category && styles.categoryButtonActive
-            ]}
-            onPress={() => setSelectedCategory(category)}
-          >
-            <Text style={[
-              styles.categoryButtonText,
-              selectedCategory === category && styles.categoryButtonTextActive
-            ]}>
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Job Posts */}
-      <ScrollView
-        style={styles.jobsList}
+      {/* Job List */}
+      <FlatList
+        data={filteredJobs}
+        renderItem={({ item }) => <JobCard item={item} />}
+        keyExtractor={(item) => item.id}
+        style={styles.jobList}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.jobsContent}
-      >
-        {filteredJobs.map((job) => (
-          <JobCard key={job.id} job={job} />
-        ))}
-
-        {filteredJobs.length === 0 && (
+        numColumns={1}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.primary]}
+          />
+        }
+        ListEmptyComponent={
           <View style={styles.emptyState}>
-            <EmptyIcon size={60} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>No Jobs Found</Text>
             <Text style={styles.emptyText}>
-              Try adjusting your filters or check back later for new opportunities.
+              {searchQuery
+                ? 'Try adjusting your search terms'
+                : 'No job opportunities available'}
             </Text>
           </View>
-        )}
-      </ScrollView>
+        }
+      />
 
-      <JobDetailModal />
-    </View>
+      <ImageModal />
+      <PdfModal />
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.lightGray,
   },
+  
+  // Header styles
+  header: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: AppColors.white,
+    opacity: 0.9,
+  },
+  
+  // Stats styles
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
     backgroundColor: AppColors.white,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    justifyContent: 'space-around',
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
   },
   statCard: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-  },
-  middleStatCard: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: AppColors.border,
   },
   statNumber: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: AppColors.dark,
-    marginTop: 4,
+    color: AppColors.primary,
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: AppColors.gray,
-    marginTop: 2,
     textAlign: 'center',
   },
-  tabContainer: {
+  
+  // Search styles
+  searchContainer: {
     flexDirection: 'row',
-    backgroundColor: AppColors.white,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 6,
-    marginHorizontal: 2,
-  },
-  activeTab: {
-    backgroundColor: AppColors.primary,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: AppColors.gray,
-  },
-  activeTabText: {
-    color: AppColors.white,
-  },
-  categoryContainer: {
-    backgroundColor: AppColors.cream,
-    paddingVertical: 8,
-    maxHeight: 45,
-  },
-  categoryContent: {
-    paddingHorizontal: 15,
-  },
-  categoryButton: {
     backgroundColor: AppColors.white,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    minHeight: 28,
-    justifyContent: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    margin: 16,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  categoryButtonActive: {
-    backgroundColor: AppColors.teal,
-    borderColor: AppColors.teal,
-  },
-  categoryButtonText: {
-    fontSize: 12,
-    color: AppColors.dark,
-    fontWeight: '500',
-  },
-  categoryButtonTextActive: {
-    color: AppColors.white,
-  },
-  jobsList: {
+  searchInput: {
     flex: 1,
+    fontSize: 16,
+    color: AppColors.dark,
+    marginLeft: 8,
+    paddingVertical: 4,
   },
-  jobsContent: {
-    padding: 12,
+  clearSearchIcon: {
+    padding: 4,
+  },
+  
+  // Job List styles
+  jobList: {
+    flex: 1,
+    paddingHorizontal: 10,
   },
   jobCard: {
     backgroundColor: AppColors.white,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    marginHorizontal: 5,
+    marginVertical: 6,
+    borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
-    borderLeftWidth: 3,
-  },
-  offerCard: {
-    borderLeftColor: AppColors.success,
-  },
-  needCard: {
-    borderLeftColor: AppColors.blue,
-  },
-  urgentCard: {
-    borderWidth: 1,
-    borderColor: AppColors.warning,
-  },
-  urgentBadge: {
-    position: 'absolute',
-    top: -4,
-    right: 12,
-    backgroundColor: AppColors.warning,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    zIndex: 1,
-  },
-  urgentText: {
-    color: AppColors.white,
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginLeft: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
   },
   jobHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    padding: 12,
+    paddingBottom: 8,
   },
-  jobTitleSection: {
-    flex: 1,
-    marginRight: 10,
+  typeIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  urgentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  urgentText: {
+    fontSize: 10,
+    color: AppColors.white,
+    fontWeight: 'bold',
+  },
+  imagePreview: {
+    height: 120,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: AppColors.lightGray,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  jobInfo: {
+    padding: 12,
+    paddingTop: 0,
   },
   jobTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: AppColors.dark,
-    marginBottom: 3,
-    lineHeight: 18,
+    marginBottom: 4,
+    lineHeight: 20,
   },
   companyName: {
     fontSize: 13,
     color: AppColors.primary,
     fontWeight: '500',
-  },
-  typeIndicator: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  jobDetails: {
-    marginBottom: 8,
-    gap: 2,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  detailText: {
-    fontSize: 11,
-    color: AppColors.gray,
-    marginLeft: 5,
+    marginBottom: 6,
   },
   jobDescription: {
     fontSize: 13,
-    color: AppColors.dark,
+    color: AppColors.gray,
     lineHeight: 18,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   jobFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-end',
+  },
+  jobMeta: {
+    flex: 1,
+  },
+  locationText: {
+    fontSize: 12,
+    color: AppColors.gray,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  salaryText: {
+    fontSize: 11,
+    color: AppColors.teal,
+    fontWeight: '600',
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  typeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    color: AppColors.white,
+    fontWeight: '500',
   },
   categoryBadge: {
-    backgroundColor: AppColors.lightGray,
     paddingHorizontal: 6,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 6,
   },
-  categoryText: {
+  categoryBadgeText: {
     fontSize: 10,
-    color: AppColors.teal,
+    color: AppColors.white,
     fontWeight: '500',
   },
-  jobActions: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  pdfButton: {
-    padding: 6,
-  },
-  contactButton: {
-    padding: 6,
-  },
-  postInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  
+  // Loading & Empty states
+  loadingContainer: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 6,
+    justifyContent: 'center',
   },
-  postedBy: {
-    fontSize: 10,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
     color: AppColors.gray,
-  },
-  postedDate: {
-    fontSize: 10,
-    color: AppColors.gray,
-  },
-  deadlineInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppColors.cream,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 5,
-    alignSelf: 'flex-start',
-  },
-  deadlineText: {
-    fontSize: 10,
-    color: AppColors.warning,
-    fontWeight: '500',
-    marginLeft: 3,
   },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
+    paddingHorizontal: 40,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: AppColors.dark,
-    marginTop: 15,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
     color: AppColors.gray,
     textAlign: 'center',
-    paddingHorizontal: 40,
   },
 
   // Modal Styles
-  modalContainer: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+  },
+  modalHeader: {
+    paddingTop: StatusBar.currentHeight || 40,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  modalHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: AppColors.white,
+    marginRight: 20,
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  fullScreenImage: {
+    width: width - 40,
+    height: height - 200,
+    borderRadius: 8,
+  },
+  modalFooter: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  modalFooterText: {
+    color: AppColors.white,
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  
+  // PDF Modal Styles
+  pdfModalContainer: {
     flex: 1,
     backgroundColor: AppColors.white,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  pdfModalHeader: {
+    backgroundColor: AppColors.teal,
+    paddingTop: StatusBar.currentHeight || 40,
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-    paddingTop: 50,
+    paddingBottom: 15,
   },
-  modalTitle: {
+  pdfHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 20,
+  },
+  pdfModalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: AppColors.dark,
+    color: AppColors.white,
   },
-  closeButton: {
-    padding: 5,
+  viewerLabel: {
+    fontSize: 12,
+    color: AppColors.white,
+    opacity: 0.9,
+    marginTop: 2,
   },
-  modalContent: {
+  pdfCloseButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  pdfContent: {
     flex: 1,
-    paddingHorizontal: 20,
   },
-  jobDetailHeader: {
-    paddingVertical: 20,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
+  webView: {
+    flex: 1,
   },
-  jobDetailTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: AppColors.dark,
+  loadingSpinner: {
+    marginBottom: 20,
+    padding: 20,
+    backgroundColor: AppColors.white,
+    borderRadius: 50,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  loadingEmoji: {
+    fontSize: 32,
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  jobDetailCompany: {
-    fontSize: 16,
-    color: AppColors.primary,
-    fontWeight: '500',
-    marginBottom: 12,
-  },
-  typeIndicatorLarge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  typeText: {
-    color: AppColors.white,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  jobDetailSection: {
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: AppColors.dark,
-    marginBottom: 12,
-  },
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  infoItem: {
-    width: '50%',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: AppColors.gray,
-    marginTop: 4,
-    marginLeft: 20,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: AppColors.dark,
-    fontWeight: '500',
-    marginLeft: 20,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: AppColors.dark,
-    lineHeight: 22,
-  },
-  requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  requirementText: {
-    fontSize: 14,
-    color: AppColors.dark,
-    marginLeft: 8,
-  },
-  contactInfo: {
-    backgroundColor: AppColors.lightGray,
-    padding: 15,
-    borderRadius: 8,
-  },
-  contactLabel: {
-    fontSize: 14,
-    color: AppColors.gray,
-    marginBottom: 4,
-  },
-  contactValue: {
-    fontSize: 16,
-    color: AppColors.dark,
-    fontWeight: '500',
-  },
-  pdfButtonLarge: {
-    backgroundColor: AppColors.danger,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  pdfButtonText: {
-    color: AppColors.white,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  contactButtonLarge: {
-    backgroundColor: AppColors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  contactButtonText: {
-    color: AppColors.white,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
 });
+
+export default EmploymentScreen;
