@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  ScrollView,
   Dimensions,
   RefreshControl,
   StatusBar,
@@ -46,9 +45,9 @@ const ImageIcon = ({ size = 24, color = "#fff" }) => (
   </Svg>
 );
 
-const BriefcaseIcon = ({ size = 24, color = "#fff" }) => (
+const MeetingIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16m8 0H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" fill={color}/>
+    <Path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H11V21H5V19H13V21H19V9H21ZM13 3.5L18.5 9H13V3.5Z" fill={color}/>
   </Svg>
 );
 
@@ -58,15 +57,25 @@ const BackIcon = ({ size = 24, color = "#fff" }) => (
   </Svg>
 );
 
-const GridIcon = ({ size = 16, color = "#666" }) => (
+const CalendarIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z" fill={color}/>
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M16 2v4M8 2v4M3 10h18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
-const StarIcon = ({ size = 16, color = "#666" }) => (
+const ClockIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={color}/>
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M12 6v6l4 2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
+const UsersIcon = ({ size = 16, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
@@ -87,194 +96,164 @@ const AppColors = {
   success: '#10b981',
   warning: '#f59e0b',
   purple: '#8b5cf6',
+  sport: '#e74c3c',
 };
 
-// Job Post Interface
-interface JobPost {
+// Meeting Document Interface
+interface MeetingDocument {
   id: string;
   title: string;
-  company: string;
-  location: string;
+  organizer: string;
   description: string;
-  category: string;
-  type: 'pdf' | 'image' | 'posting';
+  type: 'pdf' | 'image' | 'document';
   url: string;
   thumbnailUrl?: string;
-  salary: string;
-  experience: string;
-  jobType: 'offer' | 'need';
-  postedBy: string;
-  language: string;
-  isUrgent?: boolean;
+  meetingDate: string;
+  meetingTime: string;
+  attendees: string;
+  documentType: 'agenda' | 'minutes' | 'invite';
+  status: 'upcoming' | 'completed' | 'cancelled';
+  priority: 'high' | 'medium' | 'low';
 }
 
-// Dummy data with PDF and image support
-const jobPosts: JobPost[] = [
+// Dummy data for meeting documents
+const meetingDocuments: MeetingDocument[] = [
   {
     id: '1',
-    title: 'Senior Software Developer Position',
-    company: 'TechCorp Solutions',
-    location: 'Mumbai, Maharashtra',
-    description: 'We are looking for a skilled software developer to join our dynamic team. You will be responsible for developing web applications using React.js, Node.js, and modern technologies. Must have 3-5 years experience.',
-    category: 'IT & Software',
+    title: 'Q1 Planning Meeting Agenda',
+    organizer: 'Sarah Johnson',
+    description: 'Comprehensive agenda for quarterly planning session covering budget review, project timelines, and strategic goals for next quarter.',
     type: 'pdf',
     url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹12-18 LPA',
-    experience: '3-5 years',
-    jobType: 'offer',
-    postedBy: 'Rajesh Kumar',
-    language: 'English',
-    isUrgent: true
+    meetingDate: '15 March 2025',
+    meetingTime: '10:00 AM - 12:00 PM',
+    attendees: '12 people',
+    documentType: 'agenda',
+    status: 'upcoming',
+    priority: 'high'
   },
   {
     id: '2',
-    title: 'Accountant Job Requirements',
-    company: 'Community Business',
-    location: 'Delhi NCR',
-    description: 'Looking for an experienced accountant for our family business. Must be familiar with GST, taxation, and financial reporting. Immediate joining preferred.',
-    category: 'Finance & Accounting',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-7 LPA',
-    experience: '2-4 years',
-    jobType: 'need',
-    postedBy: 'Priya Sharma',
-    language: 'Hindi'
+    title: 'Team Standup Meeting Minutes',
+    organizer: 'Mike Chen',
+    description: 'Weekly team standup meeting minutes with action items, blockers discussed, and next steps for ongoing projects.',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
+    meetingDate: '12 March 2025',
+    meetingTime: '9:00 AM - 9:30 AM',
+    attendees: '8 people',
+    documentType: 'minutes',
+    status: 'completed',
+    priority: 'medium'
   },
   {
     id: '3',
-    title: 'Marketing Executive Opportunity',
-    company: 'Growth Marketing Agency',
-    location: 'Bangalore, Karnataka',
-    description: 'Join our marketing team to drive digital campaigns and boost brand awareness. Experience in social media marketing and content creation preferred.',
-    category: 'Marketing & Sales',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹5-8 LPA',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Amit Patel',
-    language: 'English'
+    title: 'Board Meeting Invitation',
+    organizer: 'Executive Office',
+    description: 'Formal invitation to monthly board meeting with agenda preview and joining instructions for all board members.',
+    type: 'image',
+    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
+    meetingDate: '20 March 2025',
+    meetingTime: '2:00 PM - 4:00 PM',
+    attendees: '6 people',
+    documentType: 'invite',
+    status: 'upcoming',
+    priority: 'high'
   },
   {
     id: '4',
-    title: 'Graphic Designer Required',
-    company: 'Creative Studio',
-    location: 'Remote/Work from Home',
-    description: 'Looking for a creative graphic designer for branding projects. Need someone who can create logos, brochures, and digital assets using Adobe Creative Suite.',
-    category: 'Design & Creative',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹25K-40K/project',
-    experience: '1-2 years',
-    jobType: 'need',
-    postedBy: 'Sunita Singh',
-    language: 'English',
-    isUrgent: true
+    title: 'Project Review Meeting Minutes',
+    organizer: 'Lisa Wang',
+    description: 'Detailed minutes from project review meeting including milestone updates, budget discussions, and resource allocation decisions.',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
+    meetingDate: '10 March 2025',
+    meetingTime: '3:00 PM - 5:00 PM',
+    attendees: '15 people',
+    documentType: 'minutes',
+    status: 'completed',
+    priority: 'medium'
   },
   {
     id: '5',
-    title: 'Data Analyst Role Available',
-    company: 'Analytics Pro Ltd',
-    location: 'Pune, Maharashtra',
-    description: 'Seeking a data analyst to help derive insights from large datasets and create meaningful reports for business decisions. Python and SQL expertise required.',
-    category: 'Data & Analytics',
+    title: 'Client Meeting Agenda',
+    organizer: 'David Brown',
+    description: 'Client meeting agenda covering project deliverables, timeline review, feedback collection, and next phase planning.',
     type: 'pdf',
     url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹8-12 LPA',
-    experience: '2-4 years',
-    jobType: 'offer',
-    postedBy: 'Vikash Kumar',
-    language: 'English'
+    meetingDate: '18 March 2025',
+    meetingTime: '11:00 AM - 12:30 PM',
+    attendees: '5 people',
+    documentType: 'agenda',
+    status: 'upcoming',
+    priority: 'high'
   },
   {
     id: '6',
-    title: 'Math Teacher Needed Urgently',
-    company: 'Community School',
-    location: 'Chennai, Tamil Nadu',
-    description: 'Our community school needs a dedicated teacher for mathematics and science subjects for classes 6-10. B.Ed qualification required.',
-    category: 'Education & Training',
+    title: 'All Hands Meeting Invite',
+    organizer: 'HR Department',
+    description: 'Monthly all hands meeting invitation with company updates, new team member introductions, and Q&A session details.',
     type: 'image',
     url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹3-5 LPA',
-    experience: '1-3 years',
-    jobType: 'need',
-    postedBy: 'School Committee',
-    language: 'Tamil',
-    isUrgent: true
-  },
-  {
-    id: '7',
-    title: 'Sales Manager Position',
-    company: 'Retail Chain Ltd',
-    location: 'Hyderabad, Telangana',
-    description: 'Looking for an experienced sales manager to lead our retail operations. Must have team management experience and strong communication skills.',
-    category: 'Marketing & Sales',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹6-10 LPA',
-    experience: '3-6 years',
-    jobType: 'offer',
-    postedBy: 'HR Department',
-    language: 'English'
-  },
-  {
-    id: '8',
-    title: 'Web Developer Wanted',
-    company: 'StartUp Hub',
-    location: 'Gurgaon, Haryana',
-    description: 'Join our startup team as a web developer. Work with latest technologies including React, Node.js, and cloud platforms. Equity offered.',
-    category: 'IT & Software',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-8 LPA + Equity',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Tech Lead',
-    language: 'English'
+    meetingDate: '25 March 2025',
+    meetingTime: '4:00 PM - 5:00 PM',
+    attendees: '50+ people',
+    documentType: 'invite',
+    status: 'upcoming',
+    priority: 'medium'
   }
 ];
 
-const getJobTypeColor = (jobType: string) => {
-  return jobType === 'offer' ? AppColors.success : AppColors.blue;
+const getDocumentTypeColor = (docType: string) => {
+  switch(docType) {
+    case 'agenda': return AppColors.blue;
+    case 'minutes': return AppColors.green;
+    case 'invite': return AppColors.purple;
+    default: return AppColors.gray;
+  }
 };
 
-const EmploymentScreen = () => {
-  const [filteredJobs, setFilteredJobs] = useState<JobPost[]>(jobPosts);
+const getStatusColor = (status: string) => {
+  switch(status) {
+    case 'upcoming': return AppColors.warning;
+    case 'completed': return AppColors.success;
+    case 'cancelled': return AppColors.red;
+    default: return AppColors.gray;
+  }
+};
+
+const MeetingScreen = () => {
+  const [filteredDocuments, setFilteredDocuments] = useState<MeetingDocument[]>(meetingDocuments);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<MeetingDocument | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
-  // Filter jobs based on search only
+  // Filter documents based on search
   useEffect(() => {
-    filterJobs();
+    filterDocuments();
   }, [searchQuery]);
 
-  const filterJobs = () => {
-    let filtered = jobPosts;
+  const filterDocuments = () => {
+    let filtered = meetingDocuments;
 
-    // Apply search filter only
     if (searchQuery.trim()) {
-      filtered = filtered.filter(job => {
+      filtered = filtered.filter(doc => {
         const query = searchQuery.toLowerCase();
         return (
-          job.title.toLowerCase().includes(query) ||
-          job.description.toLowerCase().includes(query) ||
-          job.category.toLowerCase().includes(query) ||
-          job.company.toLowerCase().includes(query) ||
-          job.location.toLowerCase().includes(query)
+          doc.title.toLowerCase().includes(query) ||
+          doc.description.toLowerCase().includes(query) ||
+          doc.organizer.toLowerCase().includes(query) ||
+          doc.documentType.toLowerCase().includes(query)
         );
       });
     }
 
-    setFilteredJobs(filtered);
+    setFilteredDocuments(filtered);
   };
 
   const onRefresh = () => {
@@ -284,14 +263,14 @@ const EmploymentScreen = () => {
     }, 1000);
   };
 
-  const openJob = (job: JobPost) => {
-    setSelectedJob(job);
-    if (job.type === 'image') {
+  const openDocument = (document: MeetingDocument) => {
+    setSelectedDocument(document);
+    if (document.type === 'image') {
       setImageModalVisible(true);
-    } else if (job.type === 'pdf') {
+    } else if (document.type === 'pdf') {
       setPdfModalVisible(true);
     } else {
-      Alert.alert('Job Details', `${job.title}\n\n${job.description}\n\nSalary: ${job.salary}\nExperience: ${job.experience}\nContact: ${job.postedBy}`, [
+      Alert.alert('Meeting Details', `${document.title}\n\n${document.description}\n\nDate: ${document.meetingDate}\nTime: ${document.meetingTime}\nAttendees: ${document.attendees}`, [
         { text: 'Close', style: 'cancel' }
       ]);
     }
@@ -300,7 +279,7 @@ const EmploymentScreen = () => {
   const closeModals = () => {
     setImageModalVisible(false);
     setPdfModalVisible(false);
-    setSelectedJob(null);
+    setSelectedDocument(null);
   };
 
   // PDF Modal Component
@@ -322,9 +301,9 @@ const EmploymentScreen = () => {
             <View style={styles.pdfHeaderContent}>
               <View style={styles.titleContainer}>
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
-                  {selectedJob?.title}
+                  {selectedDocument?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>💼 Job Posting</Text>
+                <Text style={styles.viewerLabel}>📅 Meeting Document</Text>
               </View>
               <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
@@ -333,9 +312,9 @@ const EmploymentScreen = () => {
           </View>
           
           <View style={styles.pdfContent}>
-            {selectedJob && (
+            {selectedDocument && (
               <WebView
-                source={{ uri: getPdfViewerUrl(selectedJob.url) }}
+                source={{ uri: getPdfViewerUrl(selectedDocument.url) }}
                 style={styles.webView}
                 startInLoadingState={true}
                 javaScriptEnabled={true}
@@ -343,13 +322,13 @@ const EmploymentScreen = () => {
                 renderLoading={() => (
                   <View style={styles.loadingContainer}>
                     <View style={styles.loadingSpinner}>
-                      <Text style={styles.loadingEmoji}>📄</Text>
+                      <Text style={styles.loadingEmoji}>📋</Text>
                     </View>
-                    <Text style={styles.loadingText}>Loading Job Details...</Text>
+                    <Text style={styles.loadingText}>Loading Meeting Document...</Text>
                   </View>
                 )}
                 onError={() => {
-                  Alert.alert('Error', 'Unable to load job details');
+                  Alert.alert('Error', 'Unable to load meeting document');
                 }}
               />
             )}
@@ -372,7 +351,7 @@ const EmploymentScreen = () => {
         <View style={styles.modalHeader}>
           <View style={styles.modalHeaderContent}>
             <Text style={styles.modalTitle} numberOfLines={1}>
-              {selectedJob?.title}
+              {selectedDocument?.title}
             </Text>
             <TouchableOpacity onPress={closeModals} style={styles.closeButton}>
               <CloseIcon size={24} color={AppColors.white} />
@@ -381,9 +360,9 @@ const EmploymentScreen = () => {
         </View>
         
         <View style={styles.imageModalContent}>
-          {selectedJob && (
+          {selectedDocument && (
             <Image
-              source={{ uri: selectedJob.url }}
+              source={{ uri: selectedDocument.url }}
               style={styles.fullScreenImage}
               resizeMode="contain"
             />
@@ -392,34 +371,29 @@ const EmploymentScreen = () => {
         
         <View style={styles.modalFooter}>
           <Text style={styles.modalFooterText}>
-            {selectedJob?.company} • {selectedJob?.location}
+            {selectedDocument?.organizer} • {selectedDocument?.meetingDate}
           </Text>
         </View>
       </View>
     </Modal>
   );
 
-  // Type Filter Component - REMOVED
-
-  // Job Card Component
-  const JobCard = ({ item }: { item: JobPost }) => (
+  // Document Card Component
+  const DocumentCard = ({ item }: { item: MeetingDocument }) => (
     <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => openJob(item)}
+      style={styles.documentCard}
+      onPress={() => openDocument(item)}
       activeOpacity={0.8}
     >
-      <View style={styles.jobHeader}>
-        <View style={[styles.typeIndicator, { backgroundColor: getJobTypeColor(item.jobType) }]}>
+      <View style={styles.documentHeader}>
+        <View style={[styles.typeIndicator, { backgroundColor: getDocumentTypeColor(item.documentType) }]}>
           {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
           {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
-          {item.type === 'posting' && <BriefcaseIcon size={24} color={AppColors.white} />}
+          {item.type === 'document' && <MeetingIcon size={24} color={AppColors.white} />}
         </View>
-        {item.isUrgent && (
-          <View style={styles.urgentBadge}>
-            <StarIcon size={12} color={AppColors.white} />
-            <Text style={styles.urgentText}>URGENT</Text>
-          </View>
-        )}
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+        </View>
       </View>
 
       {item.type === 'image' && item.thumbnailUrl && (
@@ -432,27 +406,36 @@ const EmploymentScreen = () => {
         </View>
       )}
       
-      <View style={styles.jobInfo}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
-        <Text style={styles.companyName}>{item.company}</Text>
-        <Text style={styles.jobDescription} numberOfLines={3}>
+      <View style={styles.documentInfo}>
+        <Text style={styles.documentTitle}>{item.title}</Text>
+        <Text style={styles.organizerName}>{item.organizer}</Text>
+        <Text style={styles.documentDescription} numberOfLines={3}>
           {item.description}
         </Text>
         
-        <View style={styles.jobFooter}>
-          <View style={styles.jobMeta}>
-            <Text style={styles.locationText}>{item.location}</Text>
-            <Text style={styles.salaryText}>{item.salary}</Text>
+        <View style={styles.meetingDetails}>
+          <View style={styles.detailRow}>
+            <CalendarIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText}>{item.meetingDate}</Text>
           </View>
-          <View style={styles.badgeContainer}>
-            <View style={[styles.typeBadge, { backgroundColor: getJobTypeColor(item.jobType) }]}>
-              <Text style={styles.typeBadgeText}>
-                {item.jobType === 'offer' ? 'OFFER' : 'NEED'}
-              </Text>
-            </View>
-            <View style={[styles.categoryBadge, { backgroundColor: AppColors.primary }]}>
-              <Text style={styles.categoryBadgeText}>{item.category}</Text>
-            </View>
+          <View style={styles.detailRow}>
+            <ClockIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText}>{item.meetingTime}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <UsersIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText}>{item.attendees}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.documentFooter}>
+          <View style={[styles.docTypeBadge, { backgroundColor: getDocumentTypeColor(item.documentType) }]}>
+            <Text style={styles.docTypeBadgeText}>
+              {item.documentType.toUpperCase()}
+            </Text>
+          </View>
+          <View style={[styles.formatBadge, { backgroundColor: AppColors.primary }]}>
+            <Text style={styles.formatBadgeText}>{item.type.toUpperCase()}</Text>
           </View>
         </View>
       </View>
@@ -463,7 +446,7 @@ const EmploymentScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={AppColors.primary} />
-        <Text style={styles.loadingText}>Loading job opportunities...</Text>
+        <Text style={styles.loadingText}>Loading meeting documents...</Text>
       </View>
     );
   }
@@ -477,28 +460,28 @@ const EmploymentScreen = () => {
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Employment</Text>
-          <Text style={styles.headerSubtitle}>{filteredJobs.length} opportunities available</Text>
+          <Text style={styles.headerTitle}>Meeting</Text>
+          <Text style={styles.headerSubtitle}>{filteredDocuments.length} documents available</Text>
         </View>
       </View>
 
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Text style={styles.statNumber}>{meetingDocuments.length}</Text>
+          <Text style={styles.statLabel}>Total Docs</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'offer').length}</Text>
-          <Text style={styles.statLabel}>Offers</Text>
+          <Text style={styles.statNumber}>{meetingDocuments.filter(d => d.documentType === 'agenda').length}</Text>
+          <Text style={styles.statLabel}>Agendas</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'need').length}</Text>
-          <Text style={styles.statLabel}>Needs</Text>
+          <Text style={styles.statNumber}>{meetingDocuments.filter(d => d.documentType === 'minutes').length}</Text>
+          <Text style={styles.statLabel}>Minutes</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.isUrgent).length}</Text>
-          <Text style={styles.statLabel}>Urgent</Text>
+          <Text style={styles.statNumber}>{meetingDocuments.filter(d => d.status === 'upcoming').length}</Text>
+          <Text style={styles.statLabel}>Upcoming</Text>
         </View>
       </View>
 
@@ -507,7 +490,7 @@ const EmploymentScreen = () => {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search jobs, companies, locations..."
+          placeholder="Search meeting documents, agendas, minutes..."
           placeholderTextColor={AppColors.gray}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -519,14 +502,13 @@ const EmploymentScreen = () => {
         )}
       </View>
 
-      {/* Job List */}
+      {/* Document List */}
       <FlatList
-        data={filteredJobs}
-        renderItem={({ item }) => <JobCard item={item} />}
+        data={filteredDocuments}
+        renderItem={({ item }) => <DocumentCard item={item} />}
         keyExtractor={(item) => item.id}
-        style={styles.jobList}
+        style={styles.documentList}
         showsVerticalScrollIndicator={false}
-        numColumns={1}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -536,11 +518,11 @@ const EmploymentScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No Jobs Found</Text>
+            <Text style={styles.emptyTitle}>No Documents Found</Text>
             <Text style={styles.emptyText}>
               {searchQuery
                 ? 'Try adjusting your search terms'
-                : 'No job opportunities available'}
+                : 'No meeting documents available'}
             </Text>
           </View>
         }
@@ -637,12 +619,12 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   
-  // Job List styles
-  jobList: {
+  // Document List styles
+  documentList: {
     flex: 1,
     paddingHorizontal: 10,
   },
-  jobCard: {
+  documentCard: {
     backgroundColor: AppColors.white,
     marginHorizontal: 5,
     marginVertical: 6,
@@ -654,7 +636,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
-  jobHeader: {
+  documentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -668,16 +650,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  urgentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppColors.warning,
+  statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    gap: 4,
   },
-  urgentText: {
+  statusText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: 'bold',
@@ -694,68 +672,62 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  jobInfo: {
+  documentInfo: {
     padding: 12,
     paddingTop: 0,
   },
-  jobTitle: {
+  documentTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: AppColors.dark,
     marginBottom: 4,
     lineHeight: 20,
   },
-  companyName: {
+  organizerName: {
     fontSize: 13,
     color: AppColors.primary,
     fontWeight: '500',
     marginBottom: 6,
   },
-  jobDescription: {
+  documentDescription: {
     fontSize: 13,
     color: AppColors.gray,
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  jobFooter: {
+  meetingDetails: {
+    marginBottom: 10,
+    gap: 4,
+  },
+  detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    gap: 6,
   },
-  jobMeta: {
-    flex: 1,
-  },
-  locationText: {
+  detailText: {
     fontSize: 12,
     color: AppColors.gray,
-    fontWeight: '500',
-    marginBottom: 2,
   },
-  salaryText: {
-    fontSize: 11,
-    color: AppColors.teal,
-    fontWeight: '600',
-  },
-  badgeContainer: {
+  documentFooter: {
     flexDirection: 'row',
     gap: 6,
   },
-  typeBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+  docTypeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
-  typeBadgeText: {
+  docTypeBadgeText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: '500',
   },
-  categoryBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+  formatBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
-  categoryBadgeText: {
+  formatBadgeText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: '500',
@@ -897,4 +869,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EmploymentScreen;
+export default MeetingScreen;

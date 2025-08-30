@@ -46,9 +46,10 @@ const ImageIcon = ({ size = 24, color = "#fff" }) => (
   </Svg>
 );
 
-const BriefcaseIcon = ({ size = 24, color = "#fff" }) => (
+const SportIcon = ({ size = 24, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16m8 0H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" fill={color}/>
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke={color} strokeWidth="2" fill="none"/>
   </Svg>
 );
 
@@ -58,15 +59,25 @@ const BackIcon = ({ size = 24, color = "#fff" }) => (
   </Svg>
 );
 
-const GridIcon = ({ size = 16, color = "#666" }) => (
+const TrophyIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z" fill={color}/>
+    <Path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M6 9a9 9 0 1 0 12 0" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M12 16v6M8 22h8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
-const StarIcon = ({ size = 16, color = "#666" }) => (
+const CalendarIcon = ({ size = 16, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={color}/>
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M16 2v4M8 2v4M3 10h18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
+const MapIcon = ({ size = 16, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke={color} strokeWidth="2" fill="none"/>
+    <Circle cx="12" cy="10" r="3" stroke={color} strokeWidth="2" fill="none"/>
   </Svg>
 );
 
@@ -87,194 +98,201 @@ const AppColors = {
   success: '#10b981',
   warning: '#f59e0b',
   purple: '#8b5cf6',
+  sport: '#e74c3c',
 };
 
-// Job Post Interface
-interface JobPost {
+// Sports Event Interface
+interface SportsEvent {
   id: string;
   title: string;
-  company: string;
+  organizer: string;
   location: string;
   description: string;
   category: string;
-  type: 'pdf' | 'image' | 'posting';
+  type: 'pdf' | 'image' | 'event';
   url: string;
   thumbnailUrl?: string;
-  salary: string;
-  experience: string;
-  jobType: 'offer' | 'need';
+  eventDate: string;
+  registrationFee: string;
+  eventType: 'tournament' | 'match' | 'training';
   postedBy: string;
   language: string;
-  isUrgent?: boolean;
+  isUpcoming?: boolean;
 }
 
-// Dummy data with PDF and image support
-const jobPosts: JobPost[] = [
+// Dummy data with sports events, tournaments, and matches
+const sportsEvents: SportsEvent[] = [
   {
     id: '1',
-    title: 'Senior Software Developer Position',
-    company: 'TechCorp Solutions',
-    location: 'Mumbai, Maharashtra',
-    description: 'We are looking for a skilled software developer to join our dynamic team. You will be responsible for developing web applications using React.js, Node.js, and modern technologies. Must have 3-5 years experience.',
-    category: 'IT & Software',
+    title: 'Annual Cricket Championship 2025',
+    organizer: 'Mumbai Cricket Association',
+    location: 'Wankhede Stadium, Mumbai',
+    description: 'Join the biggest cricket tournament of the year! Open registration for all age groups. Tournament rules, fixtures, and registration details included in the official brochure.',
+    category: 'Cricket',
     type: 'pdf',
     url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹12-18 LPA',
-    experience: '3-5 years',
-    jobType: 'offer',
-    postedBy: 'Rajesh Kumar',
+    eventDate: '15-20 March 2025',
+    registrationFee: '₹500 per team',
+    eventType: 'tournament',
+    postedBy: 'Cricket Committee',
     language: 'English',
-    isUrgent: true
+    isUpcoming: true
   },
   {
     id: '2',
-    title: 'Accountant Job Requirements',
-    company: 'Community Business',
-    location: 'Delhi NCR',
-    description: 'Looking for an experienced accountant for our family business. Must be familiar with GST, taxation, and financial reporting. Immediate joining preferred.',
-    category: 'Finance & Accounting',
+    title: 'Football League Season Opener',
+    organizer: 'Delhi Football Club',
+    location: 'Jawaharlal Nehru Stadium, Delhi',
+    description: 'Season opening match poster with team lineups, match schedule, and ticket information. Support your local teams in this exciting football championship.',
+    category: 'Football',
     type: 'image',
     url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-7 LPA',
-    experience: '2-4 years',
-    jobType: 'need',
-    postedBy: 'Priya Sharma',
+    eventDate: '5 April 2025',
+    registrationFee: '₹200-800',
+    eventType: 'match',
+    postedBy: 'Football Association',
     language: 'Hindi'
   },
   {
     id: '3',
-    title: 'Marketing Executive Opportunity',
-    company: 'Growth Marketing Agency',
-    location: 'Bangalore, Karnataka',
-    description: 'Join our marketing team to drive digital campaigns and boost brand awareness. Experience in social media marketing and content creation preferred.',
-    category: 'Marketing & Sales',
+    title: 'Basketball Training Camp Brochure',
+    organizer: 'Bangalore Basketball Academy',
+    location: 'Sports Complex, Bangalore',
+    description: 'Professional basketball training camp for youth players. Complete training schedule, coaching staff details, and registration process outlined in detailed brochure.',
+    category: 'Basketball',
     type: 'pdf',
     url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹5-8 LPA',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Amit Patel',
-    language: 'English'
+    eventDate: '1-30 April 2025',
+    registrationFee: '₹3000 per month',
+    eventType: 'training',
+    postedBy: 'Basketball Coach',
+    language: 'English',
+    isUpcoming: true
   },
   {
     id: '4',
-    title: 'Graphic Designer Required',
-    company: 'Creative Studio',
-    location: 'Remote/Work from Home',
-    description: 'Looking for a creative graphic designer for branding projects. Need someone who can create logos, brochures, and digital assets using Adobe Creative Suite.',
-    category: 'Design & Creative',
+    title: 'Tennis Tournament Results',
+    organizer: 'Chennai Tennis Club',
+    location: 'SDAT Tennis Stadium, Chennai',
+    description: 'Final results and winners of the annual tennis championship. Complete bracket results, match scores, and winner photographs in commemorative poster format.',
+    category: 'Tennis',
     type: 'image',
     url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹25K-40K/project',
-    experience: '1-2 years',
-    jobType: 'need',
-    postedBy: 'Sunita Singh',
-    language: 'English',
-    isUrgent: true
-  },
-  {
-    id: '5',
-    title: 'Data Analyst Role Available',
-    company: 'Analytics Pro Ltd',
-    location: 'Pune, Maharashtra',
-    description: 'Seeking a data analyst to help derive insights from large datasets and create meaningful reports for business decisions. Python and SQL expertise required.',
-    category: 'Data & Analytics',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹8-12 LPA',
-    experience: '2-4 years',
-    jobType: 'offer',
-    postedBy: 'Vikash Kumar',
+    eventDate: 'Completed Feb 2025',
+    registrationFee: 'Results Only',
+    eventType: 'tournament',
+    postedBy: 'Tennis Club Secretary',
     language: 'English'
   },
   {
+    id: '5',
+    title: 'Swimming Championship Guidelines',
+    organizer: 'Hyderabad Aquatic Center',
+    location: 'Olympic Pool, Hyderabad',
+    description: 'Official swimming competition rules, event categories, timing standards, and registration procedures. All participants must review these guidelines before registration.',
+    category: 'Swimming',
+    type: 'pdf',
+    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
+    eventDate: '10-12 May 2025',
+    registrationFee: '₹300 per event',
+    eventType: 'tournament',
+    postedBy: 'Swimming Association',
+    language: 'English',
+    isUpcoming: true
+  },
+  {
     id: '6',
-    title: 'Math Teacher Needed Urgently',
-    company: 'Community School',
-    location: 'Chennai, Tamil Nadu',
-    description: 'Our community school needs a dedicated teacher for mathematics and science subjects for classes 6-10. B.Ed qualification required.',
-    category: 'Education & Training',
+    title: 'Athletic Meet Event Poster',
+    organizer: 'Pune Athletic Club',
+    location: 'Shiv Chhatrapati Sports Complex',
+    description: 'Annual athletic meet featuring track and field events. Event schedule, participant guidelines, and prize distribution details in colorful event poster.',
+    category: 'Athletics',
     type: 'image',
     url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹3-5 LPA',
-    experience: '1-3 years',
-    jobType: 'need',
-    postedBy: 'School Committee',
-    language: 'Tamil',
-    isUrgent: true
+    eventDate: '25-27 April 2025',
+    registrationFee: '₹150 per event',
+    eventType: 'tournament',
+    postedBy: 'Athletic Committee',
+    language: 'Marathi',
+    isUpcoming: true
   },
   {
     id: '7',
-    title: 'Sales Manager Position',
-    company: 'Retail Chain Ltd',
-    location: 'Hyderabad, Telangana',
-    description: 'Looking for an experienced sales manager to lead our retail operations. Must have team management experience and strong communication skills.',
-    category: 'Marketing & Sales',
+    title: 'Badminton League Rules & Format',
+    organizer: 'Kolkata Badminton Association',
+    location: 'Netaji Indoor Stadium, Kolkata',
+    description: 'Complete league format, match rules, player regulations, and tournament structure for the professional badminton league season.',
+    category: 'Badminton',
     type: 'pdf',
     url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹6-10 LPA',
-    experience: '3-6 years',
-    jobType: 'offer',
-    postedBy: 'HR Department',
+    eventDate: 'June-Aug 2025',
+    registrationFee: '₹1000 per player',
+    eventType: 'tournament',
+    postedBy: 'League Organizer',
     language: 'English'
   },
   {
     id: '8',
-    title: 'Web Developer Wanted',
-    company: 'StartUp Hub',
-    location: 'Gurgaon, Haryana',
-    description: 'Join our startup team as a web developer. Work with latest technologies including React, Node.js, and cloud platforms. Equity offered.',
-    category: 'IT & Software',
+    title: 'Volleyball Championship Highlights',
+    organizer: 'Goa Volleyball Federation',
+    location: 'Beach Sports Arena, Goa',
+    description: 'Championship highlights, winning moments, team photographs, and tournament memories captured in this commemorative poster presentation.',
+    category: 'Volleyball',
     type: 'image',
     url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
     thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-8 LPA + Equity',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Tech Lead',
+    eventDate: 'Completed Jan 2025',
+    registrationFee: 'Highlights Only',
+    eventType: 'tournament',
+    postedBy: 'Sports Photographer',
     language: 'English'
   }
 ];
 
-const getJobTypeColor = (jobType: string) => {
-  return jobType === 'offer' ? AppColors.success : AppColors.blue;
+const getEventTypeColor = (eventType: string) => {
+  switch(eventType) {
+    case 'tournament': return AppColors.sport;
+    case 'match': return AppColors.blue;
+    case 'training': return AppColors.green;
+    default: return AppColors.gray;
+  }
 };
 
-const EmploymentScreen = () => {
-  const [filteredJobs, setFilteredJobs] = useState<JobPost[]>(jobPosts);
+const SportsScreen = () => {
+  const [filteredEvents, setFilteredEvents] = useState<SportsEvent[]>(sportsEvents);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<SportsEvent | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
-  // Filter jobs based on search only
+  // Filter events based on search only
   useEffect(() => {
-    filterJobs();
+    filterEvents();
   }, [searchQuery]);
 
-  const filterJobs = () => {
-    let filtered = jobPosts;
+  const filterEvents = () => {
+    let filtered = sportsEvents;
 
     // Apply search filter only
     if (searchQuery.trim()) {
-      filtered = filtered.filter(job => {
+      filtered = filtered.filter(event => {
         const query = searchQuery.toLowerCase();
         return (
-          job.title.toLowerCase().includes(query) ||
-          job.description.toLowerCase().includes(query) ||
-          job.category.toLowerCase().includes(query) ||
-          job.company.toLowerCase().includes(query) ||
-          job.location.toLowerCase().includes(query)
+          event.title.toLowerCase().includes(query) ||
+          event.description.toLowerCase().includes(query) ||
+          event.category.toLowerCase().includes(query) ||
+          event.organizer.toLowerCase().includes(query) ||
+          event.location.toLowerCase().includes(query)
         );
       });
     }
 
-    setFilteredJobs(filtered);
+    setFilteredEvents(filtered);
   };
 
   const onRefresh = () => {
@@ -284,14 +302,14 @@ const EmploymentScreen = () => {
     }, 1000);
   };
 
-  const openJob = (job: JobPost) => {
-    setSelectedJob(job);
-    if (job.type === 'image') {
+  const openEvent = (event: SportsEvent) => {
+    setSelectedEvent(event);
+    if (event.type === 'image') {
       setImageModalVisible(true);
-    } else if (job.type === 'pdf') {
+    } else if (event.type === 'pdf') {
       setPdfModalVisible(true);
     } else {
-      Alert.alert('Job Details', `${job.title}\n\n${job.description}\n\nSalary: ${job.salary}\nExperience: ${job.experience}\nContact: ${job.postedBy}`, [
+      Alert.alert('Event Details', `${event.title}\n\n${event.description}\n\nDate: ${event.eventDate}\nLocation: ${event.location}\nFee: ${event.registrationFee}`, [
         { text: 'Close', style: 'cancel' }
       ]);
     }
@@ -300,7 +318,7 @@ const EmploymentScreen = () => {
   const closeModals = () => {
     setImageModalVisible(false);
     setPdfModalVisible(false);
-    setSelectedJob(null);
+    setSelectedEvent(null);
   };
 
   // PDF Modal Component
@@ -322,9 +340,9 @@ const EmploymentScreen = () => {
             <View style={styles.pdfHeaderContent}>
               <View style={styles.titleContainer}>
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
-                  {selectedJob?.title}
+                  {selectedEvent?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>💼 Job Posting</Text>
+                <Text style={styles.viewerLabel}>🏆 Sports Event</Text>
               </View>
               <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
@@ -333,9 +351,9 @@ const EmploymentScreen = () => {
           </View>
           
           <View style={styles.pdfContent}>
-            {selectedJob && (
+            {selectedEvent && (
               <WebView
-                source={{ uri: getPdfViewerUrl(selectedJob.url) }}
+                source={{ uri: getPdfViewerUrl(selectedEvent.url) }}
                 style={styles.webView}
                 startInLoadingState={true}
                 javaScriptEnabled={true}
@@ -343,13 +361,13 @@ const EmploymentScreen = () => {
                 renderLoading={() => (
                   <View style={styles.loadingContainer}>
                     <View style={styles.loadingSpinner}>
-                      <Text style={styles.loadingEmoji}>📄</Text>
+                      <Text style={styles.loadingEmoji}>📋</Text>
                     </View>
-                    <Text style={styles.loadingText}>Loading Job Details...</Text>
+                    <Text style={styles.loadingText}>Loading Event Details...</Text>
                   </View>
                 )}
                 onError={() => {
-                  Alert.alert('Error', 'Unable to load job details');
+                  Alert.alert('Error', 'Unable to load event details');
                 }}
               />
             )}
@@ -372,7 +390,7 @@ const EmploymentScreen = () => {
         <View style={styles.modalHeader}>
           <View style={styles.modalHeaderContent}>
             <Text style={styles.modalTitle} numberOfLines={1}>
-              {selectedJob?.title}
+              {selectedEvent?.title}
             </Text>
             <TouchableOpacity onPress={closeModals} style={styles.closeButton}>
               <CloseIcon size={24} color={AppColors.white} />
@@ -381,9 +399,9 @@ const EmploymentScreen = () => {
         </View>
         
         <View style={styles.imageModalContent}>
-          {selectedJob && (
+          {selectedEvent && (
             <Image
-              source={{ uri: selectedJob.url }}
+              source={{ uri: selectedEvent.url }}
               style={styles.fullScreenImage}
               resizeMode="contain"
             />
@@ -392,32 +410,30 @@ const EmploymentScreen = () => {
         
         <View style={styles.modalFooter}>
           <Text style={styles.modalFooterText}>
-            {selectedJob?.company} • {selectedJob?.location}
+            {selectedEvent?.organizer} • {selectedEvent?.location}
           </Text>
         </View>
       </View>
     </Modal>
   );
 
-  // Type Filter Component - REMOVED
-
-  // Job Card Component
-  const JobCard = ({ item }: { item: JobPost }) => (
+  // Event Card Component
+  const EventCard = ({ item }: { item: SportsEvent }) => (
     <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => openJob(item)}
+      style={styles.eventCard}
+      onPress={() => openEvent(item)}
       activeOpacity={0.8}
     >
-      <View style={styles.jobHeader}>
-        <View style={[styles.typeIndicator, { backgroundColor: getJobTypeColor(item.jobType) }]}>
+      <View style={styles.eventHeader}>
+        <View style={[styles.typeIndicator, { backgroundColor: getEventTypeColor(item.eventType) }]}>
           {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
           {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
-          {item.type === 'posting' && <BriefcaseIcon size={24} color={AppColors.white} />}
+          {item.type === 'event' && <SportIcon size={24} color={AppColors.white} />}
         </View>
-        {item.isUrgent && (
-          <View style={styles.urgentBadge}>
-            <StarIcon size={12} color={AppColors.white} />
-            <Text style={styles.urgentText}>URGENT</Text>
+        {item.isUpcoming && (
+          <View style={styles.upcomingBadge}>
+            <TrophyIcon size={12} color={AppColors.white} />
+            <Text style={styles.upcomingText}>UPCOMING</Text>
           </View>
         )}
       </View>
@@ -432,26 +448,37 @@ const EmploymentScreen = () => {
         </View>
       )}
       
-      <View style={styles.jobInfo}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
-        <Text style={styles.companyName}>{item.company}</Text>
-        <Text style={styles.jobDescription} numberOfLines={3}>
+      <View style={styles.eventInfo}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        <Text style={styles.organizerName}>{item.organizer}</Text>
+        <Text style={styles.eventDescription} numberOfLines={3}>
           {item.description}
         </Text>
         
-        <View style={styles.jobFooter}>
-          <View style={styles.jobMeta}>
-            <Text style={styles.locationText}>{item.location}</Text>
-            <Text style={styles.salaryText}>{item.salary}</Text>
+        <View style={styles.eventDetails}>
+          <View style={styles.detailRow}>
+            <CalendarIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText}>{item.eventDate}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <MapIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText}>{item.location}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.eventFooter}>
+          <View style={styles.eventMeta}>
+            <Text style={styles.categoryText}>{item.category}</Text>
+            <Text style={styles.feeText}>{item.registrationFee}</Text>
           </View>
           <View style={styles.badgeContainer}>
-            <View style={[styles.typeBadge, { backgroundColor: getJobTypeColor(item.jobType) }]}>
+            <View style={[styles.typeBadge, { backgroundColor: getEventTypeColor(item.eventType) }]}>
               <Text style={styles.typeBadgeText}>
-                {item.jobType === 'offer' ? 'OFFER' : 'NEED'}
+                {item.eventType.toUpperCase()}
               </Text>
             </View>
-            <View style={[styles.categoryBadge, { backgroundColor: AppColors.primary }]}>
-              <Text style={styles.categoryBadgeText}>{item.category}</Text>
+            <View style={[styles.formatBadge, { backgroundColor: AppColors.primary }]}>
+              <Text style={styles.formatBadgeText}>{item.type.toUpperCase()}</Text>
             </View>
           </View>
         </View>
@@ -463,7 +490,7 @@ const EmploymentScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={AppColors.primary} />
-        <Text style={styles.loadingText}>Loading job opportunities...</Text>
+        <Text style={styles.loadingText}>Loading sports events...</Text>
       </View>
     );
   }
@@ -477,28 +504,28 @@ const EmploymentScreen = () => {
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Employment</Text>
-          <Text style={styles.headerSubtitle}>{filteredJobs.length} opportunities available</Text>
+          <Text style={styles.headerTitle}>Sports</Text>
+          <Text style={styles.headerSubtitle}>{filteredEvents.length} events available</Text>
         </View>
       </View>
 
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Text style={styles.statNumber}>{sportsEvents.length}</Text>
+          <Text style={styles.statLabel}>Total Events</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'offer').length}</Text>
-          <Text style={styles.statLabel}>Offers</Text>
+          <Text style={styles.statNumber}>{sportsEvents.filter(e => e.eventType === 'tournament').length}</Text>
+          <Text style={styles.statLabel}>Tournaments</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'need').length}</Text>
-          <Text style={styles.statLabel}>Needs</Text>
+          <Text style={styles.statNumber}>{sportsEvents.filter(e => e.eventType === 'match').length}</Text>
+          <Text style={styles.statLabel}>Matches</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.isUrgent).length}</Text>
-          <Text style={styles.statLabel}>Urgent</Text>
+          <Text style={styles.statNumber}>{sportsEvents.filter(e => e.isUpcoming).length}</Text>
+          <Text style={styles.statLabel}>Upcoming</Text>
         </View>
       </View>
 
@@ -507,7 +534,7 @@ const EmploymentScreen = () => {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search jobs, companies, locations..."
+          placeholder="Search events, sports, organizers, locations..."
           placeholderTextColor={AppColors.gray}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -519,12 +546,12 @@ const EmploymentScreen = () => {
         )}
       </View>
 
-      {/* Job List */}
+      {/* Event List */}
       <FlatList
-        data={filteredJobs}
-        renderItem={({ item }) => <JobCard item={item} />}
+        data={filteredEvents}
+        renderItem={({ item }) => <EventCard item={item} />}
         keyExtractor={(item) => item.id}
-        style={styles.jobList}
+        style={styles.eventList}
         showsVerticalScrollIndicator={false}
         numColumns={1}
         refreshControl={
@@ -536,11 +563,11 @@ const EmploymentScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No Jobs Found</Text>
+            <Text style={styles.emptyTitle}>No Events Found</Text>
             <Text style={styles.emptyText}>
               {searchQuery
                 ? 'Try adjusting your search terms'
-                : 'No job opportunities available'}
+                : 'No sports events available'}
             </Text>
           </View>
         }
@@ -637,12 +664,12 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   
-  // Job List styles
-  jobList: {
+  // Event List styles
+  eventList: {
     flex: 1,
     paddingHorizontal: 10,
   },
-  jobCard: {
+  eventCard: {
     backgroundColor: AppColors.white,
     marginHorizontal: 5,
     marginVertical: 6,
@@ -654,7 +681,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
-  jobHeader: {
+  eventHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -668,7 +695,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  urgentBadge: {
+  upcomingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: AppColors.warning,
@@ -677,7 +704,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 4,
   },
-  urgentText: {
+  upcomingText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: 'bold',
@@ -694,47 +721,60 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  jobInfo: {
+  eventInfo: {
     padding: 12,
     paddingTop: 0,
   },
-  jobTitle: {
+  eventTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: AppColors.dark,
     marginBottom: 4,
     lineHeight: 20,
   },
-  companyName: {
+  organizerName: {
     fontSize: 13,
     color: AppColors.primary,
     fontWeight: '500',
     marginBottom: 6,
   },
-  jobDescription: {
+  eventDescription: {
     fontSize: 13,
     color: AppColors.gray,
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  jobFooter: {
+  eventDetails: {
+    marginBottom: 10,
+    gap: 4,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 12,
+    color: AppColors.gray,
+  },
+  eventFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  jobMeta: {
+  eventMeta: {
     flex: 1,
   },
-  locationText: {
+  categoryText: {
     fontSize: 12,
-    color: AppColors.gray,
-    fontWeight: '500',
+    color: AppColors.sport,
+    fontWeight: '600',
     marginBottom: 2,
   },
-  salaryText: {
+  feeText: {
     fontSize: 11,
     color: AppColors.teal,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   badgeContainer: {
     flexDirection: 'row',
@@ -750,12 +790,12 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontWeight: '500',
   },
-  categoryBadge: {
+  formatBadge: {
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  categoryBadgeText: {
+  formatBadgeText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: '500',
@@ -897,4 +937,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EmploymentScreen;
+export default SportsScreen;
