@@ -1,14 +1,6 @@
 /**
- * DukanScreen Component - Simple Local Shop Directory
- * 
- * Required Dependencies:
- * npm install react-native-svg
- * 
- * Features:
- * - Basic shop listings with location and category
- * - Simple search functionality
- * - Shop details modal with complete address
- * - Contact information and directions
+ * Simplified DukanScreen Component - Essential Shop Information
+ * Focus on: Shop Name, Owner, Location, Contact, and Key Details
  */
 
 import React, { useState } from 'react';
@@ -18,10 +10,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Dimensions,
   Modal,
-  StatusBar,
   TextInput,
   Linking,
   Alert,
@@ -31,20 +21,21 @@ import Svg, { Path } from 'react-native-svg';
 const { width, height } = Dimensions.get('window');
 
 const AppColors = {
-  primary: '#2563eb',
+  primary: '#7dd3c0',
   white: '#ffffff',
   black: '#000000',
   gray: '#666666',
-  lightGray: '#f3f4f6',
-  dark: '#1f2937',
-  green: '#10b981',
-  red: '#ef4444',
-  blue: '#3b82f6',
-  border: '#e5e7eb',
-  cream: '#fef7ed',
+  lightGray: '#f8f9fa',
+  dark: '#2a2a2a',
+  green: '#28a745',
+  red: '#dc3545',
+  blue: '#007bff',
+  border: '#dee2e6',
+  orange: '#fd7e14',
+  teal: '#7dd3c0',
 };
 
-// SVG Icon Components
+// SVG Icons
 const ShopIcon = ({ size = 24, color = AppColors.primary }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -72,28 +63,19 @@ const PhoneIcon = ({ size = 16, color = AppColors.green }) => (
   </Svg>
 );
 
+const PersonIcon = ({ size = 16, color = AppColors.blue }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"
+      fill={color}
+    />
+  </Svg>
+);
+
 const SearchIcon = ({ size = 20, color = AppColors.gray }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
-      fill={color}
-    />
-  </Svg>
-);
-
-const ClockIcon = ({ size = 14, color = AppColors.gray }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.7L16.2,16.2Z"
-      fill={color}
-    />
-  </Svg>
-);
-
-const DirectionIcon = ({ size = 16, color = AppColors.blue }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M21,16V14L13,9V3.5A1.5,1.5 0 0,0 11.5,2A1.5,1.5 0 0,0 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"
       fill={color}
     />
   </Svg>
@@ -108,144 +90,107 @@ const CloseIcon = ({ size = 24, color = AppColors.white }) => (
   </Svg>
 );
 
-interface DukanItem {
+interface Shop {
   id: string;
-  name: string;
-  category: string;
-  description: string;
+  shopName: string;
+  ownerName: string;
   location: string;
-  fullAddress: string;
-  distance: string;
   phone: string;
-  imageUrl: string;
   isOpen: boolean;
-  openingHours: string;
+  category: string;
+  products: string[];
+  experience: string;
+  specialty: string;
 }
 
-const dukanItems: DukanItem[] = [
+const shops: Shop[] = [
   {
     id: '1',
-    name: 'Sharma General Store',
-    category: 'Grocery',
-    description: 'Fresh vegetables, daily essentials, and household items',
+    shopName: 'Sharma General Store',
+    ownerName: 'Rajesh Sharma',
     location: 'Rajouri Garden',
-    fullAddress: 'Shop No. 15, Main Market, Rajouri Garden, Near Metro Station, New Delhi - 110027',
-    distance: '0.2 km',
     phone: '+91 9876543210',
-    imageUrl: 'https://images.unsplash.com/photo-1556909114-4f2d3d6a4b8a?w=400&h=300&fit=crop',
     isOpen: true,
-    openingHours: '8:00 AM - 10:00 PM',
+    category: 'Grocery & Daily Needs',
+    products: ['Fresh vegetables', 'Dairy products', 'Household items', 'Snacks'],
+    experience: '15 years in grocery business',
+    specialty: 'Fresh vegetables delivered daily from local farms'
   },
   {
     id: '2',
-    name: 'Delhi Sweets Corner',
-    category: 'Sweets & Snacks',
-    description: 'Traditional Indian sweets and savory snacks',
+    shopName: 'Delhi Sweets Corner',
+    ownerName: 'Mohan Gupta',
     location: 'Karol Bagh',
-    fullAddress: 'Plot 45, Karol Bagh Market, Opposite Gurudwara, Karol Bagh, New Delhi - 110005',
-    distance: '1.5 km',
     phone: '+91 9123456789',
-    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
     isOpen: true,
-    openingHours: '9:00 AM - 11:00 PM',
+    category: 'Sweets & Traditional Food',
+    products: ['Traditional sweets', 'Samosas', 'Chole bhature', 'Festival specials'],
+    experience: '25 years in sweet making',
+    specialty: 'Authentic Delhi-style sweets and fresh snacks'
   },
   {
     id: '3',
-    name: 'Mobile World',
-    category: 'Electronics',
-    description: 'Latest smartphones, accessories, and repair services',
+    shopName: 'Mobile World',
+    ownerName: 'Amit Kumar',
     location: 'Lajpat Nagar',
-    fullAddress: 'Shop 78, Central Market, Lajpat Nagar IV, Near Post Office, New Delhi - 110024',
-    distance: '2.3 km',
     phone: '+91 8765432109',
-    imageUrl: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&h=300&fit=crop',
     isOpen: false,
-    openingHours: '10:00 AM - 9:00 PM',
+    category: 'Electronics & Mobile',
+    products: ['Smartphones', 'Mobile accessories', 'Repairs', 'Screen guards'],
+    experience: '8 years in mobile business',
+    specialty: 'Expert mobile repairs and latest accessories'
   },
   {
     id: '4',
-    name: 'Fashion Hub',
-    category: 'Clothing',
-    description: 'Trendy clothes for men, women, and children',
-    location: 'Janpath',
-    fullAddress: 'Store 12, Janpath Market, Connaught Place, Near Palika Bazaar, New Delhi - 110001',
-    distance: '3.1 km',
-    phone: '+91 7654321098',
-    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+    shopName: 'Mehta Medical',
+    ownerName: 'Dr. Suresh Mehta',
+    location: 'Rohini',
+    phone: '+91 9988776655',
     isOpen: true,
-    openingHours: '11:00 AM - 10:00 PM',
+    category: 'Pharmacy & Health',
+    products: ['Medicines', 'Health supplements', 'Medical equipment', 'First aid'],
+    experience: '20 years as pharmacist',
+    specialty: '24/7 emergency medicines and health consultation'
   },
   {
     id: '5',
-    name: 'Mehta Medical Store',
-    category: 'Pharmacy',
-    description: '24/7 pharmacy with all medicines and health products',
-    location: 'Rohini',
-    fullAddress: 'Sector 7, Rohini, Near Metro Station, Main Road, Rohini, New Delhi - 110085',
-    distance: '0.8 km',
-    phone: '+91 9988776655',
-    imageUrl: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop',
+    shopName: 'Fashion Hub',
+    ownerName: 'Priya Singh',
+    location: 'Janpath',
+    phone: '+91 7654321098',
     isOpen: true,
-    openingHours: '24 Hours',
+    category: 'Clothing & Fashion',
+    products: ['Ladies wear', 'Kids clothing', 'Accessories', 'Ethnic wear'],
+    experience: '12 years in fashion retail',
+    specialty: 'Latest trends and custom tailoring services'
   },
   {
     id: '6',
-    name: 'Book Paradise',
-    category: 'Books & Stationery',
-    description: 'Academic books, novels, and stationery items',
-    location: 'Daryaganj',
-    fullAddress: 'Shop 23, Sunday Book Market, Daryaganj, Near Red Fort, Old Delhi - 110002',
-    distance: '4.2 km',
-    phone: '+91 8899770066',
-    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop',
-    isOpen: false,
-    openingHours: '10:00 AM - 8:00 PM',
-  },
-  {
-    id: '7',
-    name: 'Spice Garden',
-    category: 'Spices & Herbs',
-    description: 'Fresh spices, herbs, and organic food products',
+    shopName: 'Spice Garden',
+    ownerName: 'Ramesh Agarwal',
     location: 'Chandni Chowk',
-    fullAddress: 'Khari Baoli, Chandni Chowk, Near Fatehpuri Mosque, Old Delhi - 110006',
-    distance: '5.5 km',
     phone: '+91 7766554433',
-    imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebc227d?w=400&h=300&fit=crop',
     isOpen: true,
-    openingHours: '9:00 AM - 7:00 PM',
-  },
-  {
-    id: '8',
-    name: 'Tech Repairs',
-    category: 'Services',
-    description: 'Laptop, mobile, and electronic device repairs',
-    location: 'Nehru Place',
-    fullAddress: 'Shop 156, Nehru Place Market, Near Metro Station, Nehru Place, New Delhi - 110019',
-    distance: '3.8 km',
-    phone: '+91 6655443322',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400&h=300&fit=crop',
-    isOpen: true,
-    openingHours: '10:00 AM - 8:00 PM',
+    category: 'Spices & Herbs',
+    products: ['Fresh spices', 'Dry fruits', 'Organic herbs', 'Tea varieties'],
+    experience: '30 years in spice trade',
+    specialty: 'Pure and fresh spices directly from farms'
   }
 ];
 
-const categories = ['All', 'Grocery', 'Sweets & Snacks', 'Electronics', 'Clothing', 'Pharmacy', 'Books & Stationery', 'Spices & Herbs', 'Services'];
-
 export default function DukanScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedShop, setSelectedShop] = useState<DukanItem | null>(null);
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
 
-  const filteredShops = dukanItems.filter(shop => {
-    const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-    const matchesSearch = shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         shop.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         shop.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredShops = shops.filter(shop =>
+    shop.shopName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const openShopDetails = (shop: DukanItem) => {
+  const openShopDetails = (shop: Shop) => {
     setSelectedShop(shop);
     setModalVisible(true);
   };
@@ -261,13 +206,6 @@ export default function DukanScreen() {
     });
   };
 
-  const openDirections = (address: string) => {
-    const encodedAddress = encodeURIComponent(address);
-    Linking.openURL(`https://maps.google.com/?q=${encodedAddress}`).catch(() => {
-      Alert.alert('Error', 'Unable to open maps');
-    });
-  };
-
   const ShopDetailModal = () => (
     <Modal
       visible={modalVisible}
@@ -276,160 +214,108 @@ export default function DukanScreen() {
       onRequestClose={closeModal}
     >
       <View style={styles.modalOverlay}>
-        <StatusBar backgroundColor="rgba(0,0,0,0.5)" barStyle="light-content" />
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Shop Details</Text>
             <TouchableOpacity onPress={closeModal} style={styles.modalCloseButton}>
-              <CloseIcon size={24} color={AppColors.white} />
+              <CloseIcon size={20} color={AppColors.white} />
             </TouchableOpacity>
           </View>
 
           {selectedShop && (
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              <Image 
-                source={{ uri: selectedShop.imageUrl }} 
-                style={styles.modalImage}
-                resizeMode="cover"
-              />
+            <View style={styles.modalContent}>
+              <Text style={styles.modalShopName}>{selectedShop.shopName}</Text>
               
-              <View style={styles.modalInfo}>
-                <View style={styles.modalNameRow}>
-                  <Text style={styles.modalShopName}>{selectedShop.name}</Text>
-                  <View style={[styles.statusBadge, { 
-                    backgroundColor: selectedShop.isOpen ? AppColors.green : AppColors.red 
-                  }]}>
-                    <Text style={styles.statusText}>
-                      {selectedShop.isOpen ? 'Open' : 'Closed'}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.modalCategory}>{selectedShop.category}</Text>
-                <Text style={styles.modalDescription}>{selectedShop.description}</Text>
-
-                <View style={styles.infoSection}>
-                  <Text style={styles.sectionTitle}>Address:</Text>
-                  <View style={styles.infoRow}>
-                    <LocationIcon size={18} color={AppColors.blue} />
-                    <Text style={styles.infoText}>{selectedShop.fullAddress}</Text>
-                  </View>
-                  
-                  <Text style={styles.sectionTitle}>Opening Hours:</Text>
-                  <View style={styles.infoRow}>
-                    <ClockIcon size={18} color={AppColors.gray} />
-                    <Text style={styles.infoText}>{selectedShop.openingHours}</Text>
-                  </View>
-
-                  <Text style={styles.sectionTitle}>Contact:</Text>
-                  <View style={styles.infoRow}>
-                    <PhoneIcon size={18} color={AppColors.green} />
-                    <Text style={styles.infoText}>{selectedShop.phone}</Text>
-                  </View>
-
-                  <Text style={styles.sectionTitle}>Distance:</Text>
-                  <Text style={styles.distanceText}>{selectedShop.distance} away</Text>
-                </View>
-
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.callButton]}
-                    onPress={() => makePhoneCall(selectedShop.phone)}
-                  >
-                    <PhoneIcon size={18} color={AppColors.white} />
-                    <Text style={styles.actionButtonText}>Call Now</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.directionsButton]}
-                    onPress={() => openDirections(selectedShop.fullAddress)}
-                  >
-                    <DirectionIcon size={18} color={AppColors.white} />
-                    <Text style={styles.actionButtonText}>Get Directions</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.infoRow}>
+                <PersonIcon size={16} color={AppColors.blue} />
+                <Text style={styles.infoLabel}>Owner:</Text>
+                <Text style={styles.infoValue}>{selectedShop.ownerName}</Text>
               </View>
-            </ScrollView>
+
+              <View style={styles.infoRow}>
+                <LocationIcon size={16} color={AppColors.gray} />
+                <Text style={styles.infoLabel}>Location:</Text>
+                <Text style={styles.infoValue}>{selectedShop.location}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Category:</Text>
+                <Text style={styles.infoValue}>{selectedShop.category}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Experience:</Text>
+                <Text style={styles.infoValue}>{selectedShop.experience}</Text>
+              </View>
+
+              <View style={styles.specialtyContainer}>
+                <Text style={styles.sectionTitle}>Specialty:</Text>
+                <Text style={styles.specialtyText}>{selectedShop.specialty}</Text>
+              </View>
+
+              <View style={styles.productsContainer}>
+                <Text style={styles.sectionTitle}>Products:</Text>
+                {selectedShop.products.map((product, index) => (
+                  <Text key={index} style={styles.productText}>• {product}</Text>
+                ))}
+              </View>
+
+              <TouchableOpacity 
+                style={styles.callButton}
+                onPress={() => makePhoneCall(selectedShop.phone)}
+              >
+                <PhoneIcon size={18} color={AppColors.white} />
+                <Text style={styles.callButtonText}>Call {selectedShop.ownerName}</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
     </Modal>
   );
 
-  const ShopCard = ({ shop }: { shop: DukanItem }) => (
+  const ShopCard = ({ shop }: { shop: Shop }) => (
     <TouchableOpacity 
       style={styles.shopCard}
       onPress={() => openShopDetails(shop)}
       activeOpacity={0.7}
     >
-      <Image 
-        source={{ uri: shop.imageUrl }} 
-        style={styles.shopImage}
-        resizeMode="cover"
-      />
-      
+      <View style={styles.cardHeader}>
+        <View style={styles.shopIconContainer}>
+          <ShopIcon size={20} color={AppColors.primary} />
+        </View>
+        <View style={[styles.statusDot, { 
+          backgroundColor: shop.isOpen ? AppColors.green : AppColors.red 
+        }]} />
+      </View>
+
       <View style={styles.shopInfo}>
-        <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-        <Text style={styles.shopCategory}>{shop.category}</Text>
-        <Text style={styles.shopDescription} numberOfLines={2}>
-          {shop.description}
-        </Text>
+        <Text style={styles.shopName} numberOfLines={1}>{shop.shopName}</Text>
+        
+        <View style={styles.ownerRow}>
+          <PersonIcon size={14} color={AppColors.blue} />
+          <Text style={styles.ownerText} numberOfLines={1}>{shop.ownerName}</Text>
+        </View>
 
         <View style={styles.locationRow}>
           <LocationIcon size={14} color={AppColors.gray} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {shop.location} • {shop.distance}
-          </Text>
+          <Text style={styles.locationText} numberOfLines={1}>{shop.location}</Text>
         </View>
 
-        <View style={styles.shopFooter}>
-          <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { 
-              backgroundColor: shop.isOpen ? AppColors.green : AppColors.red 
-            }]} />
-            <Text style={[styles.statusLabel, {
-              color: shop.isOpen ? AppColors.green : AppColors.red
-            }]}>
-              {shop.isOpen ? 'Open Now' : 'Closed'}
-            </Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.callQuickButton}
-            onPress={() => makePhoneCall(shop.phone)}
-          >
-            <PhoneIcon size={14} color={AppColors.white} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.categoryLabel}>{shop.category}</Text>
       </View>
-    </TouchableOpacity>
-  );
 
-  const CategoryFilter = () => (
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false}
-      style={styles.categoryContainer}
-      contentContainerStyle={styles.categoryContent}
-    >
-      {categories.map((category) => (
-        <TouchableOpacity
-          key={category}
-          style={[
-            styles.categoryButton,
-            selectedCategory === category && styles.categoryButtonActive
-          ]}
-          onPress={() => setSelectedCategory(category)}
-        >
-          <Text style={[
-            styles.categoryButtonText,
-            selectedCategory === category && styles.categoryButtonTextActive
-          ]}>
-            {category}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+      <TouchableOpacity 
+        style={styles.contactButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          makePhoneCall(shop.phone);
+        }}
+      >
+        <PhoneIcon size={16} color={AppColors.white} />
+        <Text style={styles.contactText}>Call</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 
   const SearchBar = () => (
@@ -438,7 +324,7 @@ export default function DukanScreen() {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search shops or locations..."
+          placeholder="Search shops, owners, or location..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={AppColors.gray}
@@ -451,31 +337,17 @@ export default function DukanScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Local Dukan</Text>
-        <Text style={styles.headerSubtitle}>Find shops near you</Text>
+        <Text style={styles.headerSubtitle}>{filteredShops.length} shops found</Text>
       </View>
 
       <SearchBar />
-      <CategoryFilter />
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <ShopIcon size={18} color={AppColors.primary} />
-          <Text style={styles.statText}>{filteredShops.length} Shops Found</Text>
-        </View>
-        
-        <View style={styles.statItem}>
-          <Text style={styles.openShopsCount}>
-            {filteredShops.filter(shop => shop.isOpen).length} Open Now
-          </Text>
-        </View>
-      </View>
 
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
-        <View style={styles.shopsGrid}>
+        <View style={styles.shopsContainer}>
           {filteredShops.map((shop) => (
             <ShopCard key={shop.id} shop={shop} />
           ))}
@@ -485,17 +357,9 @@ export default function DukanScreen() {
           <View style={styles.emptyState}>
             <ShopIcon size={48} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>No shops found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try adjusting your search
-            </Text>
+            <Text style={styles.emptySubtitle}>Try searching with different keywords</Text>
           </View>
         )}
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            🏪 Local businesses directory
-          </Text>
-        </View>
       </ScrollView>
 
       <ShopDetailModal />
@@ -515,7 +379,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: AppColors.white,
     marginBottom: 5,
@@ -546,75 +410,19 @@ const styles = StyleSheet.create({
     color: AppColors.dark,
     marginLeft: 10,
   },
-  categoryContainer: {
-    backgroundColor: AppColors.cream,
-    paddingVertical: 10,
-    maxHeight: 60,
-  },
-  categoryContent: {
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  categoryButton: {
-    backgroundColor: AppColors.white,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    minHeight: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryButtonActive: {
-    backgroundColor: AppColors.primary,
-    borderColor: AppColors.primary,
-  },
-  categoryButtonText: {
-    fontSize: 13,
-    color: AppColors.dark,
-    fontWeight: '500',
-  },
-  categoryButtonTextActive: {
-    color: AppColors.white,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: AppColors.lightGray,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statText: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: AppColors.dark,
-    fontWeight: '500',
-  },
-  openShopsCount: {
-    fontSize: 13,
-    color: AppColors.green,
-    fontWeight: '600',
-  },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 20,
+    padding: 15,
   },
-  shopsGrid: {
-    paddingHorizontal: 10,
+  shopsContainer: {
+    gap: 12,
   },
   shopCard: {
     backgroundColor: AppColors.white,
-    marginHorizontal: 5,
-    marginVertical: 8,
     borderRadius: 12,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -623,74 +431,86 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: AppColors.border,
   },
-  shopImage: {
-    width: '100%',
-    height: 150,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  shopIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: AppColors.lightGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   shopInfo: {
-    padding: 15,
+    marginBottom: 15,
   },
   shopName: {
     fontSize: 18,
     fontWeight: '600',
     color: AppColors.dark,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  shopCategory: {
-    fontSize: 14,
-    color: AppColors.primary,
-    fontWeight: '500',
+  ownerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 6,
   },
-  shopDescription: {
+  ownerText: {
     fontSize: 14,
-    color: AppColors.gray,
-    lineHeight: 20,
-    marginBottom: 10,
+    color: AppColors.blue,
+    marginLeft: 6,
+    fontWeight: '500',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   locationText: {
-    fontSize: 13,
+    fontSize: 14,
     color: AppColors.gray,
     marginLeft: 6,
-    flex: 1,
   },
-  shopFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusLabel: {
+  categoryLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    color: AppColors.orange,
+    fontWeight: '500',
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
-  callQuickButton: {
-    padding: 8,
-    borderRadius: 20,
+  contactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: AppColors.green,
+    borderRadius: 8,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  contactText: {
+    color: AppColors.white,
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-    paddingHorizontal: 40,
   },
   emptyTitle: {
     fontSize: 18,
@@ -703,40 +523,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.gray,
     textAlign: 'center',
-    lineHeight: 20,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: AppColors.gray,
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   modalContainer: {
     backgroundColor: AppColors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: height * 0.85,
-    overflow: 'hidden',
+    borderRadius: 15,
+    width: '100%',
+    maxWidth: 350,
+    maxHeight: '80%',
   },
   modalHeader: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: AppColors.blue,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    paddingTop: 20,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
   },
   modalTitle: {
     fontSize: 18,
@@ -744,105 +555,76 @@ const styles = StyleSheet.create({
     color: AppColors.white,
   },
   modalCloseButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: 5,
+    borderRadius: 15,
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   modalContent: {
-    flex: 1,
-  },
-  modalImage: {
-    width: '100%',
-    height: 200,
-  },
-  modalInfo: {
     padding: 20,
-  },
-  modalNameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
   modalShopName: {
     fontSize: 22,
     fontWeight: 'bold',
     color: AppColors.dark,
-    flex: 1,
-    marginRight: 15,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: AppColors.white,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modalCategory: {
-    fontSize: 16,
-    color: AppColors.primary,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: AppColors.gray,
-    lineHeight: 22,
     marginBottom: 20,
+    textAlign: 'center',
   },
-  infoSection: {
-    marginBottom: 25,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.dark,
+    marginLeft: 8,
+    minWidth: 80,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: AppColors.gray,
+    marginLeft: 10,
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: AppColors.dark,
     marginBottom: 8,
-    marginTop: 12,
+    marginTop: 10,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 15,
+  specialtyContainer: {
+    marginTop: 15,
   },
-  infoText: {
+  specialtyText: {
+    fontSize: 14,
+    color: AppColors.gray,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  productsContainer: {
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  productText: {
     fontSize: 14,
     color: AppColors.dark,
-    marginLeft: 12,
-    flex: 1,
-    lineHeight: 20,
+    marginBottom: 4,
   },
-  distanceText: {
-    fontSize: 14,
-    color: AppColors.blue,
-    fontWeight: '500',
-    marginLeft: 12,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  actionButton: {
-    flex: 1,
+  callButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  callButton: {
     backgroundColor: AppColors.green,
+    borderRadius: 10,
+    paddingVertical: 14,
+    gap: 8,
+    marginTop: 10,
   },
-  directionsButton: {
-    backgroundColor: AppColors.blue,
-  },
-  actionButtonText: {
+  callButtonText: {
     color: AppColors.white,
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
   },
 });
