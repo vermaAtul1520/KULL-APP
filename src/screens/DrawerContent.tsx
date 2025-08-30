@@ -55,17 +55,17 @@ const MusicIcon = ({ size = 24, color = "#7dd3c0" }) => (
   </Svg>
 );
 
-const GavelIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const GamesIcon = ({ size = 24, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6 15l-2 2-2-2 2-2 2 2zM18 9l2-2 2 2-2 2-2-2z" 
+    <Path d="M6 12a6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6 6 6 0 0 0-6 6z" 
           stroke={color} 
           strokeWidth="2" 
           fill="none"/>
-    <Path d="M9 12l6-6M15 18l-6-6" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
-    <Path d="M2 22l4-4M18 6l4-4" 
+    <Circle cx="9" cy="9" r="1" fill={color}/>
+    <Circle cx="15" cy="9" r="1" fill={color}/>
+    <Circle cx="9" cy="15" r="1" fill={color}/>
+    <Circle cx="15" cy="15" r="1" fill={color}/>
+    <Path d="M12 6v2M12 16v2M6 12h2M16 12h2" 
           stroke={color} 
           strokeWidth="2" 
           strokeLinecap="round"/>
@@ -151,22 +151,22 @@ const AccountSearchIcon = ({ size = 24, color = "#7dd3c0" }) => (
   </Svg>
 );
 
-const HandsUpIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const SportsIcon = ({ size = 24, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="6" r="3" 
+    <Circle cx="12" cy="12" r="10" 
             stroke={color} 
             strokeWidth="2" 
             fill="none"/>
-    <Path d="M12 13v8M8 17l4-4 4 4" 
+    <Path d="M12 2a10 10 0 0 0 0 20M12 2a10 10 0 0 1 0 20" 
           stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M6 17c-1-1-1-3 0-4s3-1 4 0M18 17c1-1 1-3 0-4s-3-1-4 0" 
+          strokeWidth="2"/>
+    <Path d="M2 12h20" 
           stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+          strokeWidth="2"/>
+    <Circle cx="12" cy="12" r="2" 
+            stroke={color} 
+            strokeWidth="2" 
+            fill="none"/>
   </Svg>
 );
 
@@ -192,6 +192,100 @@ const StoreIcon = ({ size = 24, color = "#7dd3c0" }) => (
           stroke={color} 
           strokeWidth="2" 
           fill="none"/>
+  </Svg>
+);
+
+const MeetingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="2" y="3" width="20" height="14" rx="2" ry="2" 
+          stroke={color} 
+          strokeWidth="2" 
+          fill="none"/>
+    <Path d="M8 21l4-4 4 4" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"/>
+    <Circle cx="7" cy="9" r="2" 
+            stroke={color} 
+            strokeWidth="2" 
+            fill="none"/>
+    <Circle cx="17" cy="9" r="2" 
+            stroke={color} 
+            strokeWidth="2" 
+            fill="none"/>
+    <Path d="M12 6v6M9 9h6" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round"/>
+  </Svg>
+);
+
+const AppealIcon = ({ size = 24, color = "#7dd3c0" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          fill="none"/>
+    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"/>
+    <Circle cx="12" cy="13" r="1" fill={color}/>
+  </Svg>
+);
+
+const VoteIcon = ({ size = 24, color = "#7dd3c0" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="2" y="6" width="20" height="12" rx="2" ry="2" 
+          stroke={color} 
+          strokeWidth="2" 
+          fill="none"/>
+    <Path d="M12 2v4M8 6V2M16 6V2" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round"/>
+    <Path d="M7 10h10M7 14h6" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round"/>
+    <Circle cx="18" cy="12" r="2" 
+            stroke={color} 
+            strokeWidth="2" 
+            fill="none"/>
+    <Path d="m17 13 1 1 3-3" 
+          stroke={color} 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"/>
+  </Svg>
+);
+
+const SettingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33
+         1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09c0-.69-.39-1.31-1-1.51a1.65 1.65 0 0 0-1.82.33l-.06.06
+         a2 2 0 1 1-2.83-2.83l.06-.06c.46-.46.61-1.13.33-1.82a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+         c.69 0 1.31-.39 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 4.7l.06.06c.46.46 1.13.61
+         1.82.33.61-.2 1-.82 1-1.51V3a2 2 0 0 1 4 0v.09c0 .69.39 1.31 1 1.51.69.28 1.36.13 1.82-.33l.06-.06
+         a2 2 0 1 1 2.83 2.83l-.06.06c-.46.46-.61 1.13-.33 1.82.2.61.82 1 1.51 1H21a2 2 0 0 1 0 4h-.09
+         c-.69 0-1.31.39-1.51 1Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
@@ -232,13 +326,16 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
     {name: 'Occasions', icon: 'calendar'},
     {name: 'Kartavya', icon: 'briefcase'},
     {name: 'Bhajan', icon: 'music'},
-    {name: 'Laws and Decisions', icon: 'gavel'},
+    {name: 'Games', icon: 'games'},
     {name: 'City Search', icon: 'city'},
     {name: 'Organization Officer', icon: 'account-tie'},
     {name: 'Education', icon: 'school'},
     {name: 'Employment', icon: 'account-search'},
-    {name: 'Social Upliftment', icon: 'hands-up'},
+    {name: 'Sports', icon: 'sports'},
     {name: 'Dukan', icon: 'store'},
+    {name: 'Meetings', icon: 'meetings'},
+    {name: 'Appeal', icon: 'appeal'},
+    {name: 'Vote', icon: 'vote'},
   ];
 
   const handleMenuPress = (screenName: string) => {
@@ -284,8 +381,8 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         return <BriefcaseIcon {...iconProps} />;
       case 'music':
         return <MusicIcon {...iconProps} />;
-      case 'gavel':
-        return <GavelIcon {...iconProps} />;
+      case 'games':
+        return <GamesIcon {...iconProps} />;
       case 'city':
         return <CityIcon {...iconProps} />;
       case 'account-tie':
@@ -294,10 +391,16 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         return <SchoolIcon {...iconProps} />;
       case 'account-search':
         return <AccountSearchIcon {...iconProps} />;
-      case 'hands-up':
-        return <HandsUpIcon {...iconProps} />;
+      case 'sports':
+        return <SportsIcon {...iconProps} />;
       case 'store':
         return <StoreIcon {...iconProps} />;
+      case 'meetings':
+        return <MeetingsIcon {...iconProps} />;
+      case 'appeal':
+        return <AppealIcon {...iconProps} />;
+      case 'vote':
+        return <VoteIcon {...iconProps} />;
       default:
         return <BriefcaseIcon {...iconProps} />;
     }
@@ -344,13 +447,13 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         ))}
       </View>
 
-      {/* Donation Section */}
+      {/* Settings Section */}
       <View style={styles.donationSection}>
         <TouchableOpacity 
           style={styles.donationButton}
           onPress={() => props.navigation.navigate('HomeTab', { screen: 'Donation' })}>
-          <CurrencyIcon size={24} color="#7dd3c0" />
-          <Text style={styles.donationText}>Donation</Text>
+          <SettingsIcon size={24} color="#7dd3c0" />
+          <Text style={styles.donationText}>Settings </Text>
         </TouchableOpacity>
       </View>
 
