@@ -1,3 +1,4 @@
+import { getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -105,7 +106,9 @@ const PostScreen = () => {
   const [postingComment, setPostingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; author: string } | null>(null);
 
-  const COMMUNITY_ID = "688490a24f63d295e7026dd1";
+  console.log('commentsss', filteredPosts);
+  
+
 
   // Search functionality
   useEffect(() => {
@@ -251,6 +254,7 @@ const PostScreen = () => {
   const createPost = async (postData: { title: string; content: string; imageUrl?: string }) => {
     try {
       const headers = await getAuthHeaders();
+      const COMMUNITY_ID = await getCommunityId();
       const response = await fetch(`${BASE_URL}/api/posts/`, {
         method: 'POST',
         headers,
@@ -259,6 +263,8 @@ const PostScreen = () => {
           community: COMMUNITY_ID,
         }),
       });
+
+      console.log('responseArvind', response);
 
       if (!response.ok) {
         throw new Error('Failed to create post');
@@ -285,6 +291,9 @@ const PostScreen = () => {
       }
 
       const data = await response.json();
+
+      console.log('dataaaaaaaaa', data);
+      
       return data;
     } catch (error) {
       console.error('Error liking post:', error);
@@ -339,6 +348,9 @@ const PostScreen = () => {
         headers,
         body: JSON.stringify(body),
       });
+
+      console.log('responseArvind', response);
+      
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -518,6 +530,7 @@ const PostScreen = () => {
   };
 
   const handleCreatePost = async () => {
+    const COMMUNITY_ID = await getCommunityId();
     if (!newPost.title.trim() || !newPost.content.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -528,6 +541,7 @@ const PostScreen = () => {
     try {
       const postData = {
         title: newPost.title.trim(),
+        community: COMMUNITY_ID,
         content: newPost.content.trim(),
         imageUrl: newPost.selectedImage || newPost.imageUrl || undefined,
       };

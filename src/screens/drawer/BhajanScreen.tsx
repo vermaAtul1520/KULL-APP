@@ -1,19 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Image,
   Linking,
   Alert,
+  ActivityIndicator,
+  Modal,
   Dimensions,
-  Platform,
+  StatusBar,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { WebView } from 'react-native-webview';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@app/constants/constant';
+import { useAuth } from '@app/navigators';
+import Svg, { Path } from 'react-native-svg';
+import { getCommunityId } from '@app/constants/apiUtils';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+// Custom SVG Icons
+const PlayIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M8 5v14l11-7z" fill={color}/>
+  </Svg>
+);
+
+const CloseIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+  </Svg>
+);
+
+const ExternalIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" fill={color}/>
+  </Svg>
+);
+
+const MusicIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12,3V13.55C11.41,13.21 10.73,13 10,13A4,4 0 0,0 6,17A4,4 0 0,0 10,21A4,4 0 0,0 14,17V7H18V5H12V3Z" fill={color}/>
+  </Svg>
+);
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -23,15 +55,23 @@ const AppColors = {
   dark: '#2a2a2a',
   teal: '#1e6b5c',
   cream: '#f5f5dc',
-  lightGray: '#f8f9fa',
-  border: '#e5e7eb',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
+  blue: '#4169e1',
+  lightGray: '#f0f0f0',
+  orange: '#ff8c00',
+  red: '#dc143c',
+  green: '#228b22',
 };
 
+// API Types
+interface Community {
+  _id: string;
+  name: string;
+  code: string;
+}
+
 interface BhajanVideo {
-  id: string;
+  _id: string;
+  community: Community;
   title: string;
   artist: string;
   duration: string;
@@ -40,110 +80,35 @@ interface BhajanVideo {
   thumbnailUrl: string;
   description: string;
   category: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
-const bhajanVideos: BhajanVideo[] = [
-  {
-    id: '1',
-    title: 'Shri Ram Janki',
-    artist: 'Hariharan',
-    duration: '4:32',
-    views: '2.5M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=qZ30j6Tsxcs',
-    thumbnailUrl: 'https://img.youtube.com/vi/qZ30j6Tsxcs/mqdefault.jpg',
-    description: 'Beautiful devotional song dedicated to Lord Rama and Sita',
-    category: 'Ram Bhajan'
-  },
-  {
-    id: '2',
-    title: 'Hanuman Chalisa',
-    artist: 'MS Subbulakshmi',
-    duration: '8:15',
-    views: '5.2M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=YQHsXMglC9A',
-    thumbnailUrl: 'https://img.youtube.com/vi/YQHsXMglC9A/mqdefault.jpg',
-    description: 'Classical rendition of the sacred Hanuman Chalisa',
-    category: 'Hanuman Bhajan'
-  },
-  {
-    id: '3',
-    title: 'Krishna Govind Hare Murari',
-    artist: 'Anup Jalota',
-    duration: '6:45',
-    views: '3.8M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=kTJczUoc26U',
-    thumbnailUrl: 'https://img.youtube.com/vi/kTJczUoc26U/mqdefault.jpg',
-    description: 'Soulful Krishna bhajan by the renowned Anup Jalota',
-    category: 'Krishna Bhajan'
-  },
-  {
-    id: '4',
-    title: 'Om Jai Jagdish Hare',
-    artist: 'Lata Mangeshkar',
-    duration: '5:20',
-    views: '4.1M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=F57P9C4SAW4',
-    thumbnailUrl: 'https://img.youtube.com/vi/F57P9C4SAW4/mqdefault.jpg',
-    description: 'Traditional aarti sung by the legendary Lata Mangeshkar',
-    category: 'Aarti'
-  },
-  {
-    id: '5',
-    title: 'Shiva Shambho',
-    artist: 'Sounds of Isha',
-    duration: '7:30',
-    views: '1.9M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=YQQ2StSwg5s',
-    thumbnailUrl: 'https://img.youtube.com/vi/YQQ2StSwg5s/mqdefault.jpg',
-    description: 'Powerful Shiva chant from Sounds of Isha',
-    category: 'Shiva Bhajan'
-  },
-  {
-    id: '6',
-    title: 'Gayatri Mantra',
-    artist: 'Deva Premal',
-    duration: '9:12',
-    views: '6.7M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=RUES6L-zk8s',
-    thumbnailUrl: 'https://img.youtube.com/vi/RUES6L-zk8s/mqdefault.jpg',
-    description: 'Sacred Gayatri Mantra chanted 108 times',
-    category: 'Mantra'
-  },
-  {
-    id: '7',
-    title: 'Mere Banke Bihari',
-    artist: 'Jagjit Singh',
-    duration: '5:45',
-    views: '2.3M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=1vDxlnJVvW8',
-    thumbnailUrl: 'https://img.youtube.com/vi/1vDxlnJVvW8/mqdefault.jpg',
-    description: 'Melodious Krishna bhajan by Jagjit Singh',
-    category: 'Krishna Bhajan'
-  },
-  {
-    id: '8',
-    title: 'Vaishnav Jan To',
-    artist: 'MS Subbulakshmi',
-    duration: '4:18',
-    views: '3.2M',
-    youtubeUrl: 'https://www.youtube.com/watch?v=p0RQJ2nfpWg',
-    thumbnailUrl: 'https://img.youtube.com/vi/p0RQJ2nfpWg/mqdefault.jpg',
-    description: 'Mahatma Gandhi\'s favorite bhajan sung beautifully',
-    category: 'Devotional'
-  }
-];
+interface BhajanAPIResponse {
+  success: boolean;
+  data: BhajanVideo[];
+}
 
-const categories = ['All', 'Ram Bhajan', 'Krishna Bhajan', 'Hanuman Bhajan', 'Shiva Bhajan', 'Aarti', 'Mantra', 'Devotional'];
+const BhajanScreen = () => {
+  const { user, token } = useAuth();
+  
+  const [videos, setVideos] = useState<BhajanVideo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVideo, setSelectedVideo] = useState<BhajanVideo | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
 
-export default function BhajanScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  // API Functions
+  const getAuthHeaders = async () => {
+    const userToken = await AsyncStorage.getItem('userToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken || token}`,
+    };
+  };
 
-  const filteredVideos = selectedCategory === 'All' 
-    ? bhajanVideos 
-    : bhajanVideos.filter(video => video.category === selectedCategory);
-
-  const extractVideoId = (url: string): string => {
+  const extractYouTubeId = (url: string): string => {
     // Handle youtu.be format
     if (url.includes('youtu.be/')) {
       return url.split('youtu.be/')[1].split('?')[0];
@@ -155,376 +120,449 @@ export default function BhajanScreen() {
     return '';
   };
 
-  const openYouTubeVideo = async (url: string, title: string) => {
-    const videoId = extractVideoId(url);
-    
-    if (!videoId) {
-      Alert.alert('Error', 'Invalid YouTube URL');
-      return;
-    }
+  const fetchBhajanVideos = async () => {
+    try {
+      setLoading(true);
+      const headers = await getAuthHeaders();
+      const COMMUNITY_ID = await getCommunityId();
+      console.log('Fetching bhajan videos for community:', COMMUNITY_ID);
+      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/bhajans`, {
+        method: 'GET',
+        headers,
+      });
 
-    const urls = [
-      `youtube://watch?v=${videoId}`, // YouTube app
-      `https://www.youtube.com/watch?v=${videoId}`, // Desktop YouTube
-      `https://m.youtube.com/watch?v=${videoId}`, // Mobile YouTube
-    ];
+      console.log('Bhajan API response status:', response.status);
 
-    // Try each URL until one works
-    for (let i = 0; i < urls.length; i++) {
-      try {
-        await Linking.openURL(urls[i]);
-        return; // Success! Exit the function
-      } catch (error) {
-        console.log(`Failed to open URL ${i + 1}:`, urls[i]);
-        // Continue to next URL
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    }
 
-    // If all URLs fail, show manual copy option
-    const fallbackUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const data: BhajanAPIResponse = await response.json();
+      console.log('Loaded bhajan videos count:', data.data?.length || 0);
+
+      if (data.success && data.data && Array.isArray(data.data)) {
+        setVideos(data.data);
+      } else {
+        console.log('No bhajan data available');
+        setVideos([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching bhajan videos:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load bhajan videos. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      setVideos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBhajanVideos();
+  }, []);
+
+  const onRefresh = () => {
+    fetchBhajanVideos();
+  };
+
+  const openVideoInYouTube = async (youtubeUrl: string) => {
+    const youtubeId = extractYouTubeId(youtubeUrl);
+    const youtubeAppUrl = `vnd.youtube://watch?v=${youtubeId}`;
+
+    try {
+      // Try to open in YouTube app first
+      const canOpenApp = await Linking.canOpenURL(youtubeAppUrl);
+      if (canOpenApp) {
+        await Linking.openURL(youtubeAppUrl);
+      } else {
+        // Fallback to browser
+        await Linking.openURL(youtubeUrl);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to open YouTube video');
+    }
+  };
+
+  const openVideoInModal = (video: BhajanVideo) => {
+    setSelectedVideo(video);
+    setModalVisible(true);
+    setWebViewLoading(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedVideo(null);
+    setWebViewLoading(true);
+  };
+
+  const handleVideoPress = (video: BhajanVideo) => {
     Alert.alert(
-      'Cannot Auto-Open Video',
-      `Unable to automatically open "${title}".\n\nVideo ID: ${videoId}\n\nPlease search for this video manually in YouTube app.`,
+      'Play Video',
+      'How would you like to watch this bhajan?',
       [
-        { text: 'OK' },
         {
-          text: 'Open Browser',
-          onPress: () => {
-            // Force open in default browser
-            if (Platform.OS === 'android') {
-              Linking.openURL(`intent://www.youtube.com/watch?v=${videoId}#Intent;scheme=https;package=com.android.browser;end`);
-            } else {
-              Linking.openURL(fallbackUrl);
-            }
-          }
-        }
+          text: 'In App',
+          onPress: () => openVideoInModal(video),
+          style: 'default',
+        },
+        {
+          text: 'YouTube App',
+          onPress: () => openVideoInYouTube(video.youtubeUrl),
+          style: 'default',
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
       ]
     );
   };
 
-  const toggleFavorite = (videoId: string) => {
-    setFavorites(prev => 
-      prev.includes(videoId) 
-        ? prev.filter(id => id !== videoId)
-        : [...prev, videoId]
-    );
-  };
-
-  const formatViews = (views: string) => {
-    return `${views} views`;
-  };
-
-  const BhajanCard = ({ video }: { video: BhajanVideo }) => (
-    <TouchableOpacity 
-      style={styles.videoCard}
-      onPress={() => openYouTubeVideo(video.youtubeUrl, video.title)}
-      activeOpacity={0.8}
-    >
+  const renderVideoCard = ({ item }: { item: BhajanVideo }) => (
+    <TouchableOpacity style={styles.videoCard} onPress={() => handleVideoPress(item)}>
       <View style={styles.thumbnailContainer}>
-        <Image 
-          source={{ uri: video.thumbnailUrl }} 
-          style={styles.thumbnail}
-          resizeMode="cover"
-          onError={() => console.log('Thumbnail failed to load for:', video.title)}
-        />
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{video.duration}</Text>
+        <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+        <View style={styles.playOverlay}>
+          <PlayIcon size={24} color={AppColors.white} />
         </View>
-        <View style={styles.playButton}>
-          <Icon name="play" size={20} color={AppColors.white} />
+        <View style={styles.durationBadge}>
+          <Text style={styles.durationText}>{item.duration}</Text>
         </View>
       </View>
       
       <View style={styles.videoInfo}>
-        <View style={styles.videoHeader}>
-          <Text style={styles.videoTitle} numberOfLines={2}>
-            {video.title}
-          </Text>
-          <TouchableOpacity 
-            onPress={() => toggleFavorite(video.id)}
-            style={styles.favoriteButton}
-          >
-            <Icon 
-              name={favorites.includes(video.id) ? "heart" : "heart-outline"} 
-              size={20} 
-              color={favorites.includes(video.id) ? AppColors.danger : AppColors.gray} 
-            />
-          </TouchableOpacity>
-        </View>
-        
-        <Text style={styles.artistName}>{video.artist}</Text>
-        <Text style={styles.videoDescription} numberOfLines={2}>
-          {video.description}
+        <Text style={styles.videoTitle} numberOfLines={2}>
+          {item.title}
         </Text>
-        
-        <View style={styles.videoMeta}>
-          <Text style={styles.viewsText}>{formatViews(video.views)}</Text>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{video.category}</Text>
-          </View>
+        <Text style={styles.artistName}>{item.artist}</Text>
+        <Text style={styles.videoStats}>{item.views} views</Text>
+        <Text style={styles.videoDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+        <View style={styles.categoryContainer}>
+          <Text style={styles.categoryText}>{item.category}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  const CategoryFilter = () => (
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false}
-      style={styles.categoryContainer}
-      contentContainerStyle={styles.categoryContent}
-    >
-      {categories.map((category) => (
-        <TouchableOpacity
-          key={category}
-          style={[
-            styles.categoryButton,
-            selectedCategory === category && styles.categoryButtonActive
-          ]}
-          onPress={() => setSelectedCategory(category)}
-        >
-          <Text style={[
-            styles.categoryButtonText,
-            selectedCategory === category && styles.categoryButtonTextActive
-          ]}>
-            {category}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  );
+  const renderVideoModal = () => {
+    if (!selectedVideo) return null;
+
+    const youtubeId = extractYouTubeId(selectedVideo.youtubeUrl);
+    const embedUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&playsinline=1`;
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <StatusBar backgroundColor={AppColors.black} barStyle="light-content" />
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+              <CloseIcon size={24} color={AppColors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => openVideoInYouTube(selectedVideo.youtubeUrl)}
+              style={styles.externalButton}
+            >
+              <ExternalIcon size={20} color={AppColors.white} />
+              <Text style={styles.externalText}>Open in YouTube</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.videoContainer}>
+            {webViewLoading && (
+              <View style={styles.webViewLoading}>
+                <ActivityIndicator size="large" color={AppColors.primary} />
+                <Text style={styles.loadingText}>Loading video...</Text>
+              </View>
+            )}
+            <WebView
+              source={{ uri: embedUrl }}
+              style={styles.webView}
+              allowsFullscreenVideo={true}
+              mediaPlaybackRequiresUserAction={false}
+              onLoadStart={() => setWebViewLoading(true)}
+              onLoad={() => setWebViewLoading(false)}
+              onError={() => {
+                setWebViewLoading(false);
+                Alert.alert('Error', 'Failed to load video. Please try opening in YouTube app.');
+              }}
+            />
+          </View>
+
+          <View style={styles.modalVideoInfo}>
+            <Text style={styles.modalVideoTitle}>{selectedVideo.title}</Text>
+            <Text style={styles.modalArtistName}>{selectedVideo.artist}</Text>
+            <Text style={styles.modalVideoDescription}>{selectedVideo.description}</Text>
+            <View style={styles.modalCategoryContainer}>
+              <Text style={styles.modalCategoryText}>Category: {selectedVideo.category}</Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={AppColors.primary} />
+        <Text style={styles.loadingText}>Loading bhajans...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <MusicIcon size={24} color={AppColors.primary} />
         <Text style={styles.headerTitle}>Bhajan Collection</Text>
-        <Text style={styles.headerSubtitle}>Divine music for the soul</Text>
       </View>
 
-      <CategoryFilter />
-
-      <ScrollView 
-        style={styles.scrollView}
+      <FlatList
+        data={videos}
+        renderItem={renderVideoCard}
+        keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-      >
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Icon name="music-note" size={20} color={AppColors.primary} />
-            <Text style={styles.statText}>{filteredVideos.length} Bhajans</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon name="heart" size={20} color={AppColors.danger} />
-            <Text style={styles.statText}>{favorites.length} Favorites</Text>
-          </View>
-        </View>
+        contentContainerStyle={styles.listContainer}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        onRefresh={onRefresh}
+        refreshing={loading}
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <MusicIcon size={64} color={AppColors.gray} />
+              <Text style={styles.emptyTitle}>No bhajans available</Text>
+              <Text style={styles.emptySubtitle}>
+                Bhajan videos will appear here when available
+              </Text>
+            </View>
+          ) : null
+        }
+      />
 
-        {filteredVideos.map((video) => (
-          <BhajanCard key={video.id} video={video} />
-        ))}
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            🙏 Listen with devotion and share the divine experience
-          </Text>
-        </View>
-      </ScrollView>
+      {renderVideoModal()}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.white,
-  },
-  header: {
-    backgroundColor: AppColors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: AppColors.white,
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: AppColors.white,
-    opacity: 0.9,
-  },
-  categoryContainer: {
-    backgroundColor: AppColors.lightGray,
-    paddingVertical: 10,
-    maxHeight: 60,
-  },
-  categoryContent: {
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  categoryButton: {
-    backgroundColor: AppColors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    minHeight: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryButtonActive: {
-    backgroundColor: AppColors.teal,
-    borderColor: AppColors.teal,
-  },
-  categoryButtonText: {
-    fontSize: 13,
-    color: AppColors.dark,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  categoryButtonTextActive: {
-    color: AppColors.white,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     backgroundColor: AppColors.cream,
   },
-  statItem: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 20,
+    backgroundColor: AppColors.dark,
   },
-  statText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: AppColors.dark,
-    fontWeight: '500',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginLeft: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.cream,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: AppColors.gray,
+  },
+  listContainer: {
+    padding: 16,
   },
   videoCard: {
     backgroundColor: AppColors.white,
-    marginHorizontal: 15,
-    marginVertical: 6,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    borderRadius: 12,
     overflow: 'hidden',
+    elevation: 3,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   thumbnailContainer: {
     position: 'relative',
-    width: '100%',
-    height: 180,
-    backgroundColor: AppColors.lightGray,
   },
   thumbnail: {
     width: '100%',
-    height: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  playOverlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -12 }, { translateY: -12 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    padding: 8,
   },
   durationBadge: {
     position: 'absolute',
     bottom: 8,
     right: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
   },
   durationText: {
     color: AppColors.white,
     fontSize: 12,
-    fontWeight: '500',
-  },
-  playButton: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -18,
-    marginLeft: -18,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontWeight: 'bold',
   },
   videoInfo: {
-    padding: 12,
-  },
-  videoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6,
+    padding: 16,
   },
   videoTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
     color: AppColors.dark,
-    flex: 1,
-    marginRight: 8,
-    lineHeight: 20,
-  },
-  favoriteButton: {
-    padding: 4,
-  },
-  artistName: {
-    fontSize: 13,
-    color: AppColors.primary,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  videoDescription: {
-    fontSize: 12,
-    color: AppColors.gray,
-    lineHeight: 16,
     marginBottom: 8,
   },
-  videoMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  artistName: {
+    fontSize: 14,
+    color: AppColors.primary,
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  viewsText: {
+  videoStats: {
     fontSize: 12,
     color: AppColors.gray,
+    marginBottom: 8,
   },
-  categoryBadge: {
-    backgroundColor: AppColors.lightGray,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  videoDescription: {
+    fontSize: 14,
+    color: AppColors.gray,
+    lineHeight: 20,
   },
-  categoryText: {
-    fontSize: 12,
-    color: AppColors.teal,
-    fontWeight: '500',
+  separator: {
+    height: 16,
   },
-  footer: {
+  emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
-  footerText: {
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.gray,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
     fontSize: 14,
     color: AppColors.gray,
     textAlign: 'center',
-    fontStyle: 'italic',
+    paddingHorizontal: 32,
+  },
+  categoryContainer: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  categoryText: {
+    fontSize: 12,
+    color: AppColors.primary,
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: AppColors.black,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 40,
+    backgroundColor: AppColors.dark,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  externalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.red,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  externalText: {
+    color: AppColors.white,
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  videoContainer: {
+    height: width * 9 / 16, // 16:9 aspect ratio
+    backgroundColor: AppColors.black,
+    position: 'relative',
+  },
+  webView: {
+    flex: 1,
+  },
+  webViewLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.black,
+    zIndex: 1,
+  },
+  modalVideoInfo: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: AppColors.dark,
+  },
+  modalVideoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginBottom: 8,
+  },
+  modalArtistName: {
+    fontSize: 16,
+    color: AppColors.primary,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  modalVideoDescription: {
+    fontSize: 14,
+    color: AppColors.gray,
+    lineHeight: 22,
+  },
+  modalCategoryContainer: {
+    marginTop: 12,
+  },
+  modalCategoryText: {
+    fontSize: 14,
+    color: AppColors.primary,
+    fontWeight: '600',
   },
 });
+
+export default BhajanScreen;

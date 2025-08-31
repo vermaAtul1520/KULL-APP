@@ -18,6 +18,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import { getCommunityId } from '@app/constants/apiUtils';
+import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
@@ -109,8 +111,42 @@ const MyPeopleScreen = () => {
   });
   const [tempFilters, setTempFilters] = useState<FilterOptions>({ ...filters });
 
-  // Hardcoded community ID
-  const COMMUNITY_ID = "687fcd98b40bf8cdac06ff97";
+  const CloseIcon = ({ size = 24, color = "#666" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    </Svg>
+  );
+
+  const FilterIcon = ({ size = 24, color = "#2a2a2a" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" fill={color}/>
+    </Svg>
+  );
+
+  const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    </Svg>
+   );
+
+   const EmailIcon = ({ size = 24, color = "#2a2a2a" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill={color}/>
+    </Svg>
+  );
+  
+  const MapMarkerIcon = ({ size = 24, color = "#2a2a2a" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill={color}/>
+    </Svg>
+  );
+  
+  const AccountGroupIcon = ({ size = 24, color = "#2a2a2a" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill={color}/>
+      <Path d="M20 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H20v.5zm-16-1c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H4v.5z" fill={color}/>
+    </Svg>
+  );
 
   // API Functions
   const getAuthHeaders = async () => {
@@ -124,9 +160,9 @@ const MyPeopleScreen = () => {
   const fetchCommunityUsers = async () => {
     try {
       setLoading(true);
-      console.log('Fetching community users for:', COMMUNITY_ID);
-
       const headers = await getAuthHeaders();
+      const COMMUNITY_ID = await getCommunityId();
+      console.log('Fetching community users for:', COMMUNITY_ID);
       const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/users`, {
         method: 'GET',
         headers,
@@ -268,15 +304,15 @@ const MyPeopleScreen = () => {
       
       <View style={styles.userDetails}>
         <View style={styles.detailRow}>
-          <Icon name="email" size={14} color={AppColors.gray} />
+        <EmailIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.email}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Icon name="map-marker" size={14} color={AppColors.gray} />
+        <MapMarkerIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.address}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Icon name="account-group" size={14} color={AppColors.gray} />
+        <AccountGroupIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.roleInCommunity}</Text>
         </View>
       </View>
@@ -305,7 +341,7 @@ const MyPeopleScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filter Users</Text>
               <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
-                <Icon name="close" size={24} color={AppColors.white} />
+              <CloseIcon size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -503,7 +539,7 @@ const MyPeopleScreen = () => {
       {/* Search and Filter */}
       <View style={styles.searchFilterContainer}>
         <View style={styles.searchContainer}>
-          <Icon name="magnify" size={20} color={AppColors.gray} style={styles.searchIcon} />
+        <SearchIcon size={24} color="#2a2a2a" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by name, email, occupation..."
@@ -519,7 +555,7 @@ const MyPeopleScreen = () => {
         </View>
         
         <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-          <Icon name="filter-variant" size={20} color={AppColors.white} />
+        <FilterIcon size={24} color="#2a2a2a" />
           {getActiveFilterCount() > 0 && (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>

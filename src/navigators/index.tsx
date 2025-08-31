@@ -262,14 +262,22 @@ const DrawerButton = (): React.JSX.Element => {
 
 const CustomHeaderTitle = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+  const { user } = useAuth();
   
   const navigateToHome = () => {
     navigation.navigate('HomeTab');
   };
 
+  const getCommunityName = () => {
+    if (user?.community?.name) {
+      return user.community.name.toUpperCase();
+    }
+    return 'KULL-APP'; 
+  };
+
   return (
     <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
-      <Text style={styles.headerTitleText}>KULL-APP</Text>
+      <Text style={styles.headerTitleText}>{getCommunityName()}</Text>
     </Pressable>
   );
 };
@@ -301,6 +309,9 @@ const ProfileScreen = (): React.JSX.Element => {
   const { user, logout, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
+
+  console.log('userArvind', user, updateUser);
+  
 
   useEffect(() => {
     if (user) {
@@ -459,19 +470,9 @@ const ProfileScreen = (): React.JSX.Element => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={editedUser.email || ''}
-                  onChangeText={(text) => setEditedUser({...editedUser, email: text})}
-                  placeholder="Email"
-                  keyboardType="email-address"
-                />
-              ) : (
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.email}</Text>
                 </View>
-              )}
             </View>
           </View>
 
@@ -563,6 +564,8 @@ const RenderTabBarIcon = ({
   switch (route.name) {
     case 'Home':
       return <HomeIcon width={iconSize} height={iconSize} color={color} />;
+    case 'Post':
+      return <PostIcon width={iconSize} height={iconSize} color={color} />;
     case 'News':
       return <NewsIcon width={iconSize} height={iconSize} color={color} />;
     case 'MyPeople':

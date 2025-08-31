@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path } from 'react-native-svg';
+import { getCommunityId } from '@app/constants/apiUtils';
 
 const {width} = Dimensions.get('window');
 
@@ -75,9 +76,6 @@ const HomeScreen = () => {
   const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Hardcoded community ID - you can make this dynamic based on user's community
-  const COMMUNITY_ID = "687fcd98b40bf8cdac06ff97";
-
   const CloseIcon = ({ size = 24, color = "#666" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
@@ -137,9 +135,11 @@ const HomeScreen = () => {
   const fetchCommunityConfiguration = async () => {
     try {
       setLoading(true);
+      const COMMUNITY_ID = await getCommunityId();
       console.log('Fetching community configuration for:', COMMUNITY_ID);
 
       const headers = await getAuthHeaders();
+      
       const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
         method: 'GET',
         headers,
