@@ -39,6 +39,8 @@ import NewsIcon from '@app/assets/images/news.svg';
 import PeopleIcon from '@app/assets/images/people.svg';
 import DonationIcon from '@app/assets/images/donation.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Import drawer screens
 import { OccasionsScreen } from '@app/screens/drawer/OccasionsScreen';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
 import BhajanScreen from '@app/screens/drawer/BhajanScreen';
@@ -49,6 +51,11 @@ import EducationScreen from '@app/screens/drawer/EducationScreen';
 import EmploymentScreen from '@app/screens/drawer/EmploymentScreen';
 import SocialUpliftmentScreen from '@app/screens/drawer/SocialUpliftmentScreen';
 import DukanScreen from '@app/screens/drawer/DukanScreen';
+import GamesScreen from '@app/screens/drawer/GamesScreen';
+import SportsScreen from '@app/screens/drawer/SportsScreen';
+import MeetingsScreen from '@app/screens/drawer/MeetingsScreen';
+import AppealScreen from '@app/screens/drawer/AppealScreen';
+import VoteScreen from '@app/screens/drawer/VoteScreen';
 
 // Custom Colors
 const AppColors = {
@@ -90,18 +97,24 @@ type AuthStackParamList = {
   JoinCommunity: undefined;
 };
 
+// Updated RootDrawerParamList to match implemented screens
 type RootDrawerParamList = {
   HomeTab: undefined;
   Occasions: undefined;
   Kartavya: undefined;
   Bhajan: undefined;
+  Games: undefined;
   'Laws and Decisions': undefined;
   'City Search': undefined;
   'Organization Officer': undefined;
   Education: undefined;
   Employment: undefined;
+  Sports: undefined;
   'Social Upliftment': undefined;
   Dukan: undefined;
+  Meetings: undefined;
+  Appeal: undefined;
+  Vote: undefined;
 };
 
 type HomeTabParamList = {
@@ -658,13 +671,18 @@ const DrawerNavigator = (): React.JSX.Element => {
       <Screen name="Occasions" component={OccasionsScreen} />
       <Screen name="Kartavya" component={KartavyaScreen} />
       <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Games" component={GamesScreen} />
       <Screen name="Laws and Decisions" component={LawsScreen} />
       <Screen name="City Search" component={CitySearchScreen} />
       <Screen name="Organization Officer" component={OrganizationOfficerScreen} />
       <Screen name="Education" component={EducationScreen} />
       <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Sports" component={SportsScreen} />
       <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
       <Screen name="Dukan" component={DukanScreen} />
+      <Screen name="Meetings" component={MeetingsScreen} />
+      <Screen name="Appeal" component={AppealScreen} />
+      <Screen name="Vote" component={VoteScreen} />
     </Navigator>
   );
 };
