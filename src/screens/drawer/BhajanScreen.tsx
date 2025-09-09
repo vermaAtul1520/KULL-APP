@@ -18,6 +18,7 @@ import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import { useLanguage } from '@app/hooks/LanguageContext';
 import Svg, { Path } from 'react-native-svg';
 import { getCommunityId } from '@app/constants/apiUtils';
 
@@ -104,7 +105,9 @@ interface BhajanAPIResponse {
 }
 
 const BhajanScreen = () => {
+  // All hooks must be called at the top level
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   
   const [videos, setVideos] = useState<BhajanVideo[]>([]);
   const [filteredVideos, setFilteredVideos] = useState<BhajanVideo[]>([]);
@@ -169,6 +172,7 @@ const BhajanScreen = () => {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
       console.log('Fetching bhajan videos for community:', COMMUNITY_ID);
+      
       const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/bhajans`, {
         method: 'GET',
         headers,
@@ -195,9 +199,9 @@ const BhajanScreen = () => {
     } catch (error) {
       console.error('Error fetching bhajan videos:', error);
       Alert.alert(
-        'Error',
-        'Failed to load bhajan videos. Please try again.',
-        [{ text: 'OK', style: 'default' }]
+        t('Error') || 'Error',
+        t('Failed to load bhajan videos. Please try again.') || 'Failed to load bhajan videos. Please try again.',
+        [{ text: t('OK') || 'OK', style: 'default' }]
       );
       setVideos([]);
       setFilteredVideos([]);
@@ -212,7 +216,7 @@ const BhajanScreen = () => {
 
   useEffect(() => {
     filterVideos(searchText);
-  }, [videos]);
+  }, [videos, searchText]);
 
   const onRefresh = () => {
     fetchBhajanVideos();
@@ -232,7 +236,7 @@ const BhajanScreen = () => {
         await Linking.openURL(youtubeUrl);
       }
     } catch (error) {
-      Alert.alert('Error', 'Unable to open YouTube video');
+      Alert.alert(t('Error') || 'Error', t('Unable to open YouTube video') || 'Unable to open YouTube video');
     }
   };
 
@@ -250,21 +254,21 @@ const BhajanScreen = () => {
 
   const handleVideoPress = (video: BhajanVideo) => {
     Alert.alert(
-      'Play Video',
-      'How would you like to watch this bhajan?',
+      t('Play Video') || 'Play Video',
+      t('How would you like to watch this bhajan?') || 'How would you like to watch this bhajan?',
       [
         {
-          text: 'In App',
+          text: t('In App') || 'In App',
           onPress: () => openVideoInModal(video),
           style: 'default',
         },
         {
-          text: 'YouTube App',
+          text: t('YouTube App') || 'YouTube App',
           onPress: () => openVideoInYouTube(video.youtubeUrl),
           style: 'default',
         },
         {
-          text: 'Cancel',
+          text: t('Cancel') || 'Cancel',
           style: 'cancel',
         },
       ]
@@ -277,7 +281,7 @@ const BhajanScreen = () => {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search bhajans by title, artist, category..."
+          placeholder={t('Search bhajans by title, artist, category...') || 'Search bhajans by title, artist, category...'}
           placeholderTextColor={AppColors.gray}
           value={searchText}
           onChangeText={handleSearchChange}
@@ -291,7 +295,7 @@ const BhajanScreen = () => {
       </View>
       {searchText.length > 0 && (
         <Text style={styles.searchResults}>
-          {filteredVideos.length} result{filteredVideos.length !== 1 ? 's' : ''} found
+          {filteredVideos.length} {filteredVideos.length === 1 ? (t('result found') || 'result found') : (t('results found') || 'results found')}
         </Text>
       )}
     </View>
@@ -314,7 +318,7 @@ const BhajanScreen = () => {
           {item.title}
         </Text>
         <Text style={styles.artistName}>{item.artist}</Text>
-        <Text style={styles.videoStats}>{item.views} views</Text>
+        <Text style={styles.videoStats}>{item.views} {t('views') || 'views'}</Text>
         <Text style={styles.videoDescription} numberOfLines={2}>
           {item.description}
         </Text>
@@ -349,7 +353,7 @@ const BhajanScreen = () => {
               style={styles.externalButton}
             >
               <ExternalIcon size={20} color={AppColors.white} />
-              <Text style={styles.externalText}>Open in YouTube</Text>
+              <Text style={styles.externalText}>{t('Open in YouTube') || 'Open in YouTube'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -357,7 +361,7 @@ const BhajanScreen = () => {
             {webViewLoading && (
               <View style={styles.webViewLoading}>
                 <ActivityIndicator size="large" color={AppColors.primary} />
-                <Text style={styles.loadingText}>Loading video...</Text>
+                <Text style={styles.loadingText}>{t('Loading video...') || 'Loading video...'}</Text>
               </View>
             )}
             <WebView
@@ -369,7 +373,10 @@ const BhajanScreen = () => {
               onLoad={() => setWebViewLoading(false)}
               onError={() => {
                 setWebViewLoading(false);
-                Alert.alert('Error', 'Failed to load video. Please try opening in YouTube app.');
+                Alert.alert(
+                  t('Error') || 'Error', 
+                  t('Failed to load video. Please try opening in YouTube app.') || 'Failed to load video. Please try opening in YouTube app.'
+                );
               }}
             />
           </View>
@@ -379,7 +386,7 @@ const BhajanScreen = () => {
             <Text style={styles.modalArtistName}>{selectedVideo.artist}</Text>
             <Text style={styles.modalVideoDescription}>{selectedVideo.description}</Text>
             <View style={styles.modalCategoryContainer}>
-              <Text style={styles.modalCategoryText}>Category: {selectedVideo.category}</Text>
+              <Text style={styles.modalCategoryText}>{t('Category') || 'Category'}: {selectedVideo.category}</Text>
             </View>
           </View>
         </View>
@@ -390,12 +397,12 @@ const BhajanScreen = () => {
   const renderEmptySearchResults = () => (
     <View style={styles.emptyContainer}>
       <SearchIcon size={64} color={AppColors.gray} />
-      <Text style={styles.emptyTitle}>No results found</Text>
+      <Text style={styles.emptyTitle}>{t('No results found') || 'No results found'}</Text>
       <Text style={styles.emptySubtitle}>
-        Try searching with different keywords or clear the search to see all bhajans
+        {t('Try searching with different keywords or clear the search to see all bhajans') || 'Try searching with different keywords or clear the search to see all bhajans'}
       </Text>
       <TouchableOpacity onPress={clearSearch} style={styles.clearSearchButton}>
-        <Text style={styles.clearSearchButtonText}>Clear Search</Text>
+        <Text style={styles.clearSearchButtonText}>{t('Clear Search') || 'Clear Search'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -403,9 +410,9 @@ const BhajanScreen = () => {
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MusicIcon size={64} color={AppColors.gray} />
-      <Text style={styles.emptyTitle}>No bhajans available</Text>
+      <Text style={styles.emptyTitle}>{t('No bhajans available') || 'No bhajans available'}</Text>
       <Text style={styles.emptySubtitle}>
-        Bhajan videos will appear here when available
+        {t('Bhajan videos will appear here when available') || 'Bhajan videos will appear here when available'}
       </Text>
     </View>
   );
@@ -414,7 +421,7 @@ const BhajanScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={AppColors.primary} />
-        <Text style={styles.loadingText}>Loading bhajans...</Text>
+        <Text style={styles.loadingText}>{t('Loading bhajans...') || 'Loading bhajans...'}</Text>
       </View>
     );
   }
@@ -423,7 +430,7 @@ const BhajanScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <MusicIcon size={24} color={AppColors.primary} />
-        <Text style={styles.headerTitle}>Bhajan Collection</Text>
+        <Text style={styles.headerTitle}>{t('Bhajan Collection') || 'Bhajan Collection'}</Text>
       </View>
 
       {renderSearchBar()}
