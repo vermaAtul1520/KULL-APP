@@ -20,6 +20,7 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import { getCommunityId } from '@app/constants/apiUtils';
 import Svg, { Path } from 'react-native-svg';
+import BannerComponent from '@app/navigators/BannerComponent';
 
 const { width } = Dimensions.get('window');
 
@@ -529,6 +530,7 @@ const MyPeopleScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
+      <BannerComponent />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My People</Text>
         <Text style={styles.headerSubtitle}>

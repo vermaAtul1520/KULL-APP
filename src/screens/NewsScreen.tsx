@@ -17,6 +17,7 @@ import { moderateScale } from '@app/constants/scaleUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@app/navigators';
 import { BASE_URL } from '@app/constants/constant';
+import BannerComponent from '@app/navigators/BannerComponent';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -319,6 +320,7 @@ const NewsScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
+            <BannerComponent />
             {renderHeader()}
             {renderSearchBar()}
           </>

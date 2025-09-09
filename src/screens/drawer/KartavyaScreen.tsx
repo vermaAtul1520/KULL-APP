@@ -5,6 +5,7 @@
  * npm install react-native-svg react-native-webview
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -333,6 +334,8 @@ export default function KartavyaScreen() {
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<KartyaItem | null>(null);
 
+  const navigation = useNavigation();
+
   // Filter items based on selected category and type
   const filteredItems = kartyaItems.filter(item => {
     const categoryFilter = selectedCategory 
@@ -593,7 +596,7 @@ export default function KartavyaScreen() {
         
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => {/* Handle navigation back */}} style={styles.backButton}>
+          <TouchableOpacity onPress={() => { navigation?.goBack()}} style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>

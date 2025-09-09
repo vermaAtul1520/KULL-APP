@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -420,6 +421,8 @@ export const OccasionsScreen = () => {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
+  const navigation = useNavigation();
+
   // Filter items based on selected category, sub-filter and type
   const filteredItems = occasionItems.filter(item => {
     const categoryMatch = selectedCategory ? item.category === selectedCategory.id : true;
@@ -684,7 +687,7 @@ export const OccasionsScreen = () => {
         <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
         
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => {}} style={styles.backButton}>
+          <TouchableOpacity onPress={() => { navigation?.goBack()}} style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>

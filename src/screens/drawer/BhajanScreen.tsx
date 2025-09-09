@@ -12,6 +12,7 @@ import {
   Modal,
   Dimensions,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,6 +45,18 @@ const ExternalIcon = ({ size = 24, color = "#666" }) => (
 const MusicIcon = ({ size = 24, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12,3V13.55C11.41,13.21 10.73,13 10,13A4,4 0 0,0 6,17A4,4 0 0,0 10,21A4,4 0 0,0 14,17V7H18V5H12V3Z" fill={color}/>
+  </Svg>
+);
+
+const SearchIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" fill={color}/>
+  </Svg>
+);
+
+const ClearIcon = ({ size = 24, color = "#666" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4M14.59,8L12,10.59L9.41,8L8,9.41L10.59,12L8,14.59L9.41,16L12,13.41L14.59,16L16,14.59L13.41,12L16,9.41L14.59,8Z" fill={color}/>
   </Svg>
 );
 
@@ -94,10 +107,12 @@ const BhajanScreen = () => {
   const { user, token } = useAuth();
   
   const [videos, setVideos] = useState<BhajanVideo[]>([]);
+  const [filteredVideos, setFilteredVideos] = useState<BhajanVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<BhajanVideo | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
 
   // API Functions
   const getAuthHeaders = async () => {
@@ -118,6 +133,34 @@ const BhajanScreen = () => {
       return url.split('watch?v=')[1].split('&')[0];
     }
     return '';
+  };
+
+  // Search functionality
+  const filterVideos = (text: string) => {
+    if (!text.trim()) {
+      setFilteredVideos(videos);
+      return;
+    }
+
+    const searchLower = text.toLowerCase().trim();
+    const filtered = videos.filter(video => 
+      video.title.toLowerCase().includes(searchLower) ||
+      video.artist.toLowerCase().includes(searchLower) ||
+      video.description.toLowerCase().includes(searchLower) ||
+      video.category.toLowerCase().includes(searchLower)
+    );
+    
+    setFilteredVideos(filtered);
+  };
+
+  const handleSearchChange = (text: string) => {
+    setSearchText(text);
+    filterVideos(text);
+  };
+
+  const clearSearch = () => {
+    setSearchText('');
+    setFilteredVideos(videos);
   };
 
   const fetchBhajanVideos = async () => {
@@ -142,9 +185,11 @@ const BhajanScreen = () => {
 
       if (data.success && data.data && Array.isArray(data.data)) {
         setVideos(data.data);
+        setFilteredVideos(data.data);
       } else {
         console.log('No bhajan data available');
         setVideos([]);
+        setFilteredVideos([]);
       }
 
     } catch (error) {
@@ -155,6 +200,7 @@ const BhajanScreen = () => {
         [{ text: 'OK', style: 'default' }]
       );
       setVideos([]);
+      setFilteredVideos([]);
     } finally {
       setLoading(false);
     }
@@ -163,6 +209,10 @@ const BhajanScreen = () => {
   useEffect(() => {
     fetchBhajanVideos();
   }, []);
+
+  useEffect(() => {
+    filterVideos(searchText);
+  }, [videos]);
 
   const onRefresh = () => {
     fetchBhajanVideos();
@@ -220,6 +270,32 @@ const BhajanScreen = () => {
       ]
     );
   };
+
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <View style={styles.searchInputContainer}>
+        <SearchIcon size={20} color={AppColors.gray} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search bhajans by title, artist, category..."
+          placeholderTextColor={AppColors.gray}
+          value={searchText}
+          onChangeText={handleSearchChange}
+          returnKeyType="search"
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+            <ClearIcon size={20} color={AppColors.gray} />
+          </TouchableOpacity>
+        )}
+      </View>
+      {searchText.length > 0 && (
+        <Text style={styles.searchResults}>
+          {filteredVideos.length} result{filteredVideos.length !== 1 ? 's' : ''} found
+        </Text>
+      )}
+    </View>
+  );
 
   const renderVideoCard = ({ item }: { item: BhajanVideo }) => (
     <TouchableOpacity style={styles.videoCard} onPress={() => handleVideoPress(item)}>
@@ -311,6 +387,29 @@ const BhajanScreen = () => {
     );
   };
 
+  const renderEmptySearchResults = () => (
+    <View style={styles.emptyContainer}>
+      <SearchIcon size={64} color={AppColors.gray} />
+      <Text style={styles.emptyTitle}>No results found</Text>
+      <Text style={styles.emptySubtitle}>
+        Try searching with different keywords or clear the search to see all bhajans
+      </Text>
+      <TouchableOpacity onPress={clearSearch} style={styles.clearSearchButton}>
+        <Text style={styles.clearSearchButtonText}>Clear Search</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderEmptyList = () => (
+    <View style={styles.emptyContainer}>
+      <MusicIcon size={64} color={AppColors.gray} />
+      <Text style={styles.emptyTitle}>No bhajans available</Text>
+      <Text style={styles.emptySubtitle}>
+        Bhajan videos will appear here when available
+      </Text>
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -327,8 +426,10 @@ const BhajanScreen = () => {
         <Text style={styles.headerTitle}>Bhajan Collection</Text>
       </View>
 
+      {renderSearchBar()}
+
       <FlatList
-        data={videos}
+        data={filteredVideos}
         renderItem={renderVideoCard}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
@@ -338,13 +439,7 @@ const BhajanScreen = () => {
         refreshing={loading}
         ListEmptyComponent={
           !loading ? (
-            <View style={styles.emptyContainer}>
-              <MusicIcon size={64} color={AppColors.gray} />
-              <Text style={styles.emptyTitle}>No bhajans available</Text>
-              <Text style={styles.emptySubtitle}>
-                Bhajan videos will appear here when available
-              </Text>
-            </View>
+            searchText.length > 0 ? renderEmptySearchResults() : renderEmptyList()
           ) : null
         }
       />
@@ -370,6 +465,49 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: AppColors.white,
     marginLeft: 12,
+  },
+  searchContainer: {
+    backgroundColor: AppColors.white,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.lightGray,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.lightGray,
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: AppColors.dark,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  searchResults: {
+    fontSize: 14,
+    color: AppColors.gray,
+    marginTop: 8,
+    marginLeft: 4,
+  },
+  clearSearchButton: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  clearSearchButtonText: {
+    color: AppColors.white,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert} from
 import {DrawerContentScrollView, DrawerContentComponentProps} from '@react-navigation/drawer';
 import Svg, { Path, Circle, Rect, Polygon } from 'react-native-svg';
 import { useAuth } from '@app/navigators';
+import { useLanguage } from '@app/hooks/LanguageContext';
 
 // SVG Icon Components
 const CalendarIcon = ({ size = 24, color = "#7dd3c0" }) => (
@@ -321,14 +322,15 @@ const LogoutIcon = ({ size = 24, color = "#7dd3c0" }) => (
 
 const DrawerContent = (props: DrawerContentComponentProps) => {
   const { user, logout } = useAuth();
+  const { t } : any = useLanguage();
   
   const menuItems = [
     {name: 'Occasions', icon: 'calendar'},
     {name: 'Kartavya', icon: 'briefcase'},
     {name: 'Bhajan', icon: 'music'},
     {name: 'Games', icon: 'games'},
-    {name: 'City Search', icon: 'city'},
-    {name: 'Organization Officer', icon: 'account-tie'},
+    {name: 'CitySearch', icon: 'city'},
+    {name: 'OrganizationOfficer', icon: 'account-tie'},
     {name: 'Education', icon: 'school'},
     {name: 'Employment', icon: 'account-search'},
     {name: 'Sports', icon: 'sports'},
@@ -339,20 +341,22 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   ];
 
   const handleMenuPress = (screenName: string) => {
-    props.navigation.navigate(screenName);
+    console.log('screenName', screenName);
+    
+    props?.navigation?.navigate(screenName);
   };
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('Logout'),
+      t('Are you sure you want to logout?'),
       [
         {
-          text: 'Cancel',
+          text: t('Cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('Logout'),
           style: 'destructive',
           onPress: () => {
             logout();
@@ -440,21 +444,11 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
           <TouchableOpacity
             key={index}
             style={styles.menuItem}
-            onPress={() => handleMenuPress(item.name)}>
+            onPress={() => handleMenuPress(item?.name)}>
             {renderIcon(item.icon)}
-            <Text style={styles.menuText}>{item.name}</Text>
+            <Text style={styles.menuText}>{t(item.name)}</Text>
           </TouchableOpacity>
         ))}
-      </View>
-
-      {/* Settings Section */}
-      <View style={styles.donationSection}>
-        <TouchableOpacity 
-          style={styles.donationButton}
-          onPress={() => props.navigation.navigate('HomeTab', { screen: 'Donation' })}>
-          <SettingsIcon size={24} color="#7dd3c0" />
-          <Text style={styles.donationText}>Settings </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Logout Section */}
@@ -463,7 +457,17 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
           style={styles.logoutButton}
           onPress={handleLogout}>
           <LogoutIcon size={24} color="#ef4444" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t('logout')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Settings Section */}
+      <View style={styles.donationSection}>
+        <TouchableOpacity 
+          style={styles.donationButton}
+          onPress={() => props.navigation.navigate('Settings')}>
+          <SettingsIcon size={24} color="#7dd3c0" />
+          <Text style={styles.donationText}>{t('settings')} </Text>
         </TouchableOpacity>
       </View>
     </DrawerContentScrollView>
@@ -539,9 +543,7 @@ const styles = StyleSheet.create({
   },
   donationSection: {
     paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#444',
-    marginTop: 20,
+    // marginTop: 20,
   },
   donationButton: {
     flexDirection: 'row',
@@ -556,6 +558,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   logoutSection: {
+    borderTopWidth: 1,
     // paddingTop: 15,
     // borderTopWidth: 1,
     borderTopColor: '#444',

@@ -1,7 +1,9 @@
 import { getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import BannerComponent from '@app/navigators/BannerComponent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -107,6 +109,8 @@ const PostScreen = () => {
   const [replyingTo, setReplyingTo] = useState<{ id: string; author: string } | null>(null);
 
   console.log('commentsss', filteredPosts);
+
+  const navigation = useNavigation();
   
 
 
@@ -983,11 +987,14 @@ const PostScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+       <BannerComponent />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <ArrowLeftIcon size={24} color="#2a2a2a" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>News</Text>
+        <Text style={styles.headerTitle}>Posts</Text>
         <View style={styles.headerRight} />
       </View>
 

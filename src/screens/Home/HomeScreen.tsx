@@ -10,6 +10,9 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path } from 'react-native-svg';
 import { getCommunityId } from '@app/constants/apiUtils';
+import { useNavigation } from '@react-navigation/native';
+import BannerComponent from '@app/navigators/BannerComponent';
+import MarqueeView from 'react-native-marquee-view';
 
 const {width} = Dimensions.get('window');
 
@@ -76,6 +79,8 @@ const HomeScreen = () => {
   const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const navigation = useNavigation();
+
   const CloseIcon = ({ size = 24, color = "#666" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
@@ -122,6 +127,8 @@ const HomeScreen = () => {
       avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     }
   ];
+
+  const newsString = defaultNewsHeadlines.map(item => `${item.text}`).join(' • ');
 
   // API Functions
   const getAuthHeaders = async () => {
@@ -284,14 +291,14 @@ const HomeScreen = () => {
     return (
       <TouchableOpacity 
         activeOpacity={0.8}
-        onPress={() => console.log('News tapped:', item.id)}
+        onPress={() => navigation.navigate('News')}
         style={styles.newsItem}
       >
         <Animated.View style={[
           styles.newsContent,
           {transform: [{translateX}], opacity}
         ]}>
-          <Text style={styles.newsCategory}>{item.category}</Text>
+          {/* <Text style={styles.newsCategory}>{item.category}</Text> */}
           <Text style={styles.newsText}>{item.text}</Text>
         </Animated.View>
       </TouchableOpacity>
@@ -418,78 +425,30 @@ const HomeScreen = () => {
   const sections = [
     {
       id: 'banner',
-      renderItem: () => (
-        <View style={styles.headerBanner}>
-          {bannerData.length > 0 ? (
-            <FlatList
-              ref={flatListRef}
-              data={bannerData}
-              renderItem={renderBanner}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id.toString()}
-              onScrollToIndexFailed={(info) => {
-                const wait = new Promise(resolve => setTimeout(resolve, 500));
-                wait.then(() => {
-                  flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-                });
-              }}
-            />
-          ) : (
-            <View style={[styles.bannerSlide, {width}]}>
-              <View style={[styles.bannerImage, styles.placeholderBanner]}>
-                <Text style={styles.placeholderText}>Loading banners...</Text>
-              </View>
-            </View>
-          )}
-          <View style={styles.turnoutInfo}>
-            <Text style={styles.turnoutText}>turnout recorded at 39.13% till 1 pm</Text>
-          </View>
-        </View>
-      )
+      renderItem: () => <BannerComponent />
     },
     {
       id: 'news',
       renderItem: () => (
-        <View style={styles.newsSliderContainer}>
-          <View style={[styles.sectionHeader, {marginLeft: 12}]}>
+        <View style={styles.newsMarqueeContainer}>
+          {/* <View style={styles.newsHeader}>
             <HeadlinesIcon size={20} color="#fff" />
-            <Text style={[styles.sectionTitle, {color: '#fff'}]}>News Headlines</Text>
-          </View>
-          <Animated.FlatList
-            data={defaultNewsHeadlines}
-            renderItem={renderNewsHeadline}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
-            onScroll={Animated.event(
-              [{nativeEvent: {contentOffset: {x: scrollX}}}],
-              {useNativeDriver: true}
-            )}
-            scrollEventThrottle={16}
-          />
-          <View style={styles.newsPagination}>
-            {defaultNewsHeadlines.map((_, i) => {
-              const opacity = scrollX.interpolate({
-                inputRange: [
-                  (i - 1) * width,
-                  i * width,
-                  (i + 1) * width,
-                ],
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp',
-              });
-              
-              return (
-                <Animated.View
-                  key={i}
-                  style={[styles.newsDot, {opacity}]}
-                />
-              );
-            })}
-          </View>
+            <Text style={styles.newsHeaderText}>Latest News</Text>
+          </View> */}
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('News')}
+            style={styles.marqueeWrapper}
+          >
+            <MarqueeView
+              style={styles.marqueeView}
+              speed={0.1}
+              delay={1000}
+              loop={true}
+            >
+              <Text style={styles.marqueeText}>{newsString}</Text>
+            </MarqueeView>
+          </TouchableOpacity>
         </View>
       )
     },
@@ -556,7 +515,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5dc',
   },
   bannerSlide: {
-    height: 200,
+    height: 100,
     padding: 8,
     borderRadius: 20
   },
@@ -593,7 +552,7 @@ const styles = StyleSheet.create({
   },
   turnoutInfo: {
     backgroundColor: '#f5f5dc',
-    paddingVertical: 8,
+    paddingVertical: 4,
     paddingHorizontal: 16,
   },
   turnoutText: {
@@ -714,6 +673,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+  },
+  newsMarqueeContainer: {
+    backgroundColor: '#2a2a2a',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+  },
+  newsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  newsHeaderText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  marqueeWrapper: {
+    backgroundColor: '#3a3a3a',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+  marqueeView: {
+    height: 20,
+  },
+  marqueeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   menuText: {
     color: '#fff',

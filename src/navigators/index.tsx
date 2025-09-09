@@ -56,6 +56,9 @@ import SportsScreen from '@app/screens/drawer/SportsScreen';
 import MeetingsScreen from '@app/screens/drawer/MeetingsScreen';
 import AppealScreen from '@app/screens/drawer/AppealScreen';
 import VoteScreen from '@app/screens/drawer/VoteScreen';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
+import SettingsScreen from '@app/screens/drawer/SettingScreen';
 
 // Custom Colors
 const AppColors = {
@@ -115,6 +118,7 @@ type RootDrawerParamList = {
   Meetings: undefined;
   Appeal: undefined;
   Vote: undefined;
+  Settings: undefined;
 };
 
 type HomeTabParamList = {
@@ -139,6 +143,9 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   updateUser: (userData: Partial<User>) => void;
+  bannerData: {id: number, image: string, textColor: string}[];
+  setBannerData: (banners: {id: number, image: string, textColor: string}[]) => void;
+  bannerLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -149,6 +156,9 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   isLoading: true,
   updateUser: () => {},
+  bannerData: [],
+  setBannerData: () => {},
+  bannerLoading: true,
 });
 
 // Auth Provider
@@ -158,10 +168,74 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [bannerData, setBannerDataState] = useState<{id: number, image: string, textColor: string}[]>([]);
+  const [bannerLoading, setBannerLoading] = useState(true);
+
+  const defaultBannerData = [
+    {
+      id: 1,
+      textColor: '#000',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+    },
+    {
+      id: 2,
+      textColor: '#FFF',
+      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+    }
+  ];
+
   // Check for existing login on app start
   useEffect(() => {
     checkAuthState();
   }, []);
+
+  const fetchBannerData = async () => {
+    try {
+      setBannerLoading(true);
+      const COMMUNITY_ID = await getCommunityId();
+      const headers = await getAuthHeaders();
+      
+      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        setBannerDataState(defaultBannerData);
+        return;
+      }
+
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
+
+      if (data.success && data.data && data.data.banner && Array.isArray(data.data.banner)) {
+        const banners = data.data.banner.map((imageUrl, index) => ({
+          id: index + 1,
+          image: imageUrl,
+          textColor: index % 2 === 0 ? '#000' : '#FFF'
+        }));
+        setBannerDataState(banners.length > 0 ? banners : defaultBannerData);
+      } else {
+        setBannerDataState(defaultBannerData);
+      }
+    } catch (error) {
+      console.error('Error fetching banner data:', error);
+      setBannerDataState(defaultBannerData);
+    } finally {
+      setBannerLoading(false);
+    }
+  };
+
+  // Fetch banner data on app start
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchBannerData();
+    }
+  }, [isLoggedIn]);
+
+  const setBannerData = (banners: {id: number, image: string, textColor: string}[]) => {
+    setBannerDataState(banners);
+  };
 
   const checkAuthState = async () => {
     try {
@@ -229,7 +303,10 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       login, 
       logout, 
       isLoading,
-      updateUser
+      updateUser,
+      bannerData,
+      setBannerData,
+      bannerLoading,
     }}>
       {children}
     </AuthContext.Provider>
@@ -273,9 +350,37 @@ const DrawerButton = (): React.JSX.Element => {
   );
 };
 
+// const CustomHeaderTitle = () => {
+//   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+//   const { user } = useAuth();
+  
+//   const navigateToHome = () => {
+//     navigation.navigate('HomeTab');
+//   };
+
+//   const getCommunityName = () => {
+//     if (user?.community?.name) {
+//       return user.community.name.toUpperCase();
+//     }
+//     return 'KULL-APP'; 
+//   };
+
+//   return (
+//     <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
+//       <Text style={styles.headerTitleText}>{getCommunityName()}</Text>
+//     </Pressable>
+//   );
+// };
+
 const CustomHeaderTitle = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   const { user } = useAuth();
+  
+  // Get current route name
+  const currentRouteName = navigation.getState()?.routes[navigation.getState()?.index || 0]?.name;
+
+  console.log('currentRouteName', currentRouteName);
+  
   
   const navigateToHome = () => {
     navigation.navigate('HomeTab');
@@ -288,9 +393,38 @@ const CustomHeaderTitle = () => {
     return 'KULL-APP'; 
   };
 
+  // Function to get display title based on route
+  const getDisplayTitle = () => {
+    // If on HomeTab, show community name
+    if (currentRouteName === 'HomeTab') {
+      return getCommunityName();
+    }
+    
+    // For other screens, show the screen name
+    const screenTitles = {
+      'Occasions': 'OCCASIONS',
+      'Kartavya': 'KARTAVYA',
+      'Bhajan': 'BHAJAN',
+      'Games': 'GAMES',
+      'Laws and Decisions': 'LAWS & DECISIONS',
+      'City Search': 'CITY SEARCH',
+      'Organization Officer': 'ORGANIZATION OFFICER',
+      'Education': 'EDUCATION',
+      'Employment': 'EMPLOYMENT',
+      'Sports': 'SPORTS',
+      'Social Upliftment': 'SOCIAL UPLIFTMENT',
+      'Dukan': 'DUKAN',
+      'Meetings': 'MEETINGS',
+      'Appeal': 'APPEAL',
+      'Vote': 'VOTE',
+    };
+
+    return screenTitles[currentRouteName] || getCommunityName();
+  };
+
   return (
     <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
-      <Text style={styles.headerTitleText}>{getCommunityName()}</Text>
+      <Text style={styles.headerTitleText}>{getDisplayTitle()}</Text>
     </Pressable>
   );
 };
@@ -451,34 +585,16 @@ const ProfileScreen = (): React.JSX.Element => {
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>First Name</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={editedUser.firstName || ''}
-                  onChangeText={(text) => setEditedUser({...editedUser, firstName: text})}
-                  placeholder="First Name"
-                />
-              ) : (
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.firstName}</Text>
                 </View>
-              )}
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Last Name</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={editedUser.lastName || ''}
-                  onChangeText={(text) => setEditedUser({...editedUser, lastName: text})}
-                  placeholder="Last Name"
-                />
-              ) : (
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.lastName}</Text>
                 </View>
-              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -683,6 +799,7 @@ const DrawerNavigator = (): React.JSX.Element => {
       <Screen name="Meetings" component={MeetingsScreen} />
       <Screen name="Appeal" component={AppealScreen} />
       <Screen name="Vote" component={VoteScreen} />
+      <Screen name="Settings" component={SettingsScreen} />
     </Navigator>
   );
 };

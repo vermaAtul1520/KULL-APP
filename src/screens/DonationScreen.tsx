@@ -18,6 +18,8 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import { useNavigation } from '@react-navigation/native';
+import BannerComponent from '@app/navigators/BannerComponent';
 
 const {width, height} = Dimensions.get('window');
 
@@ -68,6 +70,7 @@ const DonationScreen = () => {
   const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
   
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -643,8 +646,9 @@ const DonationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BannerComponent />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeftIcon size={24} color="#2a2a2a" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Donations</Text>
