@@ -153,6 +153,7 @@ interface CommunityConfiguration {
   __v: number;
   smaajKeTaaj: SmaajKeTaajProfile[];
   banner: string[];
+  adPopUpBanner: string
 }
 
 interface ConfigurationAPIResponse {
@@ -183,8 +184,52 @@ const HomeScreen = () => {
   // Modal state for profile details
   const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  
+  // Ad popup state
+  const [adPopupVisible, setAdPopupVisible] = useState(false);
+  const [adPopupImage, setAdPopupImage] = useState<string | null>(null);
 
   const navigation = useNavigation();
+
+  // Function to check if ad popup should be shown
+  const shouldShowAdPopup = async (adImageUrl: string) => {
+    try {
+      const lastShownTime = await AsyncStorage.getItem('adPopupLastShown');
+      if (!lastShownTime) return true;
+      
+      const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
+      const lastShown = parseInt(lastShownTime);
+      
+      return lastShown < oneHourAgo;
+    } catch (error) {
+      console.error('Error checking ad popup status:', error);
+      return true;
+    }
+  };
+
+  // Function to handle ad popup close
+  const handleAdPopupClose = async () => {
+    try {
+      await AsyncStorage.setItem('adPopupLastShown', Date.now().toString());
+      setAdPopupVisible(false);
+      setAdPopupImage(null);
+    } catch (error) {
+      console.error('Error saving ad popup status:', error);
+      setAdPopupVisible(false);
+      setAdPopupImage(null);
+    }
+  };
+
+  // Function to show ad popup if conditions are met
+  const checkAndShowAdPopup = async (adImageUrl: string | null) => {
+    if (!adImageUrl) return;
+    
+    const shouldShow = await shouldShowAdPopup(adImageUrl);
+    if (shouldShow) {
+      setAdPopupImage(adImageUrl);
+      setAdPopupVisible(true);
+    }
+  };
 
   // Function to handle token expiration and logout
   const handleTokenExpiration = async () => {
@@ -223,8 +268,6 @@ const HomeScreen = () => {
 
   // Function to check if response indicates token expiration
   const isTokenExpired = (responseData: any): boolean => {
-    console.log('responseData', responseData);
-    
     return (
       responseData.success === false &&
       (responseData.error === 'jwt expired' || 
@@ -385,6 +428,12 @@ const HomeScreen = () => {
         } else {
           setBannerData(defaultBannerData);
         }
+
+        // Handle ad popup banner (using dummy URL for now since API doesn't return it yet)
+        const dummyAdUrl = 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg';
+        // Uncomment below line when API starts returning adPopUpBanner
+        const adUrl = data.data.adPopUpBanner || dummyAdUrl;
+        await checkAndShowAdPopup(adUrl);
       } else {
         console.log('Invalid API response, using default data');
         setProfileData(defaultProfileData);
@@ -804,6 +853,33 @@ const HomeScreen = () => {
       
       {/* Profile Details Modal */}
       {renderProfileDetailsModal()}
+      
+      {/* Ad Popup Modal */}
+      {adPopupVisible && adPopupImage && (
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={adPopupVisible}
+          onRequestClose={handleAdPopupClose}
+        >
+          <View style={styles.adPopupOverlay}>
+            <View style={styles.adPopupContainer}>
+              <TouchableOpacity 
+                style={styles.adCloseButton}
+                onPress={handleAdPopupClose}
+                activeOpacity={0.8}
+              >
+                <CloseIcon size={30} color="#fff" />
+              </TouchableOpacity>
+              <Image
+                source={{uri: adPopupImage}}
+                style={styles.adPopupImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -1219,6 +1295,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 12,
     flex: 1,
+  },
+  // Ad Popup Styles
+  adPopupOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adPopupContainer: {
+    width: width * 0.9,
+    height: '80%',
+    position: 'relative',
+  },
+  adCloseButton: {
+    position: 'absolute',
+    top: -20,
+    right: 10,
+    zIndex: 1000,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    padding: 5,
+  },
+  adPopupImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
   },
 });
 

@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'react-native';
@@ -225,8 +226,13 @@ const LoginScreen: React.FC = () => {
               style={styles.loginButton} 
               onPress={handleLogin}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
+              {isLoading ? 
+              <ActivityIndicator />
+              :
               <Text style={styles.loginButtonText}>LOG IN</Text>
+              }
             </TouchableOpacity>
 
             <TouchableOpacity 
