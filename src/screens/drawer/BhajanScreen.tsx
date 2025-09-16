@@ -21,6 +21,7 @@ import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import Svg, { Path } from 'react-native-svg';
 import { getCommunityId } from '@app/constants/apiUtils';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,6 +35,12 @@ const PlayIcon = ({ size = 24, color = "#666" }) => (
 const CloseIcon = ({ size = 24, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+  </Svg>
+);
+
+const BackIcon = ({ size = 24, color = "#fff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
@@ -107,6 +114,7 @@ interface BhajanAPIResponse {
 const BhajanScreen = () => {
   // All hooks must be called at the top level
   const { user, token } = useAuth();
+  const navigation = useNavigation();
   const { t } = useLanguage();
   
   const [videos, setVideos] = useState<BhajanVideo[]>([]);
@@ -429,7 +437,10 @@ const BhajanScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <MusicIcon size={24} color={AppColors.primary} />
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.white} />
+        </TouchableOpacity>
+        {/* <MusicIcon size={24} color={AppColors.primary} /> */}
         <Text style={styles.headerTitle}>{t('Bhajan Collection') || 'Bhajan Collection'}</Text>
       </View>
 
@@ -462,10 +473,16 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.cream,
   },
   header: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: AppColors.dark,
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
   },
   headerTitle: {
     fontSize: 20,

@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -267,6 +268,7 @@ const getYearsOfService = (joinedDate: string) => {
 };
 
 const OfficersScreen = () => {
+  const navigation = useNavigation();
   const [filteredOfficers, setFilteredOfficers] = useState<Officer[]>(officers);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -419,7 +421,7 @@ const OfficersScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
       
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>

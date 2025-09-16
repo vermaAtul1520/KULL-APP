@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -225,6 +226,7 @@ const getStatusColor = (status: string) => {
 };
 
 const MeetingScreen = () => {
+  const navigation = useNavigation();
   const [filteredDocuments, setFilteredDocuments] = useState<MeetingDocument[]>(meetingDocuments);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -456,7 +458,7 @@ const MeetingScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
       
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>

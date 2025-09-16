@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path } from 'react-native-svg';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +26,12 @@ const { width } = Dimensions.get('window');
 const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+  </Svg>
+);
+
+const BackIcon = ({ size = 24, color = "#fff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
@@ -110,6 +117,7 @@ interface EducationResponse {
 
 const EducationScreen = () => {
   const { user, token } = useAuth();
+  const navigation = useNavigation();
   
   // State management
   const [resources, setResources] = useState<EducationResource[]>([]);
@@ -475,6 +483,9 @@ const EducationScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.white} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Education</Text>
         <Text style={styles.headerSubtitle}>
           {filteredResources.length} resources available
@@ -567,8 +578,16 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.cream,
   },
   header: {
-    padding: 20,
-    backgroundColor: AppColors.dark,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
   },
   headerTitle: {
     fontSize: 24,

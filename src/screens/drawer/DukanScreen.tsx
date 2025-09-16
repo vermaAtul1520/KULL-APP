@@ -3,6 +3,7 @@
  * Focus on: Shop Name, Owner, Location, Contact, and Key Details
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -60,6 +61,12 @@ const PhoneIcon = ({ size = 16, color = AppColors.green }) => (
       d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"
       fill={color}
     />
+  </Svg>
+);
+
+const BackIcon = ({ size = 24, color = "#fff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
@@ -179,6 +186,7 @@ const shops: Shop[] = [
 ];
 
 export default function DukanScreen() {
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
@@ -336,8 +344,13 @@ export default function DukanScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.white} />
+        </TouchableOpacity>
+        <View style={{flex: 1, flexDirection: 'column', alignItems: 'center', alignContent: 'center', alignSelf: 'center', marginRight: 30}}>
         <Text style={styles.headerTitle}>Local Dukan</Text>
         <Text style={styles.headerSubtitle}>{filteredShops.length} shops found</Text>
+        </View>
       </View>
 
       <SearchBar />
@@ -375,8 +388,14 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: AppColors.primary,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 15,
+    paddingTop: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
   },
   headerTitle: {
     fontSize: 24,
