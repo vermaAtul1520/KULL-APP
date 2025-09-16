@@ -108,8 +108,8 @@ type RootDrawerParamList = {
   Bhajan: undefined;
   Games: undefined;
   'Laws and Decisions': undefined;
-  'City Search': undefined;
-  'Organization Officer': undefined;
+  'CitySearch': undefined;
+  'OrganizationOfficer': undefined;
   Education: undefined;
   Employment: undefined;
   Sports: undefined;
@@ -789,8 +789,8 @@ const DrawerNavigator = (): React.JSX.Element => {
       <Screen name="Bhajan" component={BhajanScreen} />
       <Screen name="Games" component={GamesScreen} />
       <Screen name="Laws and Decisions" component={LawsScreen} />
-      <Screen name="City Search" component={CitySearchScreen} />
-      <Screen name="Organization Officer" component={OrganizationOfficerScreen} />
+      <Screen name="CitySearch" component={CitySearchScreen} />
+      <Screen name="OrganizationOfficer" component={OrganizationOfficerScreen} />
       <Screen name="Education" component={EducationScreen} />
       <Screen name="Employment" component={EmploymentScreen} />
       <Screen name="Sports" component={SportsScreen} />
