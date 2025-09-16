@@ -18,7 +18,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
-import { getCommunityId } from '@app/constants/apiUtils';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import Svg, { Path } from 'react-native-svg';
 import BannerComponent from '@app/navigators/BannerComponent';
 
@@ -150,13 +150,13 @@ const MyPeopleScreen = () => {
   );
 
   // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const fetchCommunityUsers = async () => {
     try {

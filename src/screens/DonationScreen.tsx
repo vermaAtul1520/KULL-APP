@@ -20,6 +20,7 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import { useNavigation } from '@react-navigation/native';
 import BannerComponent from '@app/navigators/BannerComponent';
+import { getAuthHeaders } from '@app/constants/apiUtils';
 
 const {width, height} = Dimensions.get('window');
 
@@ -90,15 +91,6 @@ const DonationScreen = () => {
   const categories = ['All', 'Health', 'Education', 'Food', 'Environment', 'Other'];
   const urgencyLevels = ['All', 'High', 'Medium', 'Low'];
   const organizationTypes = ['All', 'NGO', 'Trust', 'Foundation', 'Government', 'Private'];
-
-  // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
 
   const fetchDonations = async () => {
     try {

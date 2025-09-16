@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@app/navigators';
 import { BASE_URL } from '@app/constants/constant';
 import BannerComponent from '@app/navigators/BannerComponent';
+import { getAuthHeaders } from '@app/constants/apiUtils';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -101,13 +102,13 @@ const NewsScreen = () => {
     }
   };
 
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const fetchNews = async (isRefresh = false) => {
     try {

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
-import { getCommunityId } from '@app/constants/apiUtils';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { useNavigation } from '@react-navigation/native';
 import BannerComponent from '@app/navigators/BannerComponent';
 import MarqueeView from 'react-native-marquee-view';
@@ -336,13 +336,13 @@ const HomeScreen = () => {
   const newsString = defaultNewsHeadlines.map(item => `${item.text}`).join(' • ');
 
   // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const fetchCommunityConfiguration = async () => {
     try {

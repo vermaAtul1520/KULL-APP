@@ -1,4 +1,4 @@
-import { getCommunityId } from '@app/constants/apiUtils';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import BannerComponent from '@app/navigators/BannerComponent';
@@ -220,13 +220,13 @@ const PostScreen = () => {
   );
 
   // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const fetchPosts = async (): Promise<Post[]> => {
     try {

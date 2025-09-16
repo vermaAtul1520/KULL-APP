@@ -20,7 +20,7 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import Svg, { Path } from 'react-native-svg';
-import { getCommunityId } from '@app/constants/apiUtils';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
@@ -126,13 +126,13 @@ const BhajanScreen = () => {
   const [searchText, setSearchText] = useState('');
 
   // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const extractYouTubeId = (url: string): string => {
     // Handle youtu.be format

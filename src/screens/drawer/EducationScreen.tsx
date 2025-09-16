@@ -19,6 +19,7 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
+import { getAuthHeaders } from '@app/constants/apiUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -139,13 +140,13 @@ const EducationScreen = () => {
   ];
 
   // API Functions
-  const getAuthHeaders = async () => {
-    const userToken = await AsyncStorage.getItem('userToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken || token}`,
-    };
-  };
+  // const getAuthHeaders = async () => {
+  //   const userToken = await AsyncStorage.getItem('userToken');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${userToken || token}`,
+  //   };
+  // };
 
   const fetchEducationResources = async () => {
     try {
