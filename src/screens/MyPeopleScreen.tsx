@@ -324,10 +324,11 @@ const MyPeopleScreen = () => {
     const filterOptions = {
       gender: ['male', 'female', 'other'],
       maritalStatus: ['single', 'married', 'divorced', 'widowed'],
-      communityStatus: ['pending', 'approved', 'rejected'],
-      roleInCommunity: ['member', 'admin', 'moderator'],
-      religion: ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain'],
-      cast: ['Brahmin', 'Kshatriya', 'Vaishya', 'Shudra', 'Other'],
+      gotra: ['malha','biddu']
+      // communityStatus: ['pending', 'approved', 'rejected'],
+      // roleInCommunity: ['member', 'admin', 'moderator'],
+      // religion: ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain'],
+      // cast: ['Brahmin', 'Kshatriya', 'Vaishya', 'Shudra', 'Other'],
     };
 
     return (
@@ -418,7 +419,7 @@ const MyPeopleScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>User Details</Text>
               <TouchableOpacity onPress={closeUserModal}>
-                <Icon name="close" size={24} color={AppColors.white} />
+                <CloseIcon size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
