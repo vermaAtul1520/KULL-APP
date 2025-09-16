@@ -258,7 +258,7 @@ const JoinCommunityScreen: React.FC = () => {
       </View>
 
       {/* Gotra */}
-      <View style={styles.inputGroup}>
+      {/* <View style={styles.inputGroup}>
         <Text style={styles.label}>Gotra *</Text>
         <TextInput
           style={styles.input}
@@ -267,6 +267,21 @@ const JoinCommunityScreen: React.FC = () => {
           placeholder="Enter your gotra"
           placeholderTextColor={AppColors.gray}
         />
+      </View> */}
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Gotra *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.gotra}
+            onValueChange={(value) => updateFormData('gotra', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select your gotra" value="" />
+            <Picker.Item label="Malha" value="malha" />
+            <Picker.Item label="Biddu" value="biddu" />
+          </Picker>
+        </View>
       </View>
 
       {/* Father Name */}
