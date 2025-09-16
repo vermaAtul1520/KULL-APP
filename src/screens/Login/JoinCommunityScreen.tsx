@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { moderateScale } from '@app/constants/scaleUtils';
+import { BASE_URL } from '@app/constants/constant';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -157,7 +158,7 @@ const JoinCommunityScreen: React.FC = () => {
         requestType: 'join_community'
       };
 
-      const response = await fetch('https://kull-backend.onrender.com/api/auth/signup', {
+      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
