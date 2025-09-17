@@ -1,3 +1,5 @@
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -59,18 +61,6 @@ const BackIcon = ({ size = 24, color = "#fff" }) => (
   </Svg>
 );
 
-const GridIcon = ({ size = 16, color = "#666" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z" fill={color}/>
-  </Svg>
-);
-
-const StarIcon = ({ size = 16, color = "#666" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={color}/>
-  </Svg>
-);
-
 const AppColors = {
   primary: '#7dd3c0',
   black: '#000000',
@@ -90,188 +80,90 @@ const AppColors = {
   purple: '#8b5cf6',
 };
 
-// Job Post Interface
+// Job Post Interface - Updated to match API response
 interface JobPost {
-  id: string;
+  _id: string;
   title: string;
   company: string;
   location: string;
   description: string;
   category: string;
-  type: 'pdf' | 'image' | 'posting';
-  url: string;
+  fileType: 'pdf' | 'image';
   thumbnailUrl?: string;
   salary: string;
   experience: string;
-  jobType: 'offer' | 'need';
-  postedBy: string;
   language: string;
-  isUrgent?: boolean;
+  community: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-// Dummy data with PDF and image support
-const jobPosts: JobPost[] = [
-  {
-    id: '1',
-    title: 'Senior Software Developer Position',
-    company: 'TechCorp Solutions',
-    location: 'Mumbai, Maharashtra',
-    description: 'We are looking for a skilled software developer to join our dynamic team. You will be responsible for developing web applications using React.js, Node.js, and modern technologies. Must have 3-5 years experience.',
-    category: 'IT & Software',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹12-18 LPA',
-    experience: '3-5 years',
-    jobType: 'offer',
-    postedBy: 'Rajesh Kumar',
-    language: 'English',
-    isUrgent: true
-  },
-  {
-    id: '2',
-    title: 'Accountant Job Requirements',
-    company: 'Community Business',
-    location: 'Delhi NCR',
-    description: 'Looking for an experienced accountant for our family business. Must be familiar with GST, taxation, and financial reporting. Immediate joining preferred.',
-    category: 'Finance & Accounting',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-7 LPA',
-    experience: '2-4 years',
-    jobType: 'need',
-    postedBy: 'Priya Sharma',
-    language: 'Hindi'
-  },
-  {
-    id: '3',
-    title: 'Marketing Executive Opportunity',
-    company: 'Growth Marketing Agency',
-    location: 'Bangalore, Karnataka',
-    description: 'Join our marketing team to drive digital campaigns and boost brand awareness. Experience in social media marketing and content creation preferred.',
-    category: 'Marketing & Sales',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹5-8 LPA',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Amit Patel',
-    language: 'English'
-  },
-  {
-    id: '4',
-    title: 'Graphic Designer Required',
-    company: 'Creative Studio',
-    location: 'Remote/Work from Home',
-    description: 'Looking for a creative graphic designer for branding projects. Need someone who can create logos, brochures, and digital assets using Adobe Creative Suite.',
-    category: 'Design & Creative',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹25K-40K/project',
-    experience: '1-2 years',
-    jobType: 'need',
-    postedBy: 'Sunita Singh',
-    language: 'English',
-    isUrgent: true
-  },
-  {
-    id: '5',
-    title: 'Data Analyst Role Available',
-    company: 'Analytics Pro Ltd',
-    location: 'Pune, Maharashtra',
-    description: 'Seeking a data analyst to help derive insights from large datasets and create meaningful reports for business decisions. Python and SQL expertise required.',
-    category: 'Data & Analytics',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹8-12 LPA',
-    experience: '2-4 years',
-    jobType: 'offer',
-    postedBy: 'Vikash Kumar',
-    language: 'English'
-  },
-  {
-    id: '6',
-    title: 'Math Teacher Needed Urgently',
-    company: 'Community School',
-    location: 'Chennai, Tamil Nadu',
-    description: 'Our community school needs a dedicated teacher for mathematics and science subjects for classes 6-10. B.Ed qualification required.',
-    category: 'Education & Training',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹3-5 LPA',
-    experience: '1-3 years',
-    jobType: 'need',
-    postedBy: 'School Committee',
-    language: 'Tamil',
-    isUrgent: true
-  },
-  {
-    id: '7',
-    title: 'Sales Manager Position',
-    company: 'Retail Chain Ltd',
-    location: 'Hyderabad, Telangana',
-    description: 'Looking for an experienced sales manager to lead our retail operations. Must have team management experience and strong communication skills.',
-    category: 'Marketing & Sales',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    salary: '₹6-10 LPA',
-    experience: '3-6 years',
-    jobType: 'offer',
-    postedBy: 'HR Department',
-    language: 'English'
-  },
-  {
-    id: '8',
-    title: 'Web Developer Wanted',
-    company: 'StartUp Hub',
-    location: 'Gurgaon, Haryana',
-    description: 'Join our startup team as a web developer. Work with latest technologies including React, Node.js, and cloud platforms. Equity offered.',
-    category: 'IT & Software',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    salary: '₹4-8 LPA + Equity',
-    experience: '1-3 years',
-    jobType: 'offer',
-    postedBy: 'Tech Lead',
-    language: 'English'
-  }
-];
-
-const getJobTypeColor = (jobType: string) => {
-  return jobType === 'offer' ? AppColors.success : AppColors.blue;
-};
 
 const EmploymentScreen = () => {
   const navigation = useNavigation();
-  const [filteredJobs, setFilteredJobs] = useState<JobPost[]>(jobPosts);
-  const [loading, setLoading] = useState(false);
+  const [jobPosts, setJobPosts] = useState<JobPost[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<JobPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
-  // Filter jobs based on search only
+  // Fetch job posts from API
+  const fetchJobPosts = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/jobPosts/`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setJobPosts(result.data);
+        setFilteredJobs(result.data);
+      } else {
+        console.error('API returned unsuccessful response:', result);
+        setJobPosts([]);
+        setFilteredJobs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching job posts:', error);
+      Alert.alert('Error', 'Failed to load job posts. Please try again.');
+      setJobPosts([]);
+      setFilteredJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchJobPosts();
+  }, []);
+
+  // Filter jobs based on search
   useEffect(() => {
     filterJobs();
-  }, [searchQuery]);
+  }, [searchQuery, jobPosts]);
 
   const filterJobs = () => {
     let filtered = jobPosts;
 
-    // Apply search filter only
     if (searchQuery.trim()) {
       filtered = filtered.filter(job => {
         const query = searchQuery.toLowerCase();
         return (
-          job.title.toLowerCase().includes(query) ||
-          job.description.toLowerCase().includes(query) ||
-          job.category.toLowerCase().includes(query) ||
-          job.company.toLowerCase().includes(query) ||
-          job.location.toLowerCase().includes(query)
+          job.title?.toLowerCase().includes(query) ||
+          job.description?.toLowerCase().includes(query) ||
+          job.category?.toLowerCase().includes(query) ||
+          job.company?.toLowerCase().includes(query) ||
+          job.location?.toLowerCase().includes(query)
         );
       });
     }
@@ -279,21 +171,20 @@ const EmploymentScreen = () => {
     setFilteredJobs(filtered);
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await fetchJobPosts();
+    setRefreshing(false);
   };
 
   const openJob = (job: JobPost) => {
     setSelectedJob(job);
-    if (job.type === 'image') {
+    if (job.fileType === 'image') {
       setImageModalVisible(true);
-    } else if (job.type === 'pdf') {
+    } else if (job.fileType === 'pdf') {
       setPdfModalVisible(true);
     } else {
-      Alert.alert('Job Details', `${job.title}\n\n${job.description}\n\nSalary: ${job.salary}\nExperience: ${job.experience}\nContact: ${job.postedBy}`, [
+      Alert.alert('Job Details', `${job.title}\n\n${job.description}\n\nSalary: ${job.salary || 'Not specified'}\nExperience: ${job.experience || 'Not specified'}\nCompany: ${job.company}`, [
         { text: 'Close', style: 'cancel' }
       ]);
     }
@@ -305,10 +196,21 @@ const EmploymentScreen = () => {
     setSelectedJob(null);
   };
 
+  // Get full image URL with fallback
+  const getFullImageUrl = (thumbnailUrl?: string) => {
+    if (!thumbnailUrl) {
+      // Fallback dummy image
+      return 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png';
+    }
+    return `${BASE_URL}/${thumbnailUrl}`;
+  };
+
   // PDF Modal Component
   const PdfModal = () => {
-    const getPdfViewerUrl = (pdfUrl: string) => {
-      return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
+    const getPdfViewerUrl = (thumbnailUrl?: string) => {
+      if (!thumbnailUrl) return '';
+      const fullUrl = getFullImageUrl(thumbnailUrl);
+      return fullUrl ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullUrl)}` : '';
     };
 
     return (
@@ -326,7 +228,7 @@ const EmploymentScreen = () => {
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
                   {selectedJob?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>💼 Job Posting</Text>
+                <Text style={styles.viewerLabel}>Job Posting</Text>
               </View>
               <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
@@ -335,9 +237,9 @@ const EmploymentScreen = () => {
           </View>
           
           <View style={styles.pdfContent}>
-            {selectedJob && (
+            {selectedJob && selectedJob.thumbnailUrl && (
               <WebView
-                source={{ uri: getPdfViewerUrl(selectedJob.url) }}
+                source={{ uri: getPdfViewerUrl(selectedJob.thumbnailUrl) }}
                 style={styles.webView}
                 startInLoadingState={true}
                 javaScriptEnabled={true}
@@ -383,13 +285,11 @@ const EmploymentScreen = () => {
         </View>
         
         <View style={styles.imageModalContent}>
-          {selectedJob && (
-            <Image
-              source={{ uri: selectedJob.url }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
-          )}
+          <Image
+            source={{ uri: getFullImageUrl(selectedJob?.thumbnailUrl) }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
         </View>
         
         <View style={styles.modalFooter}>
@@ -401,8 +301,6 @@ const EmploymentScreen = () => {
     </Modal>
   );
 
-  // Type Filter Component - REMOVED
-
   // Job Card Component
   const JobCard = ({ item }: { item: JobPost }) => (
     <TouchableOpacity
@@ -411,23 +309,16 @@ const EmploymentScreen = () => {
       activeOpacity={0.8}
     >
       <View style={styles.jobHeader}>
-        <View style={[styles.typeIndicator, { backgroundColor: getJobTypeColor(item.jobType) }]}>
-          {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
-          {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
-          {item.type === 'posting' && <BriefcaseIcon size={24} color={AppColors.white} />}
+        <View style={[styles.typeIndicator, { backgroundColor: AppColors.primary }]}>
+          {item.fileType === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
+          {item.fileType === 'image' && <ImageIcon size={24} color={AppColors.white} />}
         </View>
-        {item.isUrgent && (
-          <View style={styles.urgentBadge}>
-            <StarIcon size={12} color={AppColors.white} />
-            <Text style={styles.urgentText}>URGENT</Text>
-          </View>
-        )}
       </View>
 
-      {item.type === 'image' && item.thumbnailUrl && (
+      {(item.fileType === 'image' || !item.thumbnailUrl) && (
         <View style={styles.imagePreview}>
           <Image 
-            source={{ uri: item.thumbnailUrl }} 
+            source={{ uri: getFullImageUrl(item.thumbnailUrl) }} 
             style={styles.previewImage}
             resizeMode="cover"
           />
@@ -444,17 +335,18 @@ const EmploymentScreen = () => {
         <View style={styles.jobFooter}>
           <View style={styles.jobMeta}>
             <Text style={styles.locationText}>{item.location}</Text>
-            <Text style={styles.salaryText}>{item.salary}</Text>
+            {item.salary && <Text style={styles.salaryText}>{item.salary}</Text>}
+            {item.experience && <Text style={styles.experienceText}>{item.experience}</Text>}
           </View>
           <View style={styles.badgeContainer}>
-            <View style={[styles.typeBadge, { backgroundColor: getJobTypeColor(item.jobType) }]}>
-              <Text style={styles.typeBadgeText}>
-                {item.jobType === 'offer' ? 'OFFER' : 'NEED'}
-              </Text>
-            </View>
             <View style={[styles.categoryBadge, { backgroundColor: AppColors.primary }]}>
               <Text style={styles.categoryBadgeText}>{item.category}</Text>
             </View>
+            {item.language && (
+              <View style={[styles.languageBadge, { backgroundColor: AppColors.blue }]}>
+                <Text style={styles.languageBadgeText}>{item.language}</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -491,16 +383,16 @@ const EmploymentScreen = () => {
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'offer').length}</Text>
-          <Text style={styles.statLabel}>Offers</Text>
+          <Text style={styles.statNumber}>{jobPosts.filter(j => j.fileType === 'image').length}</Text>
+          <Text style={styles.statLabel}>Images</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.jobType === 'need').length}</Text>
-          <Text style={styles.statLabel}>Needs</Text>
+          <Text style={styles.statNumber}>{jobPosts.filter(j => j.fileType === 'pdf').length}</Text>
+          <Text style={styles.statLabel}>PDFs</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{jobPosts.filter(j => j.isUrgent).length}</Text>
-          <Text style={styles.statLabel}>Urgent</Text>
+          <Text style={styles.statNumber}>{jobPosts.filter(j => j.language === 'English').length}</Text>
+          <Text style={styles.statLabel}>English</Text>
         </View>
       </View>
 
@@ -525,7 +417,7 @@ const EmploymentScreen = () => {
       <FlatList
         data={filteredJobs}
         renderItem={({ item }) => <JobCard item={item} />}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         style={styles.jobList}
         showsVerticalScrollIndicator={false}
         numColumns={1}
@@ -670,20 +562,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  urgentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppColors.warning,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  urgentText: {
-    fontSize: 10,
-    color: AppColors.white,
-    fontWeight: 'bold',
-  },
   imagePreview: {
     height: 120,
     marginHorizontal: 12,
@@ -737,20 +615,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: AppColors.teal,
     fontWeight: '600',
+    marginBottom: 1,
+  },
+  experienceText: {
+    fontSize: 11,
+    color: AppColors.orange,
+    fontWeight: '600',
   },
   badgeContainer: {
     flexDirection: 'row',
     gap: 6,
-  },
-  typeBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  typeBadgeText: {
-    fontSize: 10,
-    color: AppColors.white,
-    fontWeight: '500',
   },
   categoryBadge: {
     paddingHorizontal: 6,
@@ -758,6 +632,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryBadgeText: {
+    fontSize: 10,
+    color: AppColors.white,
+    fontWeight: '500',
+  },
+  languageBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  languageBadgeText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: '500',
