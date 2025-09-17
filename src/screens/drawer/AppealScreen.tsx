@@ -1,8 +1,5 @@
-/*
-REACT NATIVE VERSION WITH SIMPLE FILE UPLOAD
-Uses only built-in React Native components to avoid native module issues
-*/
-
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
@@ -280,23 +277,32 @@ const AppealScreen = () => {
     setShowTextInput(false);
   };
 
-  // Create API payload
-  const createApiPayload = () => {
+  // Category mapping for API - Maps 6 UI categories to 4 backend values
+  const getCategoryApiValue = (displayCategory: string) => {
+    const categoryMap = {
+      'General Suggestion': 'general',
+      'Technical Issue': 'technical',
+      'Service Complaint': 'general',    // Maps to general
+      'Feature Request': 'technical',    // Maps to technical  
+      'Policy Concern': 'other',         // Maps to other
+      'Other': 'other'
+    };
+    return categoryMap[displayCategory] || 'general';
+  };
+
+  // Create API payload - UPDATED TO SIMPLIFIED STRUCTURE
+  const createApiPayload = async () => {
+    const COMMUNITY_ID = await getCommunityId();
     const payload = {
       subject: subject.trim(),
       description: description.trim(),
-      category: category,
-      userId: "user_123",
-      userEmail: "user@example.com",
-      userName: "John Doe",
-      submissionTime: new Date().toISOString(),
-      deviceInfo: {
-        platform: Platform.OS,
-        version: Platform.Version,
-      },
-      priority: "medium",
-      status: "submitted",
-      attachment: uploadedFile ? {
+      category: getCategoryApiValue(category),
+      community: COMMUNITY_ID
+    };
+
+    // Add uploaded file if present
+    if (uploadedFile) {
+      payload.attachment = {
         id: uploadedFile.id,
         name: uploadedFile.name,
         type: uploadedFile.type,
@@ -304,18 +310,106 @@ const AppealScreen = () => {
         mimeType: uploadedFile.mimeType,
         base64Data: uploadedFile.base64,
         uri: uploadedFile.uri,
-      } : null,
-      metadata: {
-        hasAttachment: !!uploadedFile,
-        attachmentType: uploadedFile?.type || null,
-        attachmentSize: uploadedFile?.size || 0,
-        expectedResponseTime: "2-3 business days",
-        language: "en",
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      }
-    };
+      };
+    }
 
     return payload;
+  };
+
+  // Real API submission function
+  const submitAppealToAPI = async (payload: any) => {
+    try {
+      // console.log('Submitting appeal to API:', APPEALS_ENDPOINT);
+      console.log('Payload:', JSON.stringify(payload, null, 2));
+
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/appeals/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      console.log('API Response Status:', response.status);
+
+      if (!response.ok) {
+        // Handle different HTTP error status codes
+        let errorMessage = 'Failed to submit appeal';
+        
+        switch (response.status) {
+          case 400:
+            errorMessage = 'Invalid request data. Please check your inputs.';
+            break;
+          case 401:
+            errorMessage = 'Authentication required. Please log in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to submit appeals.';
+            break;
+          case 404:
+            errorMessage = 'Appeal submission service not found.';
+            break;
+          case 413:
+            errorMessage = 'File too large. Please select a smaller file.';
+            break;
+          case 422:
+            errorMessage = 'Invalid data format. Please check your inputs.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please try again later.';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          case 503:
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            break;
+          default:
+            errorMessage = `Request failed with status ${response.status}`;
+        }
+
+        // Try to get error details from response body
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+          console.log('API Error Data:', errorData);
+        } catch (jsonError) {
+          console.log('Could not parse error response as JSON');
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const responseData = await response.json();
+      console.log('API Success Response:', responseData);
+
+      // Return standardized response format
+      return {
+        success: true,
+        appealId: responseData.appealId || responseData.id || `APL-${Date.now()}`,
+        message: responseData.message || 'Appeal submitted successfully',
+        data: responseData
+      };
+
+    } catch (error) {
+      console.error('API Submission Error:', error);
+
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('Network')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+
+      // Handle timeout errors
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+
+      // Re-throw the error to be handled by the calling function
+      throw error;
+    }
   };
 
   const handleSubmitAppeal = async () => {
@@ -333,10 +427,7 @@ const AppealScreen = () => {
     setIsSubmitting(true);
 
     try {
-      const payload = createApiPayload();
-      console.log('Appeal API Payload:', JSON.stringify(payload, null, 2));
-      
-      // Simulate API call
+      const payload = await createApiPayload();
       const response = await submitAppealToAPI(payload);
       
       if (response.success) {
@@ -353,6 +444,8 @@ const AppealScreen = () => {
                 setUploadedFile(null);
                 setShowTextInput(false);
                 setTextNote('');
+                // Optionally navigate back
+                // navigation.goBack();
               }
             }
           ]
@@ -362,22 +455,16 @@ const AppealScreen = () => {
       }
     } catch (error) {
       console.error('Error submitting appeal:', error);
-      Alert.alert('Error', 'Failed to submit appeal. Please try again.');
+      
+      let errorMessage = 'Failed to submit appeal. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Submission Failed', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const submitAppealToAPI = async (payload: any) => {
-    return new Promise<{success: boolean, appealId?: string, message?: string}>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          appealId: `APL-${Date.now()}`,
-          message: 'Appeal submitted successfully'
-        });
-      }, 2000);
-    });
   };
 
   const getFileIcon = (type: string) => {
