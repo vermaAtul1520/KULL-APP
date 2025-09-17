@@ -1,10 +1,12 @@
 /**
- * Simplified DukanScreen Component - Essential Shop Information
- * Focus on: Shop Name, Owner, Location, Contact, and Key Details
+ * DukanScreen Component with API Integration
+ * Endpoint: /api/dukaans/
  */
 
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +18,8 @@ import {
   TextInput,
   Linking,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -98,104 +102,75 @@ const CloseIcon = ({ size = 24, color = AppColors.white }) => (
 );
 
 interface Shop {
-  id: string;
+  _id: string;
   shopName: string;
   ownerName: string;
   location: string;
   phone: string;
-  isOpen: boolean;
   category: string;
   products: string[];
-  experience: string;
-  specialty: string;
+  description: string;
+  community: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-const shops: Shop[] = [
-  {
-    id: '1',
-    shopName: 'Sharma General Store',
-    ownerName: 'Rajesh Sharma',
-    location: 'Rajouri Garden',
-    phone: '+91 9876543210',
-    isOpen: true,
-    category: 'Grocery & Daily Needs',
-    products: ['Fresh vegetables', 'Dairy products', 'Household items', 'Snacks'],
-    experience: '15 years in grocery business',
-    specialty: 'Fresh vegetables delivered daily from local farms'
-  },
-  {
-    id: '2',
-    shopName: 'Delhi Sweets Corner',
-    ownerName: 'Mohan Gupta',
-    location: 'Karol Bagh',
-    phone: '+91 9123456789',
-    isOpen: true,
-    category: 'Sweets & Traditional Food',
-    products: ['Traditional sweets', 'Samosas', 'Chole bhature', 'Festival specials'],
-    experience: '25 years in sweet making',
-    specialty: 'Authentic Delhi-style sweets and fresh snacks'
-  },
-  {
-    id: '3',
-    shopName: 'Mobile World',
-    ownerName: 'Amit Kumar',
-    location: 'Lajpat Nagar',
-    phone: '+91 8765432109',
-    isOpen: false,
-    category: 'Electronics & Mobile',
-    products: ['Smartphones', 'Mobile accessories', 'Repairs', 'Screen guards'],
-    experience: '8 years in mobile business',
-    specialty: 'Expert mobile repairs and latest accessories'
-  },
-  {
-    id: '4',
-    shopName: 'Mehta Medical',
-    ownerName: 'Dr. Suresh Mehta',
-    location: 'Rohini',
-    phone: '+91 9988776655',
-    isOpen: true,
-    category: 'Pharmacy & Health',
-    products: ['Medicines', 'Health supplements', 'Medical equipment', 'First aid'],
-    experience: '20 years as pharmacist',
-    specialty: '24/7 emergency medicines and health consultation'
-  },
-  {
-    id: '5',
-    shopName: 'Fashion Hub',
-    ownerName: 'Priya Singh',
-    location: 'Janpath',
-    phone: '+91 7654321098',
-    isOpen: true,
-    category: 'Clothing & Fashion',
-    products: ['Ladies wear', 'Kids clothing', 'Accessories', 'Ethnic wear'],
-    experience: '12 years in fashion retail',
-    specialty: 'Latest trends and custom tailoring services'
-  },
-  {
-    id: '6',
-    shopName: 'Spice Garden',
-    ownerName: 'Ramesh Agarwal',
-    location: 'Chandni Chowk',
-    phone: '+91 7766554433',
-    isOpen: true,
-    category: 'Spices & Herbs',
-    products: ['Fresh spices', 'Dry fruits', 'Organic herbs', 'Tea varieties'],
-    experience: '30 years in spice trade',
-    specialty: 'Pure and fresh spices directly from farms'
-  }
-];
 
 export default function DukanScreen() {
   const navigation = useNavigation();
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
 
+  // Fetch shops from API
+  const fetchShops = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/dukaans/`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setShops(result.data);
+      } else {
+        console.error('API returned unsuccessful response:', result);
+        setShops([]);
+      }
+    } catch (error) {
+      console.error('Error fetching shops:', error);
+      Alert.alert('Error', 'Failed to load shops. Please try again.');
+      setShops([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchShops();
+  }, []);
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchShops();
+    setRefreshing(false);
+  };
+
   const filteredShops = shops.filter(shop =>
-    shop.shopName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    shop.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    shop.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    shop.category.toLowerCase().includes(searchQuery.toLowerCase())
+    shop.shopName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.ownerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shop.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const openShopDetails = (shop: Shop) => {
@@ -209,7 +184,13 @@ export default function DukanScreen() {
   };
 
   const makePhoneCall = (phoneNumber: string) => {
-    Linking.openURL(`tel:${phoneNumber}`).catch(() => {
+    // Add +91 prefix if not present and clean phone number
+    let cleanPhone = phoneNumber.replace(/[^\d]/g, '');
+    if (!cleanPhone.startsWith('91') && cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    
+    Linking.openURL(`tel:+${cleanPhone}`).catch(() => {
       Alert.alert('Error', 'Unable to make phone call');
     });
   };
@@ -251,22 +232,21 @@ export default function DukanScreen() {
                 <Text style={styles.infoValue}>{selectedShop.category}</Text>
               </View>
 
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Experience:</Text>
-                <Text style={styles.infoValue}>{selectedShop.experience}</Text>
-              </View>
+              {selectedShop.description && (
+                <View style={styles.specialtyContainer}>
+                  <Text style={styles.sectionTitle}>Description:</Text>
+                  <Text style={styles.specialtyText}>{selectedShop.description}</Text>
+                </View>
+              )}
 
-              <View style={styles.specialtyContainer}>
-                <Text style={styles.sectionTitle}>Specialty:</Text>
-                <Text style={styles.specialtyText}>{selectedShop.specialty}</Text>
-              </View>
-
-              <View style={styles.productsContainer}>
-                <Text style={styles.sectionTitle}>Products:</Text>
-                {selectedShop.products.map((product, index) => (
-                  <Text key={index} style={styles.productText}>• {product}</Text>
-                ))}
-              </View>
+              {selectedShop.products && selectedShop.products.length > 0 && (
+                <View style={styles.productsContainer}>
+                  <Text style={styles.sectionTitle}>Products:</Text>
+                  {selectedShop.products.map((product, index) => (
+                    <Text key={index} style={styles.productText}>• {product}</Text>
+                  ))}
+                </View>
+              )}
 
               <TouchableOpacity 
                 style={styles.callButton}
@@ -292,9 +272,7 @@ export default function DukanScreen() {
         <View style={styles.shopIconContainer}>
           <ShopIcon size={20} color={AppColors.primary} />
         </View>
-        <View style={[styles.statusDot, { 
-          backgroundColor: shop.isOpen ? AppColors.green : AppColors.red 
-        }]} />
+        <View style={[styles.statusDot, { backgroundColor: AppColors.green }]} />
       </View>
 
       <View style={styles.shopInfo}>
@@ -311,6 +289,13 @@ export default function DukanScreen() {
         </View>
 
         <Text style={styles.categoryLabel}>{shop.category}</Text>
+        
+        {shop.products && shop.products.length > 0 && (
+          <Text style={styles.productsPreview} numberOfLines={1}>
+            {shop.products.slice(0, 3).join(', ')}
+            {shop.products.length > 3 ? '...' : ''}
+          </Text>
+        )}
       </View>
 
       <TouchableOpacity 
@@ -341,15 +326,36 @@ export default function DukanScreen() {
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <BackIcon size={24} color={AppColors.white} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Local Dukan</Text>
+            <Text style={styles.headerSubtitle}>Loading shops...</Text>
+          </View>
+        </View>
+        
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={AppColors.primary} />
+          <Text style={styles.loadingText}>Loading shops...</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
-        <View style={{flex: 1, flexDirection: 'column', alignItems: 'center', alignContent: 'center', alignSelf: 'center', marginRight: 30}}>
-        <Text style={styles.headerTitle}>Local Dukan</Text>
-        <Text style={styles.headerSubtitle}>{filteredShops.length} shops found</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Local Dukan</Text>
+          <Text style={styles.headerSubtitle}>{filteredShops.length} shops found</Text>
         </View>
       </View>
 
@@ -359,18 +365,27 @@ export default function DukanScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.primary]}
+          />
+        }
       >
         <View style={styles.shopsContainer}>
           {filteredShops.map((shop) => (
-            <ShopCard key={shop.id} shop={shop} />
+            <ShopCard key={shop._id} shop={shop} />
           ))}
         </View>
 
-        {filteredShops.length === 0 && (
+        {filteredShops.length === 0 && !loading && (
           <View style={styles.emptyState}>
             <ShopIcon size={48} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>No shops found</Text>
-            <Text style={styles.emptySubtitle}>Try searching with different keywords</Text>
+            <Text style={styles.emptySubtitle}>
+              {searchQuery ? 'Try searching with different keywords' : 'No shops available in your area'}
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -397,6 +412,14 @@ const styles = StyleSheet.create({
     marginRight: 15,
     padding: 5,
   },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    marginRight: 30,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -407,6 +430,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.white,
     opacity: 0.9,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: AppColors.gray,
   },
   searchContainer: {
     backgroundColor: AppColors.white,
@@ -511,6 +544,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  productsPreview: {
+    fontSize: 12,
+    color: AppColors.gray,
+    fontStyle: 'italic',
   },
   contactButton: {
     flexDirection: 'row',
