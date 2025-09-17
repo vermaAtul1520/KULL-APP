@@ -1,3 +1,5 @@
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -102,110 +104,24 @@ const AppColors = {
 
 // Meeting Document Interface
 interface MeetingDocument {
-  id: string;
+  _id: string;
   title: string;
-  organizer: string;
   description: string;
-  type: 'pdf' | 'image' | 'document';
+  organizer: string;
+  type: 'pdf' | 'image';
   url: string;
   thumbnailUrl?: string;
   meetingDate: string;
   meetingTime: string;
   attendees: string;
   documentType: 'agenda' | 'minutes' | 'invite';
-  status: 'upcoming' | 'completed' | 'cancelled';
-  priority: 'high' | 'medium' | 'low';
+  fileSize: number;
+  isActive: boolean;
+  community: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-// Dummy data for meeting documents
-const meetingDocuments: MeetingDocument[] = [
-  {
-    id: '1',
-    title: 'Q1 Planning Meeting Agenda',
-    organizer: 'Sarah Johnson',
-    description: 'Comprehensive agenda for quarterly planning session covering budget review, project timelines, and strategic goals for next quarter.',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    meetingDate: '15 March 2025',
-    meetingTime: '10:00 AM - 12:00 PM',
-    attendees: '12 people',
-    documentType: 'agenda',
-    status: 'upcoming',
-    priority: 'high'
-  },
-  {
-    id: '2',
-    title: 'Team Standup Meeting Minutes',
-    organizer: 'Mike Chen',
-    description: 'Weekly team standup meeting minutes with action items, blockers discussed, and next steps for ongoing projects.',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    meetingDate: '12 March 2025',
-    meetingTime: '9:00 AM - 9:30 AM',
-    attendees: '8 people',
-    documentType: 'minutes',
-    status: 'completed',
-    priority: 'medium'
-  },
-  {
-    id: '3',
-    title: 'Board Meeting Invitation',
-    organizer: 'Executive Office',
-    description: 'Formal invitation to monthly board meeting with agenda preview and joining instructions for all board members.',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    meetingDate: '20 March 2025',
-    meetingTime: '2:00 PM - 4:00 PM',
-    attendees: '6 people',
-    documentType: 'invite',
-    status: 'upcoming',
-    priority: 'high'
-  },
-  {
-    id: '4',
-    title: 'Project Review Meeting Minutes',
-    organizer: 'Lisa Wang',
-    description: 'Detailed minutes from project review meeting including milestone updates, budget discussions, and resource allocation decisions.',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    meetingDate: '10 March 2025',
-    meetingTime: '3:00 PM - 5:00 PM',
-    attendees: '15 people',
-    documentType: 'minutes',
-    status: 'completed',
-    priority: 'medium'
-  },
-  {
-    id: '5',
-    title: 'Client Meeting Agenda',
-    organizer: 'David Brown',
-    description: 'Client meeting agenda covering project deliverables, timeline review, feedback collection, and next phase planning.',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    meetingDate: '18 March 2025',
-    meetingTime: '11:00 AM - 12:30 PM',
-    attendees: '5 people',
-    documentType: 'agenda',
-    status: 'upcoming',
-    priority: 'high'
-  },
-  {
-    id: '6',
-    title: 'All Hands Meeting Invite',
-    organizer: 'HR Department',
-    description: 'Monthly all hands meeting invitation with company updates, new team member introductions, and Q&A session details.',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    meetingDate: '25 March 2025',
-    meetingTime: '4:00 PM - 5:00 PM',
-    attendees: '50+ people',
-    documentType: 'invite',
-    status: 'upcoming',
-    priority: 'medium'
-  }
-];
 
 const getDocumentTypeColor = (docType: string) => {
   switch(docType) {
@@ -216,29 +132,96 @@ const getDocumentTypeColor = (docType: string) => {
   }
 };
 
-const getStatusColor = (status: string) => {
-  switch(status) {
-    case 'upcoming': return AppColors.warning;
-    case 'completed': return AppColors.success;
-    case 'cancelled': return AppColors.red;
-    default: return AppColors.gray;
+// Format date for display
+const formatMeetingDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  } catch {
+    return dateString;
   }
+};
+
+// Format time for display
+const formatMeetingTime = (timeString: string) => {
+  try {
+    const [hour, minute] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hour), parseInt(minute));
+    return date.toLocaleTimeString('en-IN', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  } catch {
+    return timeString;
+  }
+};
+
+// Format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 const MeetingScreen = () => {
   const navigation = useNavigation();
-  const [filteredDocuments, setFilteredDocuments] = useState<MeetingDocument[]>(meetingDocuments);
-  const [loading, setLoading] = useState(false);
+  const [meetingDocuments, setMeetingDocuments] = useState<MeetingDocument[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<MeetingDocument[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocument, setSelectedDocument] = useState<MeetingDocument | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
+  // Fetch meeting documents from API
+  const fetchMeetingDocuments = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/meetings/`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setMeetingDocuments(result.data);
+        setFilteredDocuments(result.data);
+      } else {
+        console.error('API returned unsuccessful response:', result);
+        setMeetingDocuments([]);
+        setFilteredDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching meeting documents:', error);
+      Alert.alert('Error', 'Failed to load meeting documents. Please try again.');
+      setMeetingDocuments([]);
+      setFilteredDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchMeetingDocuments();
+  }, []);
+
   // Filter documents based on search
   useEffect(() => {
     filterDocuments();
-  }, [searchQuery]);
+  }, [searchQuery, meetingDocuments]);
 
   const filterDocuments = () => {
     let filtered = meetingDocuments;
@@ -247,10 +230,10 @@ const MeetingScreen = () => {
       filtered = filtered.filter(doc => {
         const query = searchQuery.toLowerCase();
         return (
-          doc.title.toLowerCase().includes(query) ||
-          doc.description.toLowerCase().includes(query) ||
-          doc.organizer.toLowerCase().includes(query) ||
-          doc.documentType.toLowerCase().includes(query)
+          doc.title?.toLowerCase().includes(query) ||
+          doc.description?.toLowerCase().includes(query) ||
+          doc.organizer?.toLowerCase().includes(query) ||
+          doc.documentType?.toLowerCase().includes(query)
         );
       });
     }
@@ -258,11 +241,10 @@ const MeetingScreen = () => {
     setFilteredDocuments(filtered);
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await fetchMeetingDocuments();
+    setRefreshing(false);
   };
 
   const openDocument = (document: MeetingDocument) => {
@@ -272,7 +254,7 @@ const MeetingScreen = () => {
     } else if (document.type === 'pdf') {
       setPdfModalVisible(true);
     } else {
-      Alert.alert('Meeting Details', `${document.title}\n\n${document.description}\n\nDate: ${document.meetingDate}\nTime: ${document.meetingTime}\nAttendees: ${document.attendees}`, [
+      Alert.alert('Meeting Details', `${document.title}\n\n${document.description}\n\nDate: ${formatMeetingDate(document.meetingDate)}\nTime: ${formatMeetingTime(document.meetingTime)}\nAttendees: ${document.attendees}`, [
         { text: 'Close', style: 'cancel' }
       ]);
     }
@@ -282,6 +264,16 @@ const MeetingScreen = () => {
     setImageModalVisible(false);
     setPdfModalVisible(false);
     setSelectedDocument(null);
+  };
+
+  // Get full image URL with fallback
+  const getFullImageUrl = (imageUrl?: string) => {
+    if (!imageUrl) {
+      // Fallback dummy meeting image
+      return 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png';
+    }
+    // Use the full URL directly from API
+    return imageUrl;
   };
 
   // PDF Modal Component
@@ -305,7 +297,7 @@ const MeetingScreen = () => {
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
                   {selectedDocument?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>📅 Meeting Document</Text>
+                <Text style={styles.viewerLabel}>Meeting Document</Text>
               </View>
               <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
@@ -314,7 +306,7 @@ const MeetingScreen = () => {
           </View>
           
           <View style={styles.pdfContent}>
-            {selectedDocument && (
+            {selectedDocument?.url && (
               <WebView
                 source={{ uri: getPdfViewerUrl(selectedDocument.url) }}
                 style={styles.webView}
@@ -362,18 +354,16 @@ const MeetingScreen = () => {
         </View>
         
         <View style={styles.imageModalContent}>
-          {selectedDocument && (
-            <Image
-              source={{ uri: selectedDocument.url }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
-          )}
+          <Image
+            source={{ uri: getFullImageUrl(selectedDocument?.url) }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
         </View>
         
         <View style={styles.modalFooter}>
           <Text style={styles.modalFooterText}>
-            {selectedDocument?.organizer} • {selectedDocument?.meetingDate}
+            {selectedDocument?.organizer} • {selectedDocument && formatMeetingDate(selectedDocument.meetingDate)}
           </Text>
         </View>
       </View>
@@ -391,17 +381,16 @@ const MeetingScreen = () => {
         <View style={[styles.typeIndicator, { backgroundColor: getDocumentTypeColor(item.documentType) }]}>
           {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
           {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
-          {item.type === 'document' && <MeetingIcon size={24} color={AppColors.white} />}
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: AppColors.success }]}>
+          <Text style={styles.statusText}>ACTIVE</Text>
         </View>
       </View>
 
-      {item.type === 'image' && item.thumbnailUrl && (
+      {(item.type === 'image' || item.thumbnailUrl) && (
         <View style={styles.imagePreview}>
           <Image 
-            source={{ uri: item.thumbnailUrl }} 
+            source={{ uri: getFullImageUrl(item.thumbnailUrl || item.url) }} 
             style={styles.previewImage}
             resizeMode="cover"
           />
@@ -418,11 +407,11 @@ const MeetingScreen = () => {
         <View style={styles.meetingDetails}>
           <View style={styles.detailRow}>
             <CalendarIcon size={14} color={AppColors.gray} />
-            <Text style={styles.detailText}>{item.meetingDate}</Text>
+            <Text style={styles.detailText}>{formatMeetingDate(item.meetingDate)}</Text>
           </View>
           <View style={styles.detailRow}>
             <ClockIcon size={14} color={AppColors.gray} />
-            <Text style={styles.detailText}>{item.meetingTime}</Text>
+            <Text style={styles.detailText}>{formatMeetingTime(item.meetingTime)}</Text>
           </View>
           <View style={styles.detailRow}>
             <UsersIcon size={14} color={AppColors.gray} />
@@ -439,6 +428,11 @@ const MeetingScreen = () => {
           <View style={[styles.formatBadge, { backgroundColor: AppColors.primary }]}>
             <Text style={styles.formatBadgeText}>{item.type.toUpperCase()}</Text>
           </View>
+          {item.fileSize && (
+            <View style={[styles.sizeBadge, { backgroundColor: AppColors.gray }]}>
+              <Text style={styles.sizeBadgeText}>{formatFileSize(item.fileSize)}</Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -482,8 +476,8 @@ const MeetingScreen = () => {
           <Text style={styles.statLabel}>Minutes</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{meetingDocuments.filter(d => d.status === 'upcoming').length}</Text>
-          <Text style={styles.statLabel}>Upcoming</Text>
+          <Text style={styles.statNumber}>{meetingDocuments.filter(d => d.isActive).length}</Text>
+          <Text style={styles.statLabel}>Active</Text>
         </View>
       </View>
 
@@ -508,7 +502,7 @@ const MeetingScreen = () => {
       <FlatList
         data={filteredDocuments}
         renderItem={({ item }) => <DocumentCard item={item} />}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         style={styles.documentList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -713,6 +707,7 @@ const styles = StyleSheet.create({
   documentFooter: {
     flexDirection: 'row',
     gap: 6,
+    flexWrap: 'wrap',
   },
   docTypeBadge: {
     paddingHorizontal: 8,
@@ -730,6 +725,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   formatBadgeText: {
+    fontSize: 10,
+    color: AppColors.white,
+    fontWeight: '500',
+  },
+  sizeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  sizeBadgeText: {
     fontSize: 10,
     color: AppColors.white,
     fontWeight: '500',
