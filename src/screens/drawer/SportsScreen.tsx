@@ -1,3 +1,5 @@
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -104,154 +106,25 @@ const AppColors = {
 
 // Sports Event Interface
 interface SportsEvent {
-  id: string;
+  _id: string;
   title: string;
   organizer: string;
   location: string;
   description: string;
   category: string;
-  type: 'pdf' | 'image' | 'event';
+  type: 'pdf' | 'image';
   url: string;
   thumbnailUrl?: string;
   eventDate: string;
   registrationFee: string;
   eventType: 'tournament' | 'match' | 'training';
-  postedBy: string;
-  language: string;
   isUpcoming?: boolean;
+  isActive: boolean;
+  community: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-// Dummy data with sports events, tournaments, and matches
-const sportsEvents: SportsEvent[] = [
-  {
-    id: '1',
-    title: 'Annual Cricket Championship 2025',
-    organizer: 'Mumbai Cricket Association',
-    location: 'Wankhede Stadium, Mumbai',
-    description: 'Join the biggest cricket tournament of the year! Open registration for all age groups. Tournament rules, fixtures, and registration details included in the official brochure.',
-    category: 'Cricket',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    eventDate: '15-20 March 2025',
-    registrationFee: '₹500 per team',
-    eventType: 'tournament',
-    postedBy: 'Cricket Committee',
-    language: 'English',
-    isUpcoming: true
-  },
-  {
-    id: '2',
-    title: 'Football League Season Opener',
-    organizer: 'Delhi Football Club',
-    location: 'Jawaharlal Nehru Stadium, Delhi',
-    description: 'Season opening match poster with team lineups, match schedule, and ticket information. Support your local teams in this exciting football championship.',
-    category: 'Football',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    eventDate: '5 April 2025',
-    registrationFee: '₹200-800',
-    eventType: 'match',
-    postedBy: 'Football Association',
-    language: 'Hindi'
-  },
-  {
-    id: '3',
-    title: 'Basketball Training Camp Brochure',
-    organizer: 'Bangalore Basketball Academy',
-    location: 'Sports Complex, Bangalore',
-    description: 'Professional basketball training camp for youth players. Complete training schedule, coaching staff details, and registration process outlined in detailed brochure.',
-    category: 'Basketball',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    eventDate: '1-30 April 2025',
-    registrationFee: '₹3000 per month',
-    eventType: 'training',
-    postedBy: 'Basketball Coach',
-    language: 'English',
-    isUpcoming: true
-  },
-  {
-    id: '4',
-    title: 'Tennis Tournament Results',
-    organizer: 'Chennai Tennis Club',
-    location: 'SDAT Tennis Stadium, Chennai',
-    description: 'Final results and winners of the annual tennis championship. Complete bracket results, match scores, and winner photographs in commemorative poster format.',
-    category: 'Tennis',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    eventDate: 'Completed Feb 2025',
-    registrationFee: 'Results Only',
-    eventType: 'tournament',
-    postedBy: 'Tennis Club Secretary',
-    language: 'English'
-  },
-  {
-    id: '5',
-    title: 'Swimming Championship Guidelines',
-    organizer: 'Hyderabad Aquatic Center',
-    location: 'Olympic Pool, Hyderabad',
-    description: 'Official swimming competition rules, event categories, timing standards, and registration procedures. All participants must review these guidelines before registration.',
-    category: 'Swimming',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    eventDate: '10-12 May 2025',
-    registrationFee: '₹300 per event',
-    eventType: 'tournament',
-    postedBy: 'Swimming Association',
-    language: 'English',
-    isUpcoming: true
-  },
-  {
-    id: '6',
-    title: 'Athletic Meet Event Poster',
-    organizer: 'Pune Athletic Club',
-    location: 'Shiv Chhatrapati Sports Complex',
-    description: 'Annual athletic meet featuring track and field events. Event schedule, participant guidelines, and prize distribution details in colorful event poster.',
-    category: 'Athletics',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    eventDate: '25-27 April 2025',
-    registrationFee: '₹150 per event',
-    eventType: 'tournament',
-    postedBy: 'Athletic Committee',
-    language: 'Marathi',
-    isUpcoming: true
-  },
-  {
-    id: '7',
-    title: 'Badminton League Rules & Format',
-    organizer: 'Kolkata Badminton Association',
-    location: 'Netaji Indoor Stadium, Kolkata',
-    description: 'Complete league format, match rules, player regulations, and tournament structure for the professional badminton league season.',
-    category: 'Badminton',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    eventDate: 'June-Aug 2025',
-    registrationFee: '₹1000 per player',
-    eventType: 'tournament',
-    postedBy: 'League Organizer',
-    language: 'English'
-  },
-  {
-    id: '8',
-    title: 'Volleyball Championship Highlights',
-    organizer: 'Goa Volleyball Federation',
-    location: 'Beach Sports Arena, Goa',
-    description: 'Championship highlights, winning moments, team photographs, and tournament memories captured in this commemorative poster presentation.',
-    category: 'Volleyball',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    eventDate: 'Completed Jan 2025',
-    registrationFee: 'Highlights Only',
-    eventType: 'tournament',
-    postedBy: 'Sports Photographer',
-    language: 'English'
-  }
-];
 
 const getEventTypeColor = (eventType: string) => {
   switch(eventType) {
@@ -262,34 +135,86 @@ const getEventTypeColor = (eventType: string) => {
   }
 };
 
+// Format date for display
+const formatEventDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  } catch {
+    return dateString;
+  }
+};
+
 const SportsScreen = () => {
   const navigation = useNavigation();
-  const [filteredEvents, setFilteredEvents] = useState<SportsEvent[]>(sportsEvents);
-  const [loading, setLoading] = useState(false);
+  const [sportsEvents, setSportsEvents] = useState<SportsEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<SportsEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<SportsEvent | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
-  // Filter events based on search only
+  // Fetch sports events from API
+  const fetchSportsEvents = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/api/sportsEvents/`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setSportsEvents(result.data);
+        setFilteredEvents(result.data);
+      } else {
+        console.error('API returned unsuccessful response:', result);
+        setSportsEvents([]);
+        setFilteredEvents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching sports events:', error);
+      Alert.alert('Error', 'Failed to load sports events. Please try again.');
+      setSportsEvents([]);
+      setFilteredEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchSportsEvents();
+  }, []);
+
+  // Filter events based on search
   useEffect(() => {
     filterEvents();
-  }, [searchQuery]);
+  }, [searchQuery, sportsEvents]);
 
   const filterEvents = () => {
     let filtered = sportsEvents;
 
-    // Apply search filter only
     if (searchQuery.trim()) {
       filtered = filtered.filter(event => {
         const query = searchQuery.toLowerCase();
         return (
-          event.title.toLowerCase().includes(query) ||
-          event.description.toLowerCase().includes(query) ||
-          event.category.toLowerCase().includes(query) ||
-          event.organizer.toLowerCase().includes(query) ||
-          event.location.toLowerCase().includes(query)
+          event.title?.toLowerCase().includes(query) ||
+          event.description?.toLowerCase().includes(query) ||
+          event.category?.toLowerCase().includes(query) ||
+          event.organizer?.toLowerCase().includes(query) ||
+          event.location?.toLowerCase().includes(query)
         );
       });
     }
@@ -297,11 +222,10 @@ const SportsScreen = () => {
     setFilteredEvents(filtered);
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await fetchSportsEvents();
+    setRefreshing(false);
   };
 
   const openEvent = (event: SportsEvent) => {
@@ -311,7 +235,7 @@ const SportsScreen = () => {
     } else if (event.type === 'pdf') {
       setPdfModalVisible(true);
     } else {
-      Alert.alert('Event Details', `${event.title}\n\n${event.description}\n\nDate: ${event.eventDate}\nLocation: ${event.location}\nFee: ${event.registrationFee}`, [
+      Alert.alert('Event Details', `${event.title}\n\n${event.description}\n\nDate: ${formatEventDate(event.eventDate)}\nLocation: ${event.location}\nFee: ${event.registrationFee}`, [
         { text: 'Close', style: 'cancel' }
       ]);
     }
@@ -321,6 +245,16 @@ const SportsScreen = () => {
     setImageModalVisible(false);
     setPdfModalVisible(false);
     setSelectedEvent(null);
+  };
+
+  // Get full image URL with fallback
+  const getFullImageUrl = (imageUrl?: string) => {
+    if (!imageUrl) {
+      // Fallback dummy sports image
+      return 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png';
+    }
+    // Use the full URL directly from API (already complete URLs)
+    return imageUrl;
   };
 
   // PDF Modal Component
@@ -344,7 +278,7 @@ const SportsScreen = () => {
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
                   {selectedEvent?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>🏆 Sports Event</Text>
+                <Text style={styles.viewerLabel}>Sports Event</Text>
               </View>
               <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
@@ -353,7 +287,7 @@ const SportsScreen = () => {
           </View>
           
           <View style={styles.pdfContent}>
-            {selectedEvent && (
+            {selectedEvent?.url && (
               <WebView
                 source={{ uri: getPdfViewerUrl(selectedEvent.url) }}
                 style={styles.webView}
@@ -401,13 +335,11 @@ const SportsScreen = () => {
         </View>
         
         <View style={styles.imageModalContent}>
-          {selectedEvent && (
-            <Image
-              source={{ uri: selectedEvent.url }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
-          )}
+          <Image
+            source={{ uri: getFullImageUrl(selectedEvent?.url) }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
         </View>
         
         <View style={styles.modalFooter}>
@@ -430,7 +362,6 @@ const SportsScreen = () => {
         <View style={[styles.typeIndicator, { backgroundColor: getEventTypeColor(item.eventType) }]}>
           {item.type === 'pdf' && <PdfIcon size={24} color={AppColors.white} />}
           {item.type === 'image' && <ImageIcon size={24} color={AppColors.white} />}
-          {item.type === 'event' && <SportIcon size={24} color={AppColors.white} />}
         </View>
         {item.isUpcoming && (
           <View style={styles.upcomingBadge}>
@@ -440,10 +371,10 @@ const SportsScreen = () => {
         )}
       </View>
 
-      {item.type === 'image' && item.thumbnailUrl && (
+      {(item.type === 'image' || item.thumbnailUrl) && (
         <View style={styles.imagePreview}>
           <Image 
-            source={{ uri: item.thumbnailUrl }} 
+            source={{ uri: getFullImageUrl(item.thumbnailUrl || item.url) }} 
             style={styles.previewImage}
             resizeMode="cover"
           />
@@ -460,7 +391,7 @@ const SportsScreen = () => {
         <View style={styles.eventDetails}>
           <View style={styles.detailRow}>
             <CalendarIcon size={14} color={AppColors.gray} />
-            <Text style={styles.detailText}>{item.eventDate}</Text>
+            <Text style={styles.detailText}>{formatEventDate(item.eventDate)}</Text>
           </View>
           <View style={styles.detailRow}>
             <MapIcon size={14} color={AppColors.gray} />
@@ -471,7 +402,7 @@ const SportsScreen = () => {
         <View style={styles.eventFooter}>
           <View style={styles.eventMeta}>
             <Text style={styles.categoryText}>{item.category}</Text>
-            <Text style={styles.feeText}>{item.registrationFee}</Text>
+            {item.registrationFee && <Text style={styles.feeText}>{item.registrationFee}</Text>}
           </View>
           <View style={styles.badgeContainer}>
             <View style={[styles.typeBadge, { backgroundColor: getEventTypeColor(item.eventType) }]}>
@@ -552,7 +483,7 @@ const SportsScreen = () => {
       <FlatList
         data={filteredEvents}
         renderItem={({ item }) => <EventCard item={item} />}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         style={styles.eventList}
         showsVerticalScrollIndicator={false}
         numColumns={1}
