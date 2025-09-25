@@ -44,6 +44,7 @@ interface FormData {
   thoughtOfMaking: string;
   maritalStatus: string;
   gotra: string;
+  subGotra: string;
 }
 
 const RequestCommunityScreen: React.FC = () => {
@@ -68,6 +69,7 @@ const RequestCommunityScreen: React.FC = () => {
     thoughtOfMaking: '',
     maritalStatus: 'single',
     gotra: '',
+    subGotra: '',
   });
 
   const updateFormData = (field: keyof FormData, value: string) => {
@@ -82,7 +84,7 @@ const RequestCommunityScreen: React.FC = () => {
       case 2:
         return ['address', 'pinCode', 'phoneNo', 'email', 'profession'];
       case 3:
-        return ['estimatedMembers', 'thoughtOfMaking', 'gotra'];
+        return ['estimatedMembers', 'thoughtOfMaking', 'gotra', 'subGotra'];
       default:
         return [];
     }
@@ -163,6 +165,7 @@ const RequestCommunityScreen: React.FC = () => {
         thoughtOfMaking: formData.thoughtOfMaking,
         maritalStatus: formData.maritalStatus,
         gotra: formData.gotra,
+        subGotra: formData.subGotra,
         requestType: 'community_request'
       };
 
@@ -404,6 +407,17 @@ const RequestCommunityScreen: React.FC = () => {
           value={formData.gotra}
           onChangeText={(value) => updateFormData('gotra', value)}
           placeholder="Enter your gotra"
+          placeholderTextColor={AppColors.gray}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Sub Gotra *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.subGotra}
+          onChangeText={(value) => updateFormData('subGotra', value)}
+          placeholder="Enter your sub gotra"
           placeholderTextColor={AppColors.gray}
         />
       </View>
