@@ -119,6 +119,86 @@ const RefreshIcon = ({ size = 20, color = "#2a2a2a" }) => (
   </Svg>
 );
 
+// Skeleton Loading Components
+const SkeletonBox = ({ width, height, borderRadius = 8, style = {} }) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animate = () => {
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start(() => animate());
+    };
+    animate();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: '#444',
+          borderRadius,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+const ProfileCardSkeleton = () => (
+  <View style={styles.profileCard}>
+    <View style={styles.profileImageContainer}>
+      <SkeletonBox width={60} height={60} borderRadius={30} />
+      <View style={[styles.profileBadge, { backgroundColor: '#444' }]}>
+        <SkeletonBox width={12} height={12} borderRadius={6} />
+      </View>
+    </View>
+    <SkeletonBox width="80%" height={16} style={{ marginBottom: 4 }} />
+    <SkeletonBox width="60%" height={14} style={{ marginBottom: 8 }} />
+    <SkeletonBox width="40%" height={12} />
+  </View>
+);
+
+const BannerSkeleton = () => (
+  <View style={[styles.bannerSlide, { width, backgroundColor: '#444' }]}>
+    <SkeletonBox width="100%" height={240} borderRadius={20} />
+  </View>
+);
+
+const MarqueeSkeleton = () => (
+  <View style={styles.newsMarqueeContainer}>
+    <View style={[styles.marqueeWrapper, { backgroundColor: '#444' }]}>
+      <SkeletonBox width="100%" height={20} borderRadius={4} />
+    </View>
+  </View>
+);
+
+const EmptyProfilesState = ({ onRefresh }) => (
+  <View style={styles.emptyState}>
+    <KingIcon size={48} color="#666" />
+    <Text style={styles.emptyStateTitle}>No Profiles Available</Text>
+    <Text style={styles.emptyStateText}>
+      Community profiles will appear here once they're added by administrators.
+    </Text>
+    <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
+      <RefreshIcon size={16} color="#7dd3c0" />
+      <Text style={styles.retryButtonText}>Refresh</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 // API Types
 interface SmaajKeTaajProfile {
   id: number;
@@ -180,6 +260,7 @@ const HomeScreen = () => {
   const [bannerData, setBannerData] = useState<{id: number, image: string, textColor: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   
   // Modal state for profile details
   const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
@@ -457,6 +538,7 @@ const HomeScreen = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setInitialLoad(false);
     }
   };
 
@@ -780,13 +862,15 @@ const HomeScreen = () => {
   const sections = [
     {
       id: 'banner',
-      renderItem: () => <BannerComponent />
+      renderItem: () => (loading && initialLoad) ? <BannerSkeleton /> : <BannerComponent />
     },
     {
       id: 'news',
-      renderItem: () => (
+      renderItem: () => (loading && initialLoad) ? (
+        <MarqueeSkeleton />
+      ) : (
         <View style={styles.newsMarqueeContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => navigation.navigate('News')}
             style={styles.marqueeWrapper}
@@ -810,10 +894,10 @@ const HomeScreen = () => {
           <View style={styles.sectionHeader}>
             <KingIcon size={24} color="black" />
             <Text style={styles.sectionTitle}>Samaj Ke Taj</Text>
-            <TouchableOpacity 
-              onPress={onRefresh} 
+            <TouchableOpacity
+              onPress={onRefresh}
               style={styles.refreshButton}
-              disabled={refreshing}
+              disabled={refreshing || loading}
             >
               {refreshing ? (
                 <ActivityIndicator size="small" color="#2a2a2a" />
@@ -822,12 +906,15 @@ const HomeScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-          
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#2a2a2a" />
-              <Text style={styles.loadingText}>Loading profiles...</Text>
+
+          {(loading && initialLoad) ? (
+            <View style={styles.profileGrid}>
+              {[1, 2, 3, 4].map((item) => (
+                <ProfileCardSkeleton key={item} />
+              ))}
             </View>
+          ) : profileData.length === 0 ? (
+            <EmptyProfilesState onRefresh={onRefresh} />
           ) : (
             <View style={styles.profileGrid}>
               {profileData.map(renderProfileCard)}
@@ -864,7 +951,7 @@ const HomeScreen = () => {
         >
           <View style={styles.adPopupOverlay}>
             <View style={styles.adPopupContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.adCloseButton}
                 onPress={handleAdPopupClose}
                 activeOpacity={0.8}
@@ -879,6 +966,16 @@ const HomeScreen = () => {
             </View>
           </View>
         </Modal>
+      )}
+
+      {/* Refresh Loading Overlay - shown during refresh when not initial load */}
+      {loading && !initialLoad && (
+        <View style={styles.refreshOverlay}>
+          <View style={styles.refreshIndicator}>
+            <ActivityIndicator size="small" color="#7dd3c0" />
+            <Text style={styles.refreshText}>Updating...</Text>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -1321,6 +1418,73 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 10,
+  },
+  // Refresh Overlay Styles
+  refreshOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  refreshIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a2a',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+  },
+  refreshText: {
+    color: '#7dd3c0',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  // Empty State Styles
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3a3a3a',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#7dd3c0',
+  },
+  retryButtonText: {
+    color: '#7dd3c0',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
 });
 
