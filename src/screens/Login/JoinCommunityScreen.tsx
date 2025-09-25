@@ -8,11 +8,13 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { moderateScale } from '@app/constants/scaleUtils';
 import { BASE_URL } from '@app/constants/constant';
+import { getCommunityId } from '@app/constants/apiUtils';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -29,10 +31,23 @@ const AppColors = {
   green: '#228b22',
 };
 
+interface GotraOption {
+  name: string;
+  subgotra: string[];
+}
+
+interface GotraResponse {
+  success: boolean;
+  data: {
+    gotra: GotraOption[];
+  };
+}
+
 interface JoinFormData {
   name: string;
   lastName: string;
   gotra: string;
+  subGotra: string;
   fatherName: string;
   maritalStatus: string;
   phoneNumber: string;
@@ -50,11 +65,15 @@ const JoinCommunityScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [ageOrDob, setAgeOrDob] = useState<'age' | 'dob'>('age');
+  const [gotraOptions, setGotraOptions] = useState<GotraOption[]>([]);
+  const [loadingGotra, setLoadingGotra] = useState(false);
+  const [referralCodeVerified, setReferralCodeVerified] = useState(false);
   
   const [formData, setFormData] = useState<JoinFormData>({
     name: '',
     lastName: '',
     gotra: '',
+    subGotra: '',
     fatherName: '',
     maritalStatus: 'single',
     phoneNumber: '',
@@ -70,11 +89,51 @@ const JoinCommunityScreen: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const fetchGotraOptions = async (referralCode: string) => {
+    if (!referralCode.trim()) {
+      Alert.alert('Error', 'Please enter a referral code');
+      return;
+    }
+
+    setLoadingGotra(true);
+    try {
+      const communityId = await getCommunityId();
+      const response = await fetch(`${BASE_URL}/api/community/${communityId}/gotraDetail`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result: GotraResponse = await response.json();
+
+      if (result.success && result.data.gotra) {
+        setGotraOptions(result.data.gotra);
+        setReferralCodeVerified(true);
+        Alert.alert('Success', 'Referral code verified! Please continue with your details.');
+      } else {
+        Alert.alert('Error', 'Invalid referral code or failed to fetch gotra details');
+        setReferralCodeVerified(false);
+        setGotraOptions([]);
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      Alert.alert('Error', 'Network error. Please try again.');
+      setReferralCodeVerified(false);
+      setGotraOptions([]);
+    } finally {
+      setLoadingGotra(false);
+    }
+  };
+
   // Define required fields for each page
   const getRequiredFieldsForPage = (page: number) => {
     switch (page) {
       case 1:
-        return ['referralCode', 'name', 'lastName', 'gotra', 'fatherName'];
+        if (!referralCodeVerified) {
+          return ['referralCode'];
+        }
+        return ['referralCode', 'name', 'lastName', 'gotra', 'subGotra', 'fatherName'];
       case 2:
         return ['maritalStatus', 'phoneNumber', 'email', 'profession'];
       case 3:
@@ -84,10 +143,20 @@ const JoinCommunityScreen: React.FC = () => {
     }
   };
 
-  const validateCurrentPage = () => {
+  const validateCurrentPage = async () => {
+    // Special handling for page 1 referral code verification
+    if (currentPage === 1 && !referralCodeVerified) {
+      if (!formData.referralCode.trim()) {
+        Alert.alert('Error', 'Please enter a referral code');
+        return false;
+      }
+      await fetchGotraOptions(formData.referralCode);
+      return false; // Stay on the same page after verification
+    }
+
     const requiredFields = getRequiredFieldsForPage(currentPage);
     const missingFields = requiredFields.filter(field => !formData[field as keyof JoinFormData]);
-    
+
     if (missingFields.length > 0) {
       Alert.alert('Error', 'Please fill in all required fields before proceeding');
       return false;
@@ -110,8 +179,8 @@ const JoinCommunityScreen: React.FC = () => {
     return true;
   };
 
-  const handleNext = () => {
-    if (validateCurrentPage()) {
+  const handleNext = async () => {
+    if (await validateCurrentPage()) {
       setCurrentPage(prev => prev + 1);
     }
   };
@@ -121,7 +190,7 @@ const JoinCommunityScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateCurrentPage()) {
+    if (!(await validateCurrentPage())) {
       return;
     }
 
@@ -149,6 +218,7 @@ const JoinCommunityScreen: React.FC = () => {
         motherTongue: 'Hindi',
         interests: ['community participation'],
         gotra: formData.gotra,
+        subGotra: formData.subGotra,
         fatherName: formData.fatherName,
         maritalStatus: formData.maritalStatus,
         bloodGroup: formData.bloodGroup,
@@ -218,84 +288,135 @@ const JoinCommunityScreen: React.FC = () => {
   const renderPage1 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Basic Information</Text>
-      
+
       {/* Referral Code */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Referral Code *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.referralCode}
-          onChangeText={(value) => updateFormData('referralCode', value)}
-          placeholder="Enter referral code from community member"
-          placeholderTextColor={AppColors.gray}
-        />
+        <View style={styles.referralContainer}>
+          <TextInput
+            style={[styles.input, styles.referralInput, referralCodeVerified && styles.inputVerified]}
+            value={formData.referralCode}
+            onChangeText={(value) => updateFormData('referralCode', value)}
+            placeholder="Enter referral code from community member"
+            placeholderTextColor={AppColors.gray}
+            editable={!referralCodeVerified}
+          />
+          {!referralCodeVerified && (
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={() => fetchGotraOptions(formData.referralCode)}
+              disabled={loadingGotra}
+            >
+              {loadingGotra ? (
+                <ActivityIndicator size="small" color={AppColors.white} />
+              ) : (
+                <Text style={styles.verifyButtonText}>Verify</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          {referralCodeVerified && (
+            <View style={styles.verifiedIcon}>
+              <Text style={styles.verifiedText}>✓</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.helpText}>
-          You need a referral code from an existing community member to join
+          {referralCodeVerified
+            ? 'Referral code verified successfully!'
+            : 'You need a referral code from an existing community member to join'
+          }
         </Text>
       </View>
 
-      {/* Name */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>First Name *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.name}
-          onChangeText={(value) => updateFormData('name', value)}
-          placeholder="Enter your first name"
-          placeholderTextColor={AppColors.gray}
-        />
-      </View>
+      {/* Show remaining fields only after referral code verification */}
+      {referralCodeVerified && (
+        <>
+          {/* Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>First Name *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.name}
+              onChangeText={(value) => updateFormData('name', value)}
+              placeholder="Enter your first name"
+              placeholderTextColor={AppColors.gray}
+            />
+          </View>
 
-      {/* Last Name */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Last Name *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.lastName}
-          onChangeText={(value) => updateFormData('lastName', value)}
-          placeholder="Enter your last name"
-          placeholderTextColor={AppColors.gray}
-        />
-      </View>
+          {/* Last Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Last Name *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.lastName}
+              onChangeText={(value) => updateFormData('lastName', value)}
+              placeholder="Enter your last name"
+              placeholderTextColor={AppColors.gray}
+            />
+          </View>
 
-      {/* Gotra */}
-      {/* <View style={styles.inputGroup}>
-        <Text style={styles.label}>Gotra *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.gotra}
-          onChangeText={(value) => updateFormData('gotra', value)}
-          placeholder="Enter your gotra"
-          placeholderTextColor={AppColors.gray}
-        />
-      </View> */}
+          {/* Gotra */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Gotra *</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.gotra}
+                onValueChange={(value) => {
+                  updateFormData('gotra', value);
+                  updateFormData('subGotra', ''); // Reset subgotra when gotra changes
+                }}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select your gotra" value="" />
+                {gotraOptions.map((gotra) => (
+                  <Picker.Item
+                    key={gotra.name}
+                    label={gotra.name}
+                    value={gotra.name}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Gotra *</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={formData.gotra}
-            onValueChange={(value) => updateFormData('gotra', value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select your gotra" value="" />
-            <Picker.Item label="Malha" value="malha" />
-            <Picker.Item label="Biddu" value="biddu" />
-          </Picker>
-        </View>
-      </View>
+          {/* Sub Gotra */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Sub Gotra *</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.subGotra}
+                onValueChange={(value) => updateFormData('subGotra', value)}
+                style={styles.picker}
+                enabled={!!formData.gotra}
+              >
+                <Picker.Item label="Select your sub gotra" value="" />
+                {formData.gotra &&
+                  gotraOptions
+                    .find(gotra => gotra.name === formData.gotra)
+                    ?.subgotra.map((subGotra) => (
+                      <Picker.Item
+                        key={subGotra}
+                        label={subGotra}
+                        value={subGotra}
+                      />
+                    ))}
+              </Picker>
+            </View>
+          </View>
 
-      {/* Father Name */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Father's Name *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.fatherName}
-          onChangeText={(value) => updateFormData('fatherName', value)}
-          placeholder="Enter father's name"
-          placeholderTextColor={AppColors.gray}
-        />
-      </View>
+          {/* Father Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Father's Name *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.fatherName}
+              onChangeText={(value) => updateFormData('fatherName', value)}
+              placeholder="Enter father's name"
+              placeholderTextColor={AppColors.gray}
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 
@@ -498,7 +619,9 @@ const JoinCommunityScreen: React.FC = () => {
           
           {currentPage < 3 ? (
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <Text style={styles.nextButtonText}>Next</Text>
+              <Text style={styles.nextButtonText}>
+                {currentPage === 1 && !referralCodeVerified ? 'Verify Code' : 'Next'}
+              </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity 
@@ -748,6 +871,46 @@ const styles = StyleSheet.create({
   },
   submitButtonTextDisabled: {
     color: AppColors.lightGray,
+  },
+  referralContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  referralInput: {
+    flex: 1,
+  },
+  inputVerified: {
+    backgroundColor: AppColors.lightGray,
+    borderColor: AppColors.green,
+  },
+  verifyButton: {
+    backgroundColor: AppColors.teal,
+    paddingHorizontal: moderateScale(15),
+    paddingVertical: moderateScale(8),
+    borderRadius: moderateScale(8),
+    marginLeft: moderateScale(10),
+    minWidth: moderateScale(60),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyButtonText: {
+    color: AppColors.white,
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+  },
+  verifiedIcon: {
+    backgroundColor: AppColors.green,
+    width: moderateScale(30),
+    height: moderateScale(30),
+    borderRadius: moderateScale(15),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: moderateScale(10),
+  },
+  verifiedText: {
+    color: AppColors.white,
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
   },
 });
 
