@@ -16,6 +16,7 @@ import Svg, { Path } from 'react-native-svg';
 import { moderateScale } from '@app/constants/scaleUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@app/navigators';
+import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
 import { BASE_URL } from '@app/constants/constant';
 import BannerComponent from '@app/navigators/BannerComponent';
 import { getAuthHeaders } from '@app/constants/apiUtils';
@@ -75,6 +76,7 @@ const CloseIcon = ({ size = 20, color = "#666" }) => (
 
 const NewsScreen = () => {
   const { user, token } = useAuth();
+  const { t } = useLanguage(); // Add this line
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [filteredNews, setFilteredNews] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,14 +104,6 @@ const NewsScreen = () => {
     }
   };
 
-  // const getAuthHeaders = async () => {
-  //   const userToken = await AsyncStorage.getItem('userToken');
-  //   return {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${userToken || token}`,
-  //   };
-  // };
-
   const fetchNews = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -131,11 +125,11 @@ const NewsScreen = () => {
         setNewsData(result.data);
         setFilteredNews(result.data);
       } else {
-        Alert.alert('Error', 'Failed to fetch news');
+        Alert.alert(t('Error') || 'Error', t('Failed to fetch news') || 'Failed to fetch news');
       }
     } catch (error) {
       console.error('Error fetching news:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Network error. Please try again.') || 'Network error. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -169,11 +163,11 @@ const NewsScreen = () => {
     const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInHours < 1) {
-      return 'Just now';
+      return t('Just now') || 'Just now';
     } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
+      return `${diffInHours}${t('h ago') || 'h ago'}`;
     } else if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
+      return `${diffInDays}${t('d ago') || 'd ago'}`;
     } else {
       return formatDate(dateString);
     }
@@ -213,7 +207,7 @@ const NewsScreen = () => {
               </View>
             ))}
             {item.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{item.tags.length - 3} more</Text>
+              <Text style={styles.moreTagsText}>+{item.tags.length - 3} {t('more') || 'more'}</Text>
             )}
           </View>
         )}
@@ -241,14 +235,14 @@ const NewsScreen = () => {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {searchQuery.trim() !== '' ? 'No news matches your search' : 'No news available'}
+        {searchQuery.trim() !== '' ? (t('No news matches your search') || 'No news matches your search') : (t('No news available') || 'No news available')}
       </Text>
       <Text style={styles.emptySubText}>
-        {searchQuery.trim() !== '' ? 'Try different keywords' : 'Pull down to refresh'}
+        {searchQuery.trim() !== '' ? (t('Try different keywords') || 'Try different keywords') : (t('Pull down to refresh') || 'Pull down to refresh')}
       </Text>
       {searchQuery.trim() !== '' && (
         <TouchableOpacity style={styles.clearSearchButton} onPress={() => setSearchQuery('')}>
-          <Text style={styles.clearSearchText}>Clear Search</Text>
+          <Text style={styles.clearSearchText}>{t('Clear Search') || 'Clear Search'}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -256,8 +250,8 @@ const NewsScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>Community News</Text>
-      <Text style={styles.headerSubtitle}>Stay updated with latest happenings</Text>
+      <Text style={styles.headerTitle}>{t('Community News') || 'Community News'}</Text>
+      <Text style={styles.headerSubtitle}>{t('Stay updated with latest happenings') || 'Stay updated with latest happenings'}</Text>
     </View>
   );
 
@@ -267,7 +261,7 @@ const NewsScreen = () => {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search news by title, content, author, category..."
+          placeholder={t('Search news by title, content, author, category...') || 'Search news by title, content, author, category...'}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={AppColors.gray}
@@ -283,8 +277,8 @@ const NewsScreen = () => {
       {searchQuery.trim() !== '' && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsText}>
-            {filteredNews.length} article{filteredNews.length !== 1 ? 's' : ''} found
-            {filteredNews.length !== newsData.length && ` (filtered from ${newsData.length})`}
+            {filteredNews.length} {filteredNews.length !== 1 ? (t('articles') || 'articles') : (t('article') || 'article')} {t('found') || 'found'}
+            {filteredNews.length !== newsData.length && ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
           </Text>
         </View>
       )}
@@ -297,7 +291,7 @@ const NewsScreen = () => {
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppColors.teal} />
-          <Text style={styles.loadingText}>Loading news...</Text>
+          <Text style={styles.loadingText}>{t('Loading news...') || 'Loading news...'}</Text>
         </View>
       </SafeAreaView>
     );

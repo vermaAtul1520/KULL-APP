@@ -26,6 +26,7 @@ import DrawerContent from '@app/screens/DrawerContent';
 import Logo from '@app/assets/images/hamburger.svg';
 import { Text, Alert } from 'react-native';
 import { StyleSheet } from 'react-native';
+import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
 
 // Import auth screens
 import WelcomeScreen from '@app/screens/Login/WelcomeScreen';
@@ -350,37 +351,15 @@ const DrawerButton = (): React.JSX.Element => {
   );
 };
 
-// const CustomHeaderTitle = () => {
-//   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
-//   const { user } = useAuth();
-  
-//   const navigateToHome = () => {
-//     navigation.navigate('HomeTab');
-//   };
-
-//   const getCommunityName = () => {
-//     if (user?.community?.name) {
-//       return user.community.name.toUpperCase();
-//     }
-//     return 'KULL-APP'; 
-//   };
-
-//   return (
-//     <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
-//       <Text style={styles.headerTitleText}>{getCommunityName()}</Text>
-//     </Pressable>
-//   );
-// };
-
 const CustomHeaderTitle = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   const { user } = useAuth();
+  const { t } = useLanguage(); // Add this line
   
   // Get current route name
   const currentRouteName = navigation.getState()?.routes[navigation.getState()?.index || 0]?.name;
 
   console.log('currentRouteName', currentRouteName);
-  
   
   const navigateToHome = () => {
     navigation.navigate('HomeTab');
@@ -393,30 +372,31 @@ const CustomHeaderTitle = () => {
     return 'KULL-APP'; 
   };
 
-  // Function to get display title based on route
+  // Function to get display title based on route with translations
   const getDisplayTitle = () => {
     // If on HomeTab, show community name
     if (currentRouteName === 'HomeTab') {
       return getCommunityName();
     }
     
-    // For other screens, show the screen name
+    // For other screens, show the translated screen name
     const screenTitles = {
-      'Occasions': 'OCCASIONS',
-      'Kartavya': 'KARTAVYA',
-      'Bhajan': 'BHAJAN',
-      'Games': 'GAMES',
-      'Laws and Decisions': 'LAWS & DECISIONS',
-      'City Search': 'CITY SEARCH',
-      'Organization Officer': 'ORGANIZATION OFFICER',
-      'Education': 'EDUCATION',
-      'Employment': 'EMPLOYMENT',
-      'Sports': 'SPORTS',
-      'Social Upliftment': 'SOCIAL UPLIFTMENT',
-      'Dukan': 'DUKAN',
-      'Meetings': 'MEETINGS',
-      'Appeal': 'APPEAL',
-      'Vote': 'VOTE',
+      'Occasions': t('Occasions') || 'OCCASIONS',
+      'Kartavya': t('Kartavya') || 'KARTAVYA',
+      'Bhajan': t('Bhajan') || 'BHAJAN',
+      'Games': t('Games') || 'GAMES',
+      'Laws and Decisions': t('Laws and Decisions') || 'LAWS & DECISIONS',
+      'CitySearch': t('CitySearch') || 'CITY SEARCH',
+      'OrganizationOfficer': t('OrganizationOfficer') || 'ORGANIZATION OFFICER',
+      'Education': t('Education') || 'EDUCATION',
+      'Employment': t('Employment') || 'EMPLOYMENT',
+      'Sports': t('Sports') || 'SPORTS',
+      'Social Upliftment': t('Social Upliftment') || 'SOCIAL UPLIFTMENT',
+      'Dukan': t('Dukan') || 'DUKAN',
+      'Meetings': t('Meetings') || 'MEETINGS',
+      'Appeal': t('Appeal') || 'APPEAL',
+      'Vote': t('Vote') || 'VOTE',
+      'Settings': t('Settings') || 'SETTINGS',
     };
 
     return screenTitles[currentRouteName] || getCommunityName();
@@ -454,6 +434,7 @@ const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
 const ProfileScreen = (): React.JSX.Element => {
   const navigation = useNavigation();
   const { user, logout, updateUser } = useAuth();
+  const { t } = useLanguage(); // Add this line
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
 
@@ -477,24 +458,24 @@ const ProfileScreen = (): React.JSX.Element => {
     try {
       updateUser(editedUser);
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert(t('Success') || 'Success', t('Profile updated successfully!') || 'Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Failed to update profile. Please try again.') || 'Failed to update profile. Please try again.');
     }
   };
 
   const handleSignOut = () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('Sign Out') || 'Sign Out',
+      t('Are you sure you want to sign out?') || 'Are you sure you want to sign out?',
       [
         {
-          text: 'Cancel',
+          text: t('Cancel') || 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Sign Out',
+          text: t('Sign Out') || 'Sign Out',
           style: 'destructive',
           onPress: logout,
         },
@@ -527,7 +508,7 @@ const ProfileScreen = (): React.JSX.Element => {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>No user data available</Text>
+        <Text style={styles.errorText}>{t('No user data available') || 'No user data available'}</Text>
       </View>
     );
   }
@@ -543,14 +524,14 @@ const ProfileScreen = (): React.JSX.Element => {
           <Text style={styles.headerButtonText}>←</Text>
         </Pressable>
         
-        <Text style={styles.profileTitle}>Profile</Text>
+        <Text style={styles.profileTitle}>{t('Profile') || 'Profile'}</Text>
         
         <Pressable 
           onPress={() => setIsEditing(!isEditing)}
           style={styles.headerButton}
         >
           <Text style={styles.headerButtonText}>
-            {isEditing ? 'Cancel' : 'Edit'}
+            {isEditing ? (t('Cancel') || 'Cancel') : (t('Edit') || 'Edit')}
           </Text>
         </Pressable>
       </View>
@@ -581,24 +562,24 @@ const ProfileScreen = (): React.JSX.Element => {
           
           {/* Personal Details */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={styles.sectionTitle}>{t('Personal Information') || 'Personal Information'}</Text>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={styles.label}>{t('First Name') || 'First Name'}</Text>
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.firstName}</Text>
                 </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={styles.label}>{t('Last Name') || 'Last Name'}</Text>
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.lastName}</Text>
                 </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('Email') || 'Email'}</Text>
                 <View style={styles.readOnlyField}>
                   <Text style={styles.fieldValue}>{user.email}</Text>
                 </View>
@@ -607,24 +588,24 @@ const ProfileScreen = (): React.JSX.Element => {
 
           {/* Community Information */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Community Details</Text>
+            <Text style={styles.sectionTitle}>{t('Community Details') || 'Community Details'}</Text>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Role</Text>
+              <Text style={styles.label}>{t('Role') || 'Role'}</Text>
               <View style={styles.readOnlyField}>
                 <Text style={styles.fieldValue}>{user.roleInCommunity}</Text>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Member Since</Text>
+              <Text style={styles.label}>{t('Member Since') || 'Member Since'}</Text>
               <View style={styles.readOnlyField}>
                 <Text style={styles.fieldValue}>{formatDate(user.createdAt)}</Text>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>User ID</Text>
+              <Text style={styles.label}>{t('User ID') || 'User ID'}</Text>
               <View style={styles.readOnlyField}>
                 <Text style={[styles.fieldValue, styles.codeText]}>{user.code}</Text>
               </View>
@@ -633,14 +614,14 @@ const ProfileScreen = (): React.JSX.Element => {
 
           {/* Interests */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Interests</Text>
+            <Text style={styles.sectionTitle}>{t('Interests') || 'Interests'}</Text>
             
             {isEditing ? (
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={editedUser.interests?.join(', ') || ''}
                 onChangeText={(text) => setEditedUser({...editedUser, interests: text.split(',').map(item => item.trim())})}
-                placeholder="Enter interests separated by commas"
+                placeholder={t('Enter interests separated by commas') || 'Enter interests separated by commas'}
                 multiline
               />
             ) : (
@@ -652,7 +633,7 @@ const ProfileScreen = (): React.JSX.Element => {
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.noInterests}>No interests added</Text>
+                  <Text style={styles.noInterests}>{t('No interests added') || 'No interests added'}</Text>
                 )}
               </View>
             )}
@@ -662,12 +643,12 @@ const ProfileScreen = (): React.JSX.Element => {
           <View style={styles.buttonSection}>
             {isEditing && (
               <Pressable style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Text style={styles.saveButtonText}>{t('Save Changes') || 'Save Changes'}</Text>
               </Pressable>
             )}
             
             <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-              <Text style={styles.signOutButtonText}>Sign Out</Text>
+              <Text style={styles.signOutButtonText}>{t('Sign Out') || 'Sign Out'}</Text>
             </Pressable>
           </View>
         </View>
@@ -729,6 +710,8 @@ const AuthStack = (): React.JSX.Element => {
 // Home Tab Navigator
 const HomeTab = (): React.JSX.Element => {
   const {Navigator, Screen} = createBottomTabNavigator<HomeTabParamList>();
+  const { t } = useLanguage(); // Add this line
+  
   return (
     <Navigator
       screenOptions={({route}) => ({
@@ -746,11 +729,41 @@ const HomeTab = (): React.JSX.Element => {
         tabBarIcon: ({focused, color, size}) => 
           RenderTabBarIcon({focused, color, size, route}),
       })}>
-      <Screen name="Home" component={HomeScreen} />
-      <Screen name="Post" component={PostScreen} />
-      <Screen name="News" component={NewsScreen} />
-      <Screen name="MyPeople" component={MyPeopleScreen} />
-      <Screen name="Donation" component={DonationScreen} />
+      <Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={{
+          tabBarLabel: t('Home') || 'Home',
+        }}
+      />
+      <Screen 
+        name="Post" 
+        component={PostScreen}
+        options={{
+          tabBarLabel: t('Post') || 'Post',
+        }}
+      />
+      <Screen 
+        name="News" 
+        component={NewsScreen}
+        options={{
+          tabBarLabel: t('News') || 'News',
+        }}
+      />
+      <Screen 
+        name="MyPeople" 
+        component={MyPeopleScreen}
+        options={{
+          tabBarLabel: t('My People') || 'My People',
+        }}
+      />
+      <Screen 
+        name="Donation" 
+        component={DonationScreen}
+        options={{
+          tabBarLabel: t('Donation') || 'Donation',
+        }}
+      />
     </Navigator>
   );
 };
@@ -766,6 +779,8 @@ const HomeStack = (): React.JSX.Element => {
 
 const DrawerNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createDrawerNavigator<RootDrawerParamList>();
+  const { t } = useLanguage(); // Add this line
+  
   return (
     <Navigator
       drawerContent={(props) => <DrawerContent {...props} />}
@@ -782,24 +797,123 @@ const DrawerNavigator = (): React.JSX.Element => {
       <Screen 
         name="HomeTab" 
         component={HomeStack} 
-        options={{ headerShown: false }}
+        options={{ 
+          headerShown: false,
+          drawerLabel: t('Home') || 'Home',
+        }}
       />
-      <Screen name="Occasions" component={OccasionsScreen} />
-      <Screen name="Kartavya" component={KartavyaScreen} />
-      <Screen name="Bhajan" component={BhajanScreen} />
-      <Screen name="Games" component={GamesScreen} />
-      <Screen name="Laws and Decisions" component={LawsScreen} />
-      <Screen name="CitySearch" component={CitySearchScreen} />
-      <Screen name="OrganizationOfficer" component={OrganizationOfficerScreen} />
-      <Screen name="Education" component={EducationScreen} />
-      <Screen name="Employment" component={EmploymentScreen} />
-      <Screen name="Sports" component={SportsScreen} />
-      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
-      <Screen name="Dukan" component={DukanScreen} />
-      <Screen name="Meetings" component={MeetingsScreen} />
-      <Screen name="Appeal" component={AppealScreen} />
-      <Screen name="Vote" component={VoteScreen} />
-      <Screen name="Settings" component={SettingsScreen} />
+      <Screen 
+        name="Occasions" 
+        component={OccasionsScreen}
+        options={{
+          drawerLabel: t('Occasions') || 'Occasions',
+        }}
+      />
+      <Screen 
+        name="Kartavya" 
+        component={KartavyaScreen}
+        options={{
+          drawerLabel: t('Kartavya') || 'Kartavya',
+        }}
+      />
+      <Screen 
+        name="Bhajan" 
+        component={BhajanScreen}
+        options={{
+          drawerLabel: t('Bhajan') || 'Bhajan',
+        }}
+      />
+      <Screen 
+        name="Games" 
+        component={GamesScreen}
+        options={{
+          drawerLabel: t('Games') || 'Games',
+        }}
+      />
+      <Screen 
+        name="Laws and Decisions" 
+        component={LawsScreen}
+        options={{
+          drawerLabel: t('Laws and Decisions') || 'Laws and Decisions',
+        }}
+      />
+      <Screen 
+        name="CitySearch" 
+        component={CitySearchScreen}
+        options={{
+          drawerLabel: t('CitySearch') || 'City Search',
+        }}
+      />
+      <Screen 
+        name="OrganizationOfficer" 
+        component={OrganizationOfficerScreen}
+        options={{
+          drawerLabel: t('OrganizationOfficer') || 'Organization Officer',
+        }}
+      />
+      <Screen 
+        name="Education" 
+        component={EducationScreen}
+        options={{
+          drawerLabel: t('Education') || 'Education',
+        }}
+      />
+      <Screen 
+        name="Employment" 
+        component={EmploymentScreen}
+        options={{
+          drawerLabel: t('Employment') || 'Employment',
+        }}
+      />
+      <Screen 
+        name="Sports" 
+        component={SportsScreen}
+        options={{
+          drawerLabel: t('Sports') || 'Sports',
+        }}
+      />
+      <Screen 
+        name="Social Upliftment" 
+        component={SocialUpliftmentScreen}
+        options={{
+          drawerLabel: t('Social Upliftment') || 'Social Upliftment',
+        }}
+      />
+      <Screen 
+        name="Dukan" 
+        component={DukanScreen}
+        options={{
+          drawerLabel: t('Dukan') || 'Dukan',
+        }}
+      />
+      <Screen 
+        name="Meetings" 
+        component={MeetingsScreen}
+        options={{
+          drawerLabel: t('Meetings') || 'Meetings',
+        }}
+      />
+      <Screen 
+        name="Appeal" 
+        component={AppealScreen}
+        options={{
+          drawerLabel: t('Appeal') || 'Appeal',
+        }}
+      />
+      <Screen 
+        name="Vote" 
+        component={VoteScreen}
+        options={{
+          drawerLabel: t('Vote') || 'Vote',
+        }}
+      />
+      <Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          drawerLabel: t('Settings') || 'Settings',
+        }}
+      />
     </Navigator>
   );
 };
@@ -823,11 +937,15 @@ const RootStack = (): React.JSX.Element => {
   );
 };
 
-const LoadingScreen = () => (
-  <View style={styles.loadingContainer}>
-    <Text style={styles.loadingText}>Loading...</Text>
-  </View>
-);
+const LoadingScreen = () => {
+  const { t } = useLanguage(); // Add this line
+  
+  return (
+    <View style={styles.loadingContainer}>
+      <Text style={styles.loadingText}>{t('Loading...') || 'Loading...'}</Text>
+    </View>
+  );
+};
 
 // Main App Navigator
 const AppNavigator = (): React.JSX.Element => {

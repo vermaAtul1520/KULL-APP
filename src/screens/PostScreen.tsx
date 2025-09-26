@@ -1,6 +1,7 @@
 import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
 import BannerComponent from '@app/navigators/BannerComponent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -86,6 +87,7 @@ interface APIResponse {
 
 const PostScreen = () => {
   const { user, token } = useAuth();
+  const { t } = useLanguage(); // Add this line
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,14 +222,6 @@ const PostScreen = () => {
   );
 
   // API Functions
-  // const getAuthHeaders = async () => {
-  //   const userToken = await AsyncStorage.getItem('userToken');
-  //   return {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${userToken || token}`,
-  //   };
-  // };
-
   const fetchPosts = async (): Promise<Post[]> => {
     try {
       const headers = await getAuthHeaders();
@@ -404,14 +398,14 @@ const PostScreen = () => {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    if (diffInMinutes < 1) return t('Just now') || 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} ${t('minutes ago') || 'minutes ago'}`;
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 24) return `${diffInHours} ${t('hours ago') || 'hours ago'}`;
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 7) return `${diffInDays} ${t('days ago') || 'days ago'}`;
     
     return date.toLocaleDateString();
   };
@@ -433,7 +427,7 @@ const PostScreen = () => {
       setPosts(fetchedPosts);
       setFilteredPosts(fetchedPosts);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load posts. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Failed to load posts. Please try again.') || 'Failed to load posts. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -475,25 +469,25 @@ const PostScreen = () => {
             : p
         )
       );
-      Alert.alert('Error', 'Failed to like post. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Failed to like post. Please try again.') || 'Failed to like post. Please try again.');
     }
   };
 
   const handleDownload = (imageUrl: string | null, postTitle: string) => {
     if (!imageUrl) {
-      Alert.alert('Error', 'No image to download');
+      Alert.alert(t('Error') || 'Error', t('No image to download') || 'No image to download');
       return;
     }
 
     Alert.alert(
-      'Download Image',
-      `Download "${postTitle}" image?`,
+      t('Download Image') || 'Download Image',
+      `${t('Download')} "${postTitle}" ${t('image?') || 'image?'}`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel') || 'Cancel', style: 'cancel' },
         { 
-          text: 'Download', 
+          text: t('Download') || 'Download', 
           onPress: () => {
-            Alert.alert('Success', 'Image downloaded successfully!');
+            Alert.alert(t('Success') || 'Success', t('Image downloaded successfully!') || 'Image downloaded successfully!');
           }
         }
       ]
@@ -526,7 +520,7 @@ const PostScreen = () => {
       );
     } catch (error) {
       console.error('Error in openComments:', error);
-      Alert.alert('Error', 'Failed to load comments. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Failed to load comments. Please try again.') || 'Failed to load comments. Please try again.');
       // Don't close the modal, just show the error state
     } finally {
       setLoadingComments(false);
@@ -536,7 +530,7 @@ const PostScreen = () => {
   const handleCreatePost = async () => {
     const COMMUNITY_ID = await getCommunityId();
     if (!newPost.title.trim() || !newPost.content.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert(t('Error') || 'Error', t('Please fill in all required fields') || 'Please fill in all required fields');
       return;
     }
 
@@ -556,9 +550,9 @@ const PostScreen = () => {
       
       setNewPost({ title: '', content: '', imageUrl: '', selectedImage: null });
       setShowPostModal(false);
-      Alert.alert('Success', 'Post created successfully!');
+      Alert.alert(t('Success') || 'Success', t('Post created successfully!') || 'Post created successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to create post. Please try again.');
+      Alert.alert(t('Error') || 'Error', t('Failed to create post. Please try again.') || 'Failed to create post. Please try again.');
     } finally {
       setIsCreatingPost(false);
     }
@@ -568,11 +562,11 @@ const PostScreen = () => {
     setShowImagePicker(false);
     
     if (type === 'camera') {
-      Alert.alert('Camera', 'Camera feature would open here. For demo, using a sample image.');
+      Alert.alert(t('Camera') || 'Camera', t('Camera feature would open here. For demo, using a sample image.') || 'Camera feature would open here. For demo, using a sample image.');
       const sampleImage = 'https://picsum.photos/800/600?random=1';
       setNewPost({...newPost, selectedImage: sampleImage});
     } else if (type === 'gallery') {
-      Alert.alert('Gallery', 'Gallery would open here. For demo, using a sample image.');
+      Alert.alert(t('Gallery') || 'Gallery', t('Gallery would open here. For demo, using a sample image.') || 'Gallery would open here. For demo, using a sample image.');
       const sampleImage = 'https://picsum.photos/800/600?random=2';
       setNewPost({...newPost, selectedImage: sampleImage});
     }
@@ -607,7 +601,7 @@ const PostScreen = () => {
 
       setReplyingTo(null);
     } catch (error) {
-      Alert.alert('Error', 'Failed to post comment');
+      Alert.alert(t('Error') || 'Error', t('Failed to post comment') || 'Failed to post comment');
     } finally {
       setPostingComment(false);
     }
@@ -617,12 +611,12 @@ const PostScreen = () => {
     if (!selectedPost) return;
 
     Alert.alert(
-      'Delete Comment',
-      'Are you sure you want to delete this comment?',
+      t('Delete Comment') || 'Delete Comment',
+      t('Are you sure you want to delete this comment?') || 'Are you sure you want to delete this comment?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel') || 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('Delete') || 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -648,7 +642,7 @@ const PostScreen = () => {
                 )
               );
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete comment');
+              Alert.alert(t('Error') || 'Error', t('Failed to delete comment') || 'Failed to delete comment');
             }
           }
         }
@@ -682,7 +676,7 @@ const PostScreen = () => {
               author: `${comment.author.firstName} ${comment.author.lastName}` 
             })}
           >
-            <Text style={styles.replyButtonText}>Reply</Text>
+            <Text style={styles.replyButtonText}>{t('Reply') || 'Reply'}</Text>
           </TouchableOpacity>
         )}
         
@@ -691,7 +685,7 @@ const PostScreen = () => {
             style={styles.deleteButton}
             onPress={() => handleDeleteComment(comment._id)}
           >
-            <Text style={styles.deleteButtonText}>Delete</Text>
+            <Text style={styles.deleteButtonText}>{t('Delete') || 'Delete'}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -748,7 +742,7 @@ const PostScreen = () => {
           onPress={() => handleDownload(item.imageUrl, item.title)}
         >
           <DownloadIcon size={20} color="#666" />
-          <Text style={styles.actionText}>Download</Text>
+          <Text style={styles.actionText}>{t('Download') || 'Download'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -764,7 +758,7 @@ const PostScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.createPostModal}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create New Post</Text>
+            <Text style={styles.modalTitle}>{t('Create New Post') || 'Create New Post'}</Text>
             <TouchableOpacity onPress={() => setShowPostModal(false)}>
               <CloseIcon size={24} color="#666" />
             </TouchableOpacity>
@@ -772,10 +766,10 @@ const PostScreen = () => {
 
           <ScrollView style={styles.createPostContent} showsVerticalScrollIndicator={false}>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Title *</Text>
+              <Text style={styles.inputLabel}>{t('Title') || 'Title'} *</Text>
               <TextInput
                 style={styles.titleInput}
-                placeholder="Enter post title..."
+                placeholder={t('Enter post title...') || 'Enter post title...'}
                 value={newPost.title}
                 onChangeText={(text) => setNewPost({...newPost, title: text})}
                 multiline
@@ -783,10 +777,10 @@ const PostScreen = () => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Content *</Text>
+              <Text style={styles.inputLabel}>{t('Content') || 'Content'} *</Text>
               <TextInput
                 style={styles.contentInput}
-                placeholder="What's on your mind?"
+                placeholder={t("What's on your mind?") || "What's on your mind?"}
                 value={newPost.content}
                 onChangeText={(text) => setNewPost({...newPost, content: text})}
                 multiline
@@ -795,21 +789,21 @@ const PostScreen = () => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Add Image</Text>
+              <Text style={styles.inputLabel}>{t('Add Image') || 'Add Image'}</Text>
               <View style={styles.imageOptions}>
                 <TouchableOpacity 
                   style={styles.imageOption}
                   onPress={() => setShowImagePicker(true)}
                 >
                   <CameraIcon size={24} color="#666" />
-                  <Text style={styles.imageOptionText}>Camera/Gallery</Text>
+                  <Text style={styles.imageOptionText}>{t('Camera/Gallery') || 'Camera/Gallery'}</Text>
                 </TouchableOpacity>
                 
-                <Text style={styles.orText}>OR</Text>
+                <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
                 
                 <TextInput
                   style={styles.imageUrlInput}
-                  placeholder="Paste image URL..."
+                  placeholder={t('Paste image URL...') || 'Paste image URL...'}
                   value={newPost.imageUrl}
                   onChangeText={(text) => setNewPost({...newPost, imageUrl: text})}
                 />
@@ -818,7 +812,7 @@ const PostScreen = () => {
 
             {(newPost.selectedImage || newPost.imageUrl) && (
               <View style={styles.imagePreviewContainer}>
-                <Text style={styles.inputLabel}>Preview</Text>
+                <Text style={styles.inputLabel}>{t('Preview') || 'Preview'}</Text>
                 <Image 
                   source={{ uri: newPost.selectedImage || newPost.imageUrl }} 
                   style={styles.previewImage} 
@@ -827,7 +821,7 @@ const PostScreen = () => {
                   style={styles.removeImageButton}
                   onPress={() => setNewPost({...newPost, selectedImage: null, imageUrl: ''})}
                 >
-                  <Text style={styles.removeImageText}>Remove Image</Text>
+                  <Text style={styles.removeImageText}>{t('Remove Image') || 'Remove Image'}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -839,7 +833,7 @@ const PostScreen = () => {
               onPress={() => setShowPostModal(false)}
               disabled={isCreatingPost}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('Cancel') || 'Cancel'}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[
@@ -853,7 +847,7 @@ const PostScreen = () => {
               {isCreatingPost ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.postButtonText}>Post</Text>
+                <Text style={styles.postButtonText}>{t('Post') || 'Post'}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -868,14 +862,14 @@ const PostScreen = () => {
       >
         <View style={styles.imagePickerOverlay}>
           <View style={styles.imagePickerModal}>
-            <Text style={styles.imagePickerTitle}>Select Image</Text>
+            <Text style={styles.imagePickerTitle}>{t('Select Image') || 'Select Image'}</Text>
             
             <TouchableOpacity 
               style={styles.imagePickerOption}
               onPress={() => handleImageSelection('camera')}
             >
               <CameraIcon size={24} color="#2a2a2a" />
-              <Text style={styles.imagePickerOptionText}>Take Photo</Text>
+              <Text style={styles.imagePickerOptionText}>{t('Take Photo') || 'Take Photo'}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -883,14 +877,14 @@ const PostScreen = () => {
               onPress={() => handleImageSelection('gallery')}
             >
               <GalleryIcon size={24} color="#2a2a2a" />
-              <Text style={styles.imagePickerOptionText}>Choose from Gallery</Text>
+              <Text style={styles.imagePickerOptionText}>{t('Choose from Gallery') || 'Choose from Gallery'}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.imagePickerCancel}
               onPress={() => setShowImagePicker(false)}
             >
-              <Text style={styles.imagePickerCancelText}>Cancel</Text>
+              <Text style={styles.imagePickerCancelText}>{t('Cancel') || 'Cancel'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -912,7 +906,7 @@ const PostScreen = () => {
         <View style={styles.commentsModal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              Comments ({selectedPost?.comments || 0})
+              {t('Comments') || 'Comments'} ({selectedPost?.comments || 0})
             </Text>
             <TouchableOpacity onPress={() => {
               setShowCommentsModal(false);
@@ -926,11 +920,11 @@ const PostScreen = () => {
             {loadingComments ? (
               <View style={styles.loadingCommentsContainer}>
                 <ActivityIndicator size="small" color="#2a2a2a" />
-                <Text style={styles.loadingCommentsText}>Loading comments...</Text>
+                <Text style={styles.loadingCommentsText}>{t('Loading comments...') || 'Loading comments...'}</Text>
               </View>
             ) : selectedPost?.commentsData?.length === 0 ? (
               <View style={styles.noCommentsContainer}>
-                <Text style={styles.noCommentsText}>No comments yet. Be the first to comment!</Text>
+                <Text style={styles.noCommentsText}>{t('No comments yet. Be the first to comment!') || 'No comments yet. Be the first to comment!'}</Text>
               </View>
             ) : (
               selectedPost?.commentsData?.map((comment) => renderComment(comment))
@@ -940,10 +934,10 @@ const PostScreen = () => {
           {replyingTo && (
             <View style={styles.replyingToIndicator}>
               <Text style={styles.replyingToText}>
-                Replying to {replyingTo.author}
+                {t('Replying to') || 'Replying to'} {replyingTo.author}
               </Text>
               <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                <Text style={styles.cancelReplyText}>Cancel</Text>
+                <Text style={styles.cancelReplyText}>{t('Cancel') || 'Cancel'}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -951,7 +945,7 @@ const PostScreen = () => {
           <View style={styles.commentInputContainer}>
             <TextInput
               style={styles.commentInput}
-              placeholder={replyingTo ? "Add a reply..." : "Add a comment..."}
+              placeholder={replyingTo ? (t('Add a reply...') || 'Add a reply...') : (t('Add a comment...') || 'Add a comment...')}
               value={newComment}
               onChangeText={setNewComment}
               multiline
@@ -980,7 +974,7 @@ const PostScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2a2a2a" />
-        <Text style={styles.loadingText}>Loading posts...</Text>
+        <Text style={styles.loadingText}>{t('Loading posts...') || 'Loading posts...'}</Text>
       </View>
     );
   }
@@ -994,7 +988,7 @@ const PostScreen = () => {
           style={styles.backButton}>
           <ArrowLeftIcon size={24} color="#2a2a2a" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Posts</Text>
+        <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -1004,7 +998,7 @@ const PostScreen = () => {
           <SearchIcon size={20} color="#666" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search posts by title, content, author..."
+            placeholder={t('Search posts by title, content, author...') || 'Search posts by title, content, author...'}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#999"
@@ -1021,8 +1015,8 @@ const PostScreen = () => {
       {searchQuery.trim() !== '' && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsText}>
-            {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} found
-            {filteredPosts.length !== posts.length && ` (filtered from ${posts.length})`}
+            {filteredPosts.length} {filteredPosts.length !== 1 ? (t('posts') || 'posts') : (t('post') || 'post')} {t('found') || 'found'}
+            {filteredPosts.length !== posts.length && ` (${t('filtered from') || 'filtered from'} ${posts.length})`}
           </Text>
         </View>
       )}
@@ -1038,11 +1032,11 @@ const PostScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery.trim() !== '' ? 'No posts match your search criteria' : 'No posts available. Create the first post!'}
+              {searchQuery.trim() !== '' ? (t('No posts match your search criteria') || 'No posts match your search criteria') : (t('No posts available. Create the first post!') || 'No posts available. Create the first post!')}
             </Text>
             {searchQuery.trim() !== '' && (
               <TouchableOpacity style={styles.clearSearchButton2} onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearSearchText}>Clear Search</Text>
+                <Text style={styles.clearSearchText}>{t('Clear Search') || 'Clear Search'}</Text>
               </TouchableOpacity>
             )}
           </View>

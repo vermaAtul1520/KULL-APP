@@ -98,7 +98,7 @@ const JoinCommunityScreen: React.FC = () => {
     setLoadingGotra(true);
     try {
       const communityId = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/community/${communityId}/gotraDetail`, {
+      const response = await fetch(`${BASE_URL}/api/communities/${communityId}/gotraDetail`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -106,6 +106,7 @@ const JoinCommunityScreen: React.FC = () => {
       });
 
       const result: GotraResponse = await response.json();
+
 
       if (result.success && result.data.gotra) {
         setGotraOptions(result.data.gotra);

@@ -1,17 +1,20 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text, ActivityIndicator, Alert, Modal, Linking} from 'react-native';
-import {Animated} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Dimensions, View, Text, ActivityIndicator, Alert, Modal, Linking } from 'react-native';
+import { Animated } from 'react-native';
 import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
+import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
 import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
 import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { useNavigation } from '@react-navigation/native';
 import BannerComponent from '@app/navigators/BannerComponent';
 import MarqueeView from 'react-native-marquee-view';
+import { Easing } from 'react-native';
+import TextTicker from 'react-native-text-ticker';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -31,91 +34,91 @@ const AppColors = {
 // Custom SVG Icons
 const KingIcon = ({ size = 24, color = "black" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2.7-2h8.6l.9-5.4-2.1 1.4L12 8l-3.1 2L6.8 8.6L7.7 14z" fill={color}/>
+    <Path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2.7-2h8.6l.9-5.4-2.1 1.4L12 8l-3.1 2L6.8 8.6L7.7 14z" fill={color} />
   </Svg>
 );
 
 const HeadlinesIcon = ({ size = 20, color = "#fff" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" fill={color}/>
+    <Path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" fill={color} />
   </Svg>
 );
 
 const CloseIcon = ({ size = 24, color = "#666" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color} />
   </Svg>
 );
 
 const PhoneIcon = ({ size = 16, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill={color}/>
+    <Path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill={color} />
   </Svg>
 );
 
 const EmailIcon = ({ size = 16, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill={color}/>
+    <Path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill={color} />
   </Svg>
 );
 
 const OfficeBuildingIcon = ({ size = 16, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill={color}/>
+    <Path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill={color} />
   </Svg>
 );
 
 const MapMarkerIcon = ({ size = 16, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill={color}/>
+    <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill={color} />
   </Svg>
 );
 
 const WebIcon = ({ size = 20, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill={color}/>
+    <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill={color} />
   </Svg>
 );
 
 const LinkedInIcon = ({ size = 20, color = "#0077B5" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" fill={color}/>
+    <Path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" fill={color} />
   </Svg>
 );
 
 const TwitterIcon = ({ size = 20, color = "#1DA1F2" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" fill={color}/>
+    <Path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" fill={color} />
   </Svg>
 );
 
 const FacebookIcon = ({ size = 20, color = "#4267B2" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill={color}/>
+    <Path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill={color} />
   </Svg>
 );
 
 const InstagramIcon = ({ size = 20, color = "#E4405F" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill={color}/>
+    <Path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill={color} />
   </Svg>
 );
 
 const LinkIcon = ({ size = 20, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" fill={color}/>
+    <Path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" fill={color} />
   </Svg>
 );
 
 const ExternalLinkIcon = ({ size = 16, color = "#aaa" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill={color}/>
+    <Path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill={color} />
   </Svg>
 );
 
 const RefreshIcon = ({ size = 20, color = "#2a2a2a" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill={color}/>
+    <Path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill={color} />
   </Svg>
 );
 
@@ -153,7 +156,7 @@ interface CommunityConfiguration {
   __v: number;
   smaajKeTaaj: SmaajKeTaajProfile[];
   banner: string[];
-  adPopUpBanner: string
+  addPopup: string
 }
 
 interface ConfigurationAPIResponse {
@@ -169,22 +172,23 @@ interface TokenErrorResponse {
 
 const HomeScreen = () => {
   const { user, token, logout } = useAuth();
+  const { t } = useLanguage(); // Add this line
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const mainFlatListRef = useRef<FlatList>(null);
 
-  console.log('token',token);
-  
+  console.log('token', token);
+
   // State for API data
   const [profileData, setProfileData] = useState<SmaajKeTaajProfile[]>([]);
-  const [bannerData, setBannerData] = useState<{id: number, image: string, textColor: string}[]>([]);
+  const [bannerData, setBannerData] = useState<{ id: number, image: string, textColor: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Modal state for profile details
   const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  
+
   // Ad popup state
   const [adPopupVisible, setAdPopupVisible] = useState(false);
   const [adPopupImage, setAdPopupImage] = useState<string | null>(null);
@@ -196,10 +200,10 @@ const HomeScreen = () => {
     try {
       const lastShownTime = await AsyncStorage.getItem('adPopupLastShown');
       if (!lastShownTime) return true;
-      
+
       const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
       const lastShown = parseInt(lastShownTime);
-      
+
       return lastShown < oneHourAgo;
     } catch (error) {
       console.error('Error checking ad popup status:', error);
@@ -223,7 +227,7 @@ const HomeScreen = () => {
   // Function to show ad popup if conditions are met
   const checkAndShowAdPopup = async (adImageUrl: string | null) => {
     if (!adImageUrl) return;
-    
+
     const shouldShow = await shouldShowAdPopup(adImageUrl);
     if (shouldShow) {
       setAdPopupImage(adImageUrl);
@@ -237,19 +241,19 @@ const HomeScreen = () => {
       // Clear all stored tokens
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('refreshToken');
-      
+
       // Call logout from auth context
       if (logout) {
         logout();
       }
-      
+
       // Show user-friendly message
       Alert.alert(
-        'Session Expired',
-        'Your session has expired. Please log in again.',
+        t('Session Expired') || 'Session Expired',
+        t('Your session has expired. Please log in again.') || 'Your session has expired. Please log in again.',
         [
           {
-            text: 'OK',
+            text: t('OK') || 'OK',
             onPress: () => {
               // Navigate to login screen
               navigation.reset({
@@ -270,11 +274,11 @@ const HomeScreen = () => {
   const isTokenExpired = (responseData: any): boolean => {
     return (
       responseData.success === false &&
-      (responseData.error === 'jwt expired' || 
-       responseData.message === 'Invalid or expired token' ||
-       responseData.error === 'Token expired' ||
-       responseData.message?.toLowerCase().includes('token') && 
-       responseData.message?.toLowerCase().includes('expired'))
+      (responseData.error === 'jwt expired' ||
+        responseData.message === 'Invalid or expired token' ||
+        responseData.error === 'Token expired' ||
+        responseData.message?.toLowerCase().includes('token') &&
+        responseData.message?.toLowerCase().includes('expired'))
     );
   };
 
@@ -285,20 +289,20 @@ const HomeScreen = () => {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Error', 'Cannot open this URL');
+        Alert.alert(t('Error') || 'Error', t('Cannot open this URL') || 'Cannot open this URL');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to open URL');
+      Alert.alert(t('Error') || 'Error', t('Failed to open URL') || 'Failed to open URL');
     }
   };
 
-  // Fallback data
+  // Fallback data with translations
   const defaultNewsHeadlines = [
-    {id: 1, text: 'Breaking: New policy announced for social welfare', category: 'Politics'},
-    {id: 2, text: 'Community event this weekend - register now!', category: 'Events'},
-    {id: 3, text: 'Education reforms to be implemented next month', category: 'Education'},
-    {id: 4, text: 'Local business owner wins national award', category: 'Business'},
-    {id: 5, text: 'Health department issues new guidelines', category: 'Health'},
+    { id: 1, text: t('Breaking: New policy announced for social welfare') || 'Breaking: New policy announced for social welfare', category: 'Politics' },
+    { id: 2, text: t('Community event this weekend - register now!') || 'Community event this weekend - register now!', category: 'Events' },
+    { id: 3, text: t('Education reforms to be implemented next month') || 'Education reforms to be implemented next month', category: 'Education' },
+    { id: 4, text: t('Local business owner wins national award') || 'Local business owner wins national award', category: 'Business' },
+    { id: 5, text: t('Health department issues new guidelines') || 'Health department issues new guidelines', category: 'Health' },
   ];
 
   const defaultBannerData = [
@@ -332,18 +336,6 @@ const HomeScreen = () => {
       avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
     }
   ];
-
-  const newsString = defaultNewsHeadlines.map(item => `${item.text}`).join(' • ');
-
-  // API Functions
-  // const getAuthHeaders = async () => {
-  //   const userToken = await AsyncStorage.getItem('userToken');
-  //   return {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${userToken || token}`,
-  //   };
-  // };
-
   const fetchCommunityConfiguration = async () => {
     try {
       setLoading(true);
@@ -351,7 +343,7 @@ const HomeScreen = () => {
       console.log('Fetching community configuration for:', COMMUNITY_ID);
 
       const headers = await getAuthHeaders();
-      
+
       const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
         method: 'GET',
         headers,
@@ -366,7 +358,7 @@ const HomeScreen = () => {
           setBannerData(defaultBannerData);
           return;
         }
-        
+
         // Check for 401 Unauthorized which typically indicates token issues
         if (response.status === 401) {
           const errorText = await response.text();
@@ -376,14 +368,14 @@ const HomeScreen = () => {
           } catch {
             errorData = { success: false, message: 'Unauthorized' };
           }
-          
+
           if (isTokenExpired(errorData)) {
             console.log('Token expired, logging out user');
             handleTokenExpiration();
             return;
           }
         }
-        
+
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -432,7 +424,7 @@ const HomeScreen = () => {
         // Handle ad popup banner (using dummy URL for now since API doesn't return it yet)
         const dummyAdUrl = 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg';
         // Uncomment below line when API starts returning adPopUpBanner
-        const adUrl = data.data.adPopUpBanner || dummyAdUrl;
+        const adUrl = data.data.addPopup || dummyAdUrl;
         await checkAndShowAdPopup(adUrl);
       } else {
         console.log('Invalid API response, using default data');
@@ -442,16 +434,16 @@ const HomeScreen = () => {
 
     } catch (error) {
       console.error('Error fetching community configuration:', error);
-      
+
       // Use fallback data
       setProfileData(defaultProfileData);
       setBannerData(defaultBannerData);
 
       if (!refreshing) { // Only show alert if not refreshing
         Alert.alert(
-          'Unable to Load Data',
-          'Using default content. Please check your connection and try refreshing.',
-          [{text: 'OK', style: 'default'}]
+          t('Unable to Load Data') || 'Unable to Load Data',
+          t('Using default content. Please check your connection and try refreshing.') || 'Using default content. Please check your connection and try refreshing.',
+          [{ text: t('OK') || 'OK', style: 'default' }]
         );
       }
     } finally {
@@ -497,23 +489,23 @@ const HomeScreen = () => {
     return () => clearInterval(interval);
   }, [bannerData.length]);
 
-  const renderBanner = ({item}: {item: {id: number, image: string, textColor: string}}) => (
-    <View style={[styles.bannerSlide, {width}]}>
+  const renderBanner = ({ item }: { item: { id: number, image: string, textColor: string } }) => (
+    <View style={[styles.bannerSlide, { width }]}>
       <ImageBackground
-        source={{uri: item.image}}
+        source={{ uri: item.image }}
         style={styles.bannerImage}
         resizeMode="cover">
       </ImageBackground>
     </View>
   );
 
-  const renderNewsHeadline = ({item, index}: {item: any, index: number}) => {
+  const renderNewsHeadline = ({ item, index }: { item: any, index: number }) => {
     const inputRange = [
       (index - 1) * width,
       index * width,
       (index + 1) * width,
     ];
-    
+
     const translateX = scrollX.interpolate({
       inputRange,
       outputRange: [width * 0.5, 0, -width * 0.5],
@@ -525,14 +517,14 @@ const HomeScreen = () => {
     });
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => navigation.navigate('News')}
         style={styles.newsItem}
       >
         <Animated.View style={[
           styles.newsContent,
-          {transform: [{translateX}], opacity}
+          { transform: [{ translateX }], opacity }
         ]}>
           <Text style={styles.newsText}>{item.text}</Text>
         </Animated.View>
@@ -541,14 +533,14 @@ const HomeScreen = () => {
   };
 
   const renderProfileCard = (profile: SmaajKeTaajProfile) => (
-    <TouchableOpacity 
-      key={profile.id} 
+    <TouchableOpacity
+      key={profile.id}
       style={styles.profileCard}
       onPress={() => handleProfileClick(profile)}
     >
       <View style={styles.profileImageContainer}>
         <Image
-          source={{uri: profile.avatar}}
+          source={{ uri: profile.avatar }}
           style={styles.profileImage}
         />
         <View style={styles.profileBadge}>
@@ -557,7 +549,7 @@ const HomeScreen = () => {
       </View>
       <Text style={styles.profileName}>{profile.name}</Text>
       <Text style={styles.profileRole}>{profile.role || profile.designation}</Text>
-      <Text style={styles.profileAge}>Age: {profile.age}</Text>
+      <Text style={styles.profileAge}>{t('Age')}: {profile.age}</Text>
     </TouchableOpacity>
   );
 
@@ -576,7 +568,7 @@ const HomeScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Header with close button */}
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Profile Details</Text>
+                <Text style={styles.modalTitle}>{t('Profile Details') || 'Profile Details'}</Text>
                 <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                   <CloseIcon size={24} color="#666" />
                 </TouchableOpacity>
@@ -585,7 +577,7 @@ const HomeScreen = () => {
               {/* Profile Image and Basic Info */}
               <View style={styles.modalProfileSection}>
                 <Image
-                  source={{uri: selectedProfile.avatar}}
+                  source={{ uri: selectedProfile.avatar }}
                   style={styles.modalProfileImage}
                 />
                 <View style={styles.modalProfileBadge}>
@@ -601,10 +593,10 @@ const HomeScreen = () => {
                     {selectedProfile.role || selectedProfile.designation}
                   </Text>
                 )}
-                <Text style={styles.modalProfileAge}>Age: {selectedProfile.age}</Text>
-                
+                <Text style={styles.modalProfileAge}>{t('Age')}: {selectedProfile.age}</Text>
+
                 {selectedProfile.fatherName && selectedProfile.fatherName.trim() !== '' && (
-                  <Text style={styles.modalProfileDetail}>Father: {selectedProfile.fatherName}</Text>
+                  <Text style={styles.modalProfileDetail}>{t('Father')}: {selectedProfile.fatherName}</Text>
                 )}
 
                 {selectedProfile.organization && selectedProfile.organization.trim() !== '' && (
@@ -625,7 +617,7 @@ const HomeScreen = () => {
               {/* Contact Information */}
               {(selectedProfile.contact || selectedProfile.email) && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Contact Information</Text>
+                  <Text style={styles.modalSectionTitle}>{t('Contact Information') || 'Contact Information'}</Text>
                   {selectedProfile.contact && selectedProfile.contact.trim() !== '' && (
                     <View style={styles.modalDetailRow}>
                       <PhoneIcon size={16} color="#7dd3c0" />
@@ -644,25 +636,25 @@ const HomeScreen = () => {
               {/* Professional Information */}
               {(selectedProfile.keyAchievements || selectedProfile.communityContribution || selectedProfile.awards) && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Professional Information</Text>
-                  
+                  <Text style={styles.modalSectionTitle}>{t('Professional Information') || 'Professional Information'}</Text>
+
                   {selectedProfile.keyAchievements && selectedProfile.keyAchievements.trim() !== '' && (
                     <View style={styles.modalTextSection}>
-                      <Text style={styles.modalSubTitle}>Key Achievements</Text>
+                      <Text style={styles.modalSubTitle}>{t('Key Achievements') || 'Key Achievements'}</Text>
                       <Text style={styles.modalDescriptionText}>{selectedProfile.keyAchievements}</Text>
                     </View>
                   )}
 
                   {selectedProfile.communityContribution && selectedProfile.communityContribution.trim() !== '' && (
                     <View style={styles.modalTextSection}>
-                      <Text style={styles.modalSubTitle}>Community Contribution</Text>
+                      <Text style={styles.modalSubTitle}>{t('Community Contribution') || 'Community Contribution'}</Text>
                       <Text style={styles.modalDescriptionText}>{selectedProfile.communityContribution}</Text>
                     </View>
                   )}
 
                   {selectedProfile.awards && selectedProfile.awards.trim() !== '' && (
                     <View style={styles.modalTextSection}>
-                      <Text style={styles.modalSubTitle}>Awards</Text>
+                      <Text style={styles.modalSubTitle}>{t('Awards') || 'Awards'}</Text>
                       <Text style={styles.modalDescriptionText}>{selectedProfile.awards}</Text>
                     </View>
                   )}
@@ -672,7 +664,7 @@ const HomeScreen = () => {
               {/* Interests */}
               {selectedProfile.interests && selectedProfile.interests.length > 0 && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Interests</Text>
+                  <Text style={styles.modalSectionTitle}>{t('Interests') || 'Interests'}</Text>
                   <View style={styles.modalTagsContainer}>
                     {selectedProfile.interests.map((interest, index) => (
                       <View key={index} style={styles.modalTag}>
@@ -686,7 +678,7 @@ const HomeScreen = () => {
               {/* Hobbies */}
               {selectedProfile.hobbies && selectedProfile.hobbies.length > 0 && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Hobbies</Text>
+                  <Text style={styles.modalSectionTitle}>{t('Hobbies') || 'Hobbies'}</Text>
                   <View style={styles.modalTagsContainer}>
                     {selectedProfile.hobbies.map((hobby, index) => (
                       <View key={index} style={[styles.modalTag, styles.modalHobbyTag]}>
@@ -698,78 +690,78 @@ const HomeScreen = () => {
               )}
 
               {/* Website and Social Links */}
-              {(selectedProfile.website || selectedProfile.linkedin || selectedProfile.twitter || 
+              {(selectedProfile.website || selectedProfile.linkedin || selectedProfile.twitter ||
                 selectedProfile.facebook || selectedProfile.instagram || selectedProfile.socialLink) && (
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Links & Social Media</Text>
-                  
-                  {selectedProfile.website && selectedProfile.website.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.website!)}
-                    >
-                      <WebIcon size={20} color="#7dd3c0" />
-                      <Text style={styles.modalLinkText}>Website</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
+                  <View style={styles.modalSection}>
+                    <Text style={styles.modalSectionTitle}>{t('Links & Social Media') || 'Links & Social Media'}</Text>
 
-                  {selectedProfile.linkedin && selectedProfile.linkedin.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.linkedin!)}
-                    >
-                      <LinkedInIcon size={20} color="#0077B5" />
-                      <Text style={styles.modalLinkText}>LinkedIn</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
+                    {selectedProfile.website && selectedProfile.website.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.website!)}
+                      >
+                        <WebIcon size={20} color="#7dd3c0" />
+                        <Text style={styles.modalLinkText}>{t('Website') || 'Website'}</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
 
-                  {selectedProfile.twitter && selectedProfile.twitter.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.twitter!)}
-                    >
-                      <TwitterIcon size={20} color="#1DA1F2" />
-                      <Text style={styles.modalLinkText}>Twitter</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
+                    {selectedProfile.linkedin && selectedProfile.linkedin.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.linkedin!)}
+                      >
+                        <LinkedInIcon size={20} color="#0077B5" />
+                        <Text style={styles.modalLinkText}>LinkedIn</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
 
-                  {selectedProfile.facebook && selectedProfile.facebook.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.facebook!)}
-                    >
-                      <FacebookIcon size={20} color="#4267B2" />
-                      <Text style={styles.modalLinkText}>Facebook</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
+                    {selectedProfile.twitter && selectedProfile.twitter.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.twitter!)}
+                      >
+                        <TwitterIcon size={20} color="#1DA1F2" />
+                        <Text style={styles.modalLinkText}>Twitter</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
 
-                  {selectedProfile.instagram && selectedProfile.instagram.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.instagram!)}
-                    >
-                      <InstagramIcon size={20} color="#E4405F" />
-                      <Text style={styles.modalLinkText}>Instagram</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
+                    {selectedProfile.facebook && selectedProfile.facebook.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.facebook!)}
+                      >
+                        <FacebookIcon size={20} color="#4267B2" />
+                        <Text style={styles.modalLinkText}>Facebook</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
 
-                  {selectedProfile.socialLink && selectedProfile.socialLink.trim() !== '' && (
-                    <TouchableOpacity 
-                      style={styles.modalLinkRow}
-                      onPress={() => handleOpenURL(selectedProfile.socialLink!)}
-                    >
-                      <LinkIcon size={20} color="#7dd3c0" />
-                      <Text style={styles.modalLinkText}>Social Link</Text>
-                      <ExternalLinkIcon size={16} color="#aaa" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
+                    {selectedProfile.instagram && selectedProfile.instagram.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.instagram!)}
+                      >
+                        <InstagramIcon size={20} color="#E4405F" />
+                        <Text style={styles.modalLinkText}>Instagram</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
+
+                    {selectedProfile.socialLink && selectedProfile.socialLink.trim() !== '' && (
+                      <TouchableOpacity
+                        style={styles.modalLinkRow}
+                        onPress={() => handleOpenURL(selectedProfile.socialLink!)}
+                      >
+                        <LinkIcon size={20} color="#7dd3c0" />
+                        <Text style={styles.modalLinkText}>{t('Social Link') || 'Social Link'}</Text>
+                        <ExternalLinkIcon size={16} color="#aaa" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
             </ScrollView>
           </View>
         </View>
@@ -809,9 +801,9 @@ const HomeScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <KingIcon size={24} color="black" />
-            <Text style={styles.sectionTitle}>Samaj Ke Taj</Text>
-            <TouchableOpacity 
-              onPress={onRefresh} 
+            <Text style={styles.sectionTitle}>{t('Samaj Ke Taj') || 'Samaj Ke Taj'}</Text>
+            <TouchableOpacity
+              onPress={onRefresh}
               style={styles.refreshButton}
               disabled={refreshing}
             >
@@ -822,11 +814,11 @@ const HomeScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-          
+
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#2a2a2a" />
-              <Text style={styles.loadingText}>Loading profiles...</Text>
+              <Text style={styles.loadingText}>{t('Loading profiles...') || 'Loading profiles...'}</Text>
             </View>
           ) : (
             <View style={styles.profileGrid}>
@@ -843,17 +835,17 @@ const HomeScreen = () => {
       <FlatList
         ref={mainFlatListRef}
         data={sections}
-        renderItem={({item}) => item.renderItem()}
+        renderItem={({ item }) => item.renderItem()}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        ListFooterComponent={<View style={{height: 20}} />}
+        ListFooterComponent={<View style={{ height: 20 }} />}
         refreshing={refreshing}
         onRefresh={onRefresh}
       />
-      
+
       {/* Profile Details Modal */}
       {renderProfileDetailsModal()}
-      
+
       {/* Ad Popup Modal */}
       {adPopupVisible && adPopupImage && (
         <Modal
@@ -864,7 +856,7 @@ const HomeScreen = () => {
         >
           <View style={styles.adPopupOverlay}>
             <View style={styles.adPopupContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.adCloseButton}
                 onPress={handleAdPopupClose}
                 activeOpacity={0.8}
@@ -872,7 +864,7 @@ const HomeScreen = () => {
                 <CloseIcon size={30} color="#fff" />
               </TouchableOpacity>
               <Image
-                source={{uri: adPopupImage}}
+                source={{ uri: adPopupImage }}
                 style={styles.adPopupImage}
                 resizeMode="contain"
               />
@@ -1071,10 +1063,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   marqueeWrapper: {
-    backgroundColor: '#3a3a3a',
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 16,
     overflow: 'hidden',
   },
   marqueeView: {
