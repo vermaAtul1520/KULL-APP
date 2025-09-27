@@ -3,16 +3,13 @@ import { ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Di
 import { Animated } from 'react-native';
 import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
-import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
-import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { useLanguage } from '@app/hooks/LanguageContext';
+import { useConfiguration } from '@app/hooks/ConfigContext';
+import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import BannerComponent from '@app/navigators/BannerComponent';
 import MarqueeView from 'react-native-marquee-view';
-import { Easing } from 'react-native';
-import TextTicker from 'react-native-text-ticker';
 
 const { width } = Dimensions.get('window');
 
@@ -122,86 +119,64 @@ const RefreshIcon = ({ size = 20, color = "#2a2a2a" }) => (
   </Svg>
 );
 
-// API Types
-interface SmaajKeTaajProfile {
-  id: number;
-  name: string;
-  role?: string;
-  designation?: string;
-  age: number;
-  fatherName?: string;
-  avatar: string;
-  contact?: string;
-  email?: string;
-  interests?: string[];
-  hobbies?: string[];
-  organization?: string;
-  keyAchievements?: string;
-  communityContribution?: string;
-  awards?: string;
-  location?: string;
-  website?: string;
-  socialLink?: string;
-  linkedin?: string;
-  twitter?: string;
-  facebook?: string;
-  instagram?: string;
-}
-
-interface CommunityConfiguration {
-  _id: string;
-  community: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-  smaajKeTaaj: SmaajKeTaajProfile[];
-  banner: string[];
-  addPopup: string
-}
-
-interface ConfigurationAPIResponse {
-  success: boolean;
-  data: CommunityConfiguration;
-}
-
-interface TokenErrorResponse {
-  success: false;
-  message: string;
-  error: string;
-}
-
 const HomeScreen = () => {
   const { user, token, logout } = useAuth();
-  const { t } = useLanguage(); // Add this line
-  const flatListRef = useRef<FlatList>(null);
+  const { t } = useLanguage();
+  const navigation = useNavigation();
+
+  // Use configuration context instead of local state and API calls
+  const {
+    profileData,
+    bannerData,
+    gotraData,
+    adPopupImage,
+    loading,
+    refreshing,
+    refreshConfiguration,
+    isDataStale,
+    lastUpdated
+  } = useConfiguration();
+  console.log('HomeScreen - Loaded configuration data:', { profileData, bannerData, adPopupImage,  });
+  const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const mainFlatListRef = useRef<FlatList>(null);
-
-  console.log('token', token);
-
-  // State for API data
-  const [profileData, setProfileData] = useState<SmaajKeTaajProfile[]>([]);
-  const [bannerData, setBannerData] = useState<{ id: number, image: string, textColor: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const mainFlatListRef = useRef(null);
 
   // Modal state for profile details
-  const [selectedProfile, setSelectedProfile] = useState<SmaajKeTaajProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   // Ad popup state
   const [adPopupVisible, setAdPopupVisible] = useState(false);
-  const [adPopupImage, setAdPopupImage] = useState<string | null>(null);
 
-  const navigation = useNavigation();
+  console.log('HomeScreen - Configuration data:', {
+    profileCount: profileData.length,
+    bannerCount: bannerData.length,
+    hasAdPopup: !!adPopupImage,
+    loading,
+    refreshing,
+    isDataStale,
+    lastUpdated: lastUpdated?.toISOString()
+  });
+
+  // Fallback data with translations
+  const defaultNewsHeadlines = [
+    { id: 1, text: t('Breaking: New policy announced for social welfare') || 'Breaking: New policy announced for social welfare', category: 'Politics' },
+    { id: 2, text: t('Community event this weekend - register now!') || 'Community event this weekend - register now!', category: 'Events' },
+    { id: 3, text: t('Education reforms to be implemented next month') || 'Education reforms to be implemented next month', category: 'Education' },
+    { id: 4, text: t('Local business owner wins national award') || 'Local business owner wins national award', category: 'Business' },
+    { id: 5, text: t('Health department issues new guidelines') || 'Health department issues new guidelines', category: 'Health' },
+  ];
+
+  // Create news string for marquee
+  const newsString = defaultNewsHeadlines.map(item => item.text).join(' • ');
 
   // Function to check if ad popup should be shown
-  const shouldShowAdPopup = async (adImageUrl: string) => {
+  const shouldShowAdPopup = async (adImageUrl) => {
     try {
       const lastShownTime = await AsyncStorage.getItem('adPopupLastShown');
       if (!lastShownTime) return true;
 
-      const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
       const lastShown = parseInt(lastShownTime);
 
       return lastShown < oneHourAgo;
@@ -216,74 +191,14 @@ const HomeScreen = () => {
     try {
       await AsyncStorage.setItem('adPopupLastShown', Date.now().toString());
       setAdPopupVisible(false);
-      setAdPopupImage(null);
     } catch (error) {
       console.error('Error saving ad popup status:', error);
       setAdPopupVisible(false);
-      setAdPopupImage(null);
     }
-  };
-
-  // Function to show ad popup if conditions are met
-  const checkAndShowAdPopup = async (adImageUrl: string | null) => {
-    if (!adImageUrl) return;
-
-    const shouldShow = await shouldShowAdPopup(adImageUrl);
-    if (shouldShow) {
-      setAdPopupImage(adImageUrl);
-      setAdPopupVisible(true);
-    }
-  };
-
-  // Function to handle token expiration and logout
-  const handleTokenExpiration = async () => {
-    try {
-      // Clear all stored tokens
-      await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('refreshToken');
-
-      // Call logout from auth context
-      if (logout) {
-        logout();
-      }
-
-      // Show user-friendly message
-      Alert.alert(
-        t('Session Expired') || 'Session Expired',
-        t('Your session has expired. Please log in again.') || 'Your session has expired. Please log in again.',
-        [
-          {
-            text: t('OK') || 'OK',
-            onPress: () => {
-              // Navigate to login screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }], // Adjust route name as per your navigation structure
-              });
-            }
-          }
-        ],
-        { cancelable: false }
-      );
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
-  };
-
-  // Function to check if response indicates token expiration
-  const isTokenExpired = (responseData: any): boolean => {
-    return (
-      responseData.success === false &&
-      (responseData.error === 'jwt expired' ||
-        responseData.message === 'Invalid or expired token' ||
-        responseData.error === 'Token expired' ||
-        responseData.message?.toLowerCase().includes('token') &&
-        responseData.message?.toLowerCase().includes('expired'))
-    );
   };
 
   // Function to handle opening URLs
-  const handleOpenURL = async (url: string) => {
+  const handleOpenURL = async (url) => {
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
@@ -296,173 +211,22 @@ const HomeScreen = () => {
     }
   };
 
-  // Fallback data with translations
-  const defaultNewsHeadlines = [
-    { id: 1, text: t('Breaking: New policy announced for social welfare') || 'Breaking: New policy announced for social welfare', category: 'Politics' },
-    { id: 2, text: t('Community event this weekend - register now!') || 'Community event this weekend - register now!', category: 'Events' },
-    { id: 3, text: t('Education reforms to be implemented next month') || 'Education reforms to be implemented next month', category: 'Education' },
-    { id: 4, text: t('Local business owner wins national award') || 'Local business owner wins national award', category: 'Business' },
-    { id: 5, text: t('Health department issues new guidelines') || 'Health department issues new guidelines', category: 'Health' },
-  ];
-
-  const defaultBannerData = [
-    {
-      id: 1,
-      textColor: '#000',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 2,
-      textColor: '#FFF',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    }
-  ];
-
-  const defaultProfileData: SmaajKeTaajProfile[] = [
-    {
-      id: 11,
-      name: 'Rajat Verma',
-      role: 'Financial Analyst',
-      age: 45,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    },
-    {
-      id: 14,
-      name: 'Nandita Rao',
-      role: 'Administrative',
-      age: 49,
-      fatherName: '',
-      avatar: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-    }
-  ];
-  const fetchCommunityConfiguration = async () => {
-    try {
-      setLoading(true);
-      const COMMUNITY_ID = await getCommunityId();
-      console.log('Fetching community configuration for:', COMMUNITY_ID);
-
-      const headers = await getAuthHeaders();
-
-      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
-        method: 'GET',
-        headers,
-      });
-
-      console.log('Configuration API response status:', response.status, response);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log('Configuration not found, using default data');
-          setProfileData(defaultProfileData);
-          setBannerData(defaultBannerData);
-          return;
-        }
-
-        // Check for 401 Unauthorized which typically indicates token issues
-        if (response.status === 401) {
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { success: false, message: 'Unauthorized' };
-          }
-
-          if (isTokenExpired(errorData)) {
-            console.log('Token expired, logging out user');
-            handleTokenExpiration();
-            return;
-          }
-        }
-
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseText = await response.text();
-      console.log('Raw configuration response:', responseText.substring(0, 200) + '...');
-
-      let data: ConfigurationAPIResponse | TokenErrorResponse;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        setProfileData(defaultProfileData);
-        setBannerData(defaultBannerData);
-        return;
-      }
-
-      // Check if the response indicates token expiration
-      if (isTokenExpired(data)) {
-        console.log('Token expired based on response data, logging out user');
-        handleTokenExpiration();
-        return;
-      }
-
-      if (data.success && 'data' in data && data.data) {
-        // Set Samaj Ke Taaj profiles
-        if (data.data.smaajKeTaaj && Array.isArray(data.data.smaajKeTaaj)) {
-          setProfileData(data.data.smaajKeTaaj);
-          console.log('Loaded Samaj Ke Taaj profiles:', data.data.smaajKeTaaj.length);
-        } else {
-          setProfileData(defaultProfileData);
-        }
-
-        // Set banner data
-        if (data.data.banner && Array.isArray(data.data.banner)) {
-          const banners = data.data.banner.map((imageUrl, index) => ({
-            id: index + 1,
-            image: imageUrl,
-            textColor: index % 2 === 0 ? '#000' : '#FFF'
-          }));
-          setBannerData(banners.length > 0 ? banners : defaultBannerData);
-          console.log('Loaded banners:', banners.length);
-        } else {
-          setBannerData(defaultBannerData);
-        }
-
-        // Handle ad popup banner (using dummy URL for now since API doesn't return it yet)
-        const dummyAdUrl = 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg';
-        // Uncomment below line when API starts returning adPopUpBanner
-        const adUrl = data.data.addPopup || dummyAdUrl;
-        await checkAndShowAdPopup(adUrl);
-      } else {
-        console.log('Invalid API response, using default data');
-        setProfileData(defaultProfileData);
-        setBannerData(defaultBannerData);
-      }
-
-    } catch (error) {
-      console.error('Error fetching community configuration:', error);
-
-      // Use fallback data
-      setProfileData(defaultProfileData);
-      setBannerData(defaultBannerData);
-
-      if (!refreshing) { // Only show alert if not refreshing
-        Alert.alert(
-          t('Unable to Load Data') || 'Unable to Load Data',
-          t('Using default content. Please check your connection and try refreshing.') || 'Using default content. Please check your connection and try refreshing.',
-          [{ text: t('OK') || 'OK', style: 'default' }]
-        );
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
+  // Check and show ad popup when adPopupImage changes
   useEffect(() => {
-    fetchCommunityConfiguration();
-  }, []);
+    const checkAndShowAdPopup = async () => {
+      if (!adPopupImage || adPopupVisible) return;
+      
+      const shouldShow = await shouldShowAdPopup(adPopupImage);
+      if (shouldShow) {
+        setAdPopupVisible(true);
+      }
+    };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchCommunityConfiguration();
-  };
+    checkAndShowAdPopup();
+  }, [adPopupImage, adPopupVisible]);
 
   // Handle profile click
-  const handleProfileClick = (profile: SmaajKeTaajProfile) => {
+  const handleProfileClick = (profile) => {
     setSelectedProfile(profile);
     setModalVisible(true);
   };
@@ -489,7 +253,7 @@ const HomeScreen = () => {
     return () => clearInterval(interval);
   }, [bannerData.length]);
 
-  const renderBanner = ({ item }: { item: { id: number, image: string, textColor: string } }) => (
+  const renderBanner = ({ item }) => (
     <View style={[styles.bannerSlide, { width }]}>
       <ImageBackground
         source={{ uri: item.image }}
@@ -499,7 +263,7 @@ const HomeScreen = () => {
     </View>
   );
 
-  const renderNewsHeadline = ({ item, index }: { item: any, index: number }) => {
+  const renderNewsHeadline = ({ item, index }) => {
     const inputRange = [
       (index - 1) * width,
       index * width,
@@ -532,7 +296,7 @@ const HomeScreen = () => {
     );
   };
 
-  const renderProfileCard = (profile: SmaajKeTaajProfile) => (
+  const renderProfileCard = (profile) => (
     <TouchableOpacity
       key={profile.id}
       style={styles.profileCard}
@@ -588,6 +352,7 @@ const HomeScreen = () => {
               {/* Basic Information */}
               <View style={styles.modalInfoSection}>
                 <Text style={styles.modalProfileName}>{selectedProfile.name}</Text>
+                <Text style={styles.modalProfileName}>{gotraData[0].name}</Text>
                 {(selectedProfile.role || selectedProfile.designation) && (
                   <Text style={styles.modalProfileRole}>
                     {selectedProfile.role || selectedProfile.designation}
@@ -698,7 +463,7 @@ const HomeScreen = () => {
                     {selectedProfile.website && selectedProfile.website.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.website!)}
+                        onPress={() => handleOpenURL(selectedProfile.website)}
                       >
                         <WebIcon size={20} color="#7dd3c0" />
                         <Text style={styles.modalLinkText}>{t('Website') || 'Website'}</Text>
@@ -709,7 +474,7 @@ const HomeScreen = () => {
                     {selectedProfile.linkedin && selectedProfile.linkedin.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.linkedin!)}
+                        onPress={() => handleOpenURL(selectedProfile.linkedin)}
                       >
                         <LinkedInIcon size={20} color="#0077B5" />
                         <Text style={styles.modalLinkText}>LinkedIn</Text>
@@ -720,7 +485,7 @@ const HomeScreen = () => {
                     {selectedProfile.twitter && selectedProfile.twitter.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.twitter!)}
+                        onPress={() => handleOpenURL(selectedProfile.twitter)}
                       >
                         <TwitterIcon size={20} color="#1DA1F2" />
                         <Text style={styles.modalLinkText}>Twitter</Text>
@@ -731,7 +496,7 @@ const HomeScreen = () => {
                     {selectedProfile.facebook && selectedProfile.facebook.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.facebook!)}
+                        onPress={() => handleOpenURL(selectedProfile.facebook)}
                       >
                         <FacebookIcon size={20} color="#4267B2" />
                         <Text style={styles.modalLinkText}>Facebook</Text>
@@ -742,7 +507,7 @@ const HomeScreen = () => {
                     {selectedProfile.instagram && selectedProfile.instagram.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.instagram!)}
+                        onPress={() => handleOpenURL(selectedProfile.instagram)}
                       >
                         <InstagramIcon size={20} color="#E4405F" />
                         <Text style={styles.modalLinkText}>Instagram</Text>
@@ -753,7 +518,7 @@ const HomeScreen = () => {
                     {selectedProfile.socialLink && selectedProfile.socialLink.trim() !== '' && (
                       <TouchableOpacity
                         style={styles.modalLinkRow}
-                        onPress={() => handleOpenURL(selectedProfile.socialLink!)}
+                        onPress={() => handleOpenURL(selectedProfile.socialLink)}
                       >
                         <LinkIcon size={20} color="#7dd3c0" />
                         <Text style={styles.modalLinkText}>{t('Social Link') || 'Social Link'}</Text>
@@ -803,7 +568,7 @@ const HomeScreen = () => {
             <KingIcon size={24} color="black" />
             <Text style={styles.sectionTitle}>{t('Samaj Ke Taj') || 'Samaj Ke Taj'}</Text>
             <TouchableOpacity
-              onPress={onRefresh}
+              onPress={refreshConfiguration}
               style={styles.refreshButton}
               disabled={refreshing}
             >
@@ -814,6 +579,15 @@ const HomeScreen = () => {
               )}
             </TouchableOpacity>
           </View>
+
+          {/* Show stale data indicator */}
+          {isDataStale && (
+            <View style={styles.staleDataIndicator}>
+              <Text style={styles.staleDataText}>
+                {t('Data might be outdated. Pull to refresh.') || 'Data might be outdated. Pull to refresh.'}
+              </Text>
+            </View>
+          )}
 
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -840,7 +614,7 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         ListFooterComponent={<View style={{ height: 20 }} />}
         refreshing={refreshing}
-        onRefresh={onRefresh}
+        onRefresh={refreshConfiguration}
       />
 
       {/* Profile Details Modal */}
@@ -953,6 +727,20 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     padding: 8,
+  },
+  staleDataIndicator: {
+    backgroundColor: '#fff3cd',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ffc107',
+  },
+  staleDataText: {
+    color: '#856404',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     paddingVertical: 40,

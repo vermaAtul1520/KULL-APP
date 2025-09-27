@@ -5,6 +5,7 @@ import RootContainer from '@app/navigators';
 import {theme} from '@constants';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import { LanguageProvider } from '@app/hooks/LanguageContext';
+import { ConfigurationProvider } from '@app/hooks/ConfigContext';
 
 // For dark theme support
 // require('react-native-ui-lib/config').setConfig({appScheme: 'default'});
@@ -22,10 +23,12 @@ export default function App(): React.JSX.Element {
   }, []);
 
   return (
+    <ConfigurationProvider>
     <LanguageProvider>
     <GestureHandlerRootView style={{flex: 1}}>
       <RootContainer />
     </GestureHandlerRootView>
     </LanguageProvider>
+    </ConfigurationProvider>
   );
 }
