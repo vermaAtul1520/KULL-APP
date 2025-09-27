@@ -4,8 +4,9 @@ import {DrawerContentScrollView, DrawerContentComponentProps} from '@react-navig
 import Svg, { Path, Circle, Rect, Polygon } from 'react-native-svg';
 import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
+import { useConfiguration } from '@app/hooks/ConfigContext'; // Add this import
 
-// SVG Icon Components
+// SVG Icon Components (keep all existing icons unchanged)
 const CalendarIcon = ({ size = 24, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" 
@@ -290,21 +291,6 @@ const SettingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
   </Svg>
 );
 
-const CurrencyIcon = ({ size = 24, color = "#7dd3c0" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6 3v18M18 3v18M8 21h8M8 3h8M12 3v18" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M17 9a5 5 0 0 0-5-2c-2 0-3 1-3 3s1 3 3 3 3 1 3 3-1 3-3 3a5 5 0 0 0-5-2" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-  </Svg>
-);
-
 const LogoutIcon = ({ size = 24, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" 
@@ -323,22 +309,36 @@ const LogoutIcon = ({ size = 24, color = "#7dd3c0" }) => (
 const DrawerContent = (props: DrawerContentComponentProps) => {
   const { user, logout } = useAuth();
   const { t } : any = useLanguage();
+  const { drorData } = useConfiguration(); // Add this line to get dror data
   
-  const menuItems = [
-    {name: 'Occasions', icon: 'calendar'},
-    {name: 'Kartavya', icon: 'briefcase'},
-    {name: 'Bhajan', icon: 'music'},
-    {name: 'Games', icon: 'games'},
-    {name: 'CitySearch', icon: 'city'},
-    {name: 'OrganizationOfficer', icon: 'account-tie'},
-    {name: 'Education', icon: 'school'},
-    {name: 'Employment', icon: 'account-search'},
-    {name: 'Sports', icon: 'sports'},
-    {name: 'Dukan', icon: 'store'},
-    {name: 'Meetings', icon: 'meetings'},
-    {name: 'Appeal', icon: 'appeal'},
-    {name: 'Vote', icon: 'vote'},
-  ];
+  // Remove static menu items and create dynamic menu based on drorData
+  const getMenuItems = () => {
+    if (!drorData) return [];
+    
+    const menuMapping = [
+      { key: 'occasions', name: 'Occasions', icon: 'calendar' },
+      { key: 'kartavya', name: 'Kartavya', icon: 'briefcase' },
+      { key: 'bhajan', name: 'Bhajan', icon: 'music' },
+      { key: 'games', name: 'Games', icon: 'games' },
+      { key: 'citySearch', name: 'CitySearch', icon: 'city' },
+      { key: 'organizationOfficer', name: 'OrganizationOfficer', icon: 'account-tie' },
+      { key: 'education', name: 'Education', icon: 'school' },
+      { key: 'employment', name: 'Employment', icon: 'account-search' },
+      { key: 'sports', name: 'Sports', icon: 'sports' },
+      { key: 'dukan', name: 'Dukan', icon: 'store' },
+      { key: 'meetings', name: 'Meetings', icon: 'meetings' },
+      { key: 'appeal', name: 'Appeal', icon: 'appeal' },
+      { key: 'vote', name: 'Vote', icon: 'vote' },
+    ];
+
+    // Filter menu items based on drorData visibility
+    return menuMapping.filter(item => {
+      const drorOption = drorData[item.key];
+      return drorOption && drorOption.visible === true;
+    });
+  };
+
+  const menuItems = getMenuItems();
 
   const handleMenuPress = (screenName: string) => {
     console.log('screenName', screenName);
@@ -438,7 +438,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         </Text>
       </View>
 
-      {/* Menu Items */}
+      {/* Menu Items - Now dynamically rendered based on drorData */}
       <View style={styles.menuSection}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
@@ -543,7 +543,6 @@ const styles = StyleSheet.create({
   },
   donationSection: {
     paddingTop: 20,
-    // marginTop: 20,
   },
   donationButton: {
     flexDirection: 'row',
@@ -559,8 +558,6 @@ const styles = StyleSheet.create({
   },
   logoutSection: {
     borderTopWidth: 1,
-    // paddingTop: 15,
-    // borderTopWidth: 1,
     borderTopColor: '#444',
     marginTop: 15,
   },
