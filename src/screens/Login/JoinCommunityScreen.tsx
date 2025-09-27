@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import { moderateScale } from '@app/constants/scaleUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { getCommunityId } from '@app/constants/apiUtils';
+import ImagePickerComponent from '@app/components/ImagePicker';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -57,6 +58,7 @@ interface JoinFormData {
   age: string;
   dob: string;
   referralCode: string;
+  profileImage: string;
 }
 
 const JoinCommunityScreen: React.FC = () => {
@@ -83,6 +85,7 @@ const JoinCommunityScreen: React.FC = () => {
     age: '',
     dob: '',
     referralCode: '',
+    profileImage: '',
   });
 
   const updateFormData = (field: keyof JoinFormData, value: string) => {
@@ -226,7 +229,8 @@ const JoinCommunityScreen: React.FC = () => {
         age: ageOrDob === 'age' ? parseInt(formData.age) : undefined,
         dateOfBirth: ageOrDob === 'dob' ? formData.dob : undefined,
         referral: formData.referralCode,
-        requestType: 'join_community'
+        requestType: 'join_community',
+        profileImage: formData.profileImage || undefined
       };
 
       const response = await fetch(`${BASE_URL}/api/auth/signup`, {
@@ -332,6 +336,16 @@ const JoinCommunityScreen: React.FC = () => {
       {/* Show remaining fields only after referral code verification */}
       {referralCodeVerified && (
         <>
+          {/* Profile Image */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Profile Photo (Optional)</Text>
+            <ImagePickerComponent
+              onImageSelected={(imageUrl) => updateFormData('profileImage', imageUrl)}
+              currentImage={formData.profileImage}
+              size={100}
+            />
+          </View>
+
           {/* Name */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>First Name *</Text>

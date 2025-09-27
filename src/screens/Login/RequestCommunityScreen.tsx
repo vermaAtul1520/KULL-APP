@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { BASE_URL } from '@app/constants/constant';
+import ImagePickerComponent from '@app/components/ImagePicker';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -45,6 +46,7 @@ interface FormData {
   maritalStatus: string;
   gotra: string;
   subGotra: string;
+  profileImage: string;
 }
 
 const RequestCommunityScreen: React.FC = () => {
@@ -70,6 +72,7 @@ const RequestCommunityScreen: React.FC = () => {
     maritalStatus: 'single',
     gotra: '',
     subGotra: '',
+    profileImage: '',
   });
 
   const updateFormData = (field: keyof FormData, value: string) => {
@@ -166,7 +169,8 @@ const RequestCommunityScreen: React.FC = () => {
         maritalStatus: formData.maritalStatus,
         gotra: formData.gotra,
         subGotra: formData.subGotra,
-        requestType: 'community_request'
+        requestType: 'community_request',
+        profileImage: formData.profileImage || undefined
       };
 
       const response = await fetch(`${BASE_URL}/api/auth/signup`, {
@@ -217,7 +221,17 @@ const RequestCommunityScreen: React.FC = () => {
   const renderPage1 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Basic Information</Text>
-      
+
+      {/* Profile Image */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Profile Photo (Optional)</Text>
+        <ImagePickerComponent
+          onImageSelected={(imageUrl) => updateFormData('profileImage', imageUrl)}
+          currentImage={formData.profileImage}
+          size={100}
+        />
+      </View>
+
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Cast *</Text>
         <TextInput

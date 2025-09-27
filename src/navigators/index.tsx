@@ -60,6 +60,7 @@ import VoteScreen from '@app/screens/drawer/VoteScreen';
 import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import SettingsScreen from '@app/screens/drawer/SettingScreen';
+import ImagePickerComponent from '@app/components/ImagePicker';
 
 // Custom Colors
 const AppColors = {
@@ -90,6 +91,7 @@ interface User {
   code: string;
   createdAt: string;
   __v: number;
+  profileImage?: string;
 }
 
 // Types
@@ -448,6 +450,7 @@ const ProfileScreen = (): React.JSX.Element => {
         lastName: user.lastName,
         email: user.email,
         interests: user.interests,
+        profileImage: user.profileImage,
       });
     }
   }, [user]);
@@ -540,11 +543,21 @@ const ProfileScreen = (): React.JSX.Element => {
         {/* Profile Header Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <View style={styles.profileAvatarLarge}>
-              <Text style={styles.avatarText}>
-                {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()}
-              </Text>
-            </View>
+            {isEditing ? (
+              <ImagePickerComponent
+                onImageSelected={(imageUrl) => setEditedUser({...editedUser, profileImage: imageUrl})}
+                currentImage={editedUser.profileImage || user.profileImage}
+                size={80}
+              />
+            ) : user.profileImage ? (
+              <Image source={{ uri: user.profileImage }} style={styles.profileAvatarLarge} />
+            ) : (
+              <View style={styles.profileAvatarLarge}>
+                <Text style={styles.avatarText}>
+                  {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()}
+                </Text>
+              </View>
+            )}
           </View>
           
           <Text style={styles.fullName}>
