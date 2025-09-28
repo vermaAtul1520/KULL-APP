@@ -420,9 +420,16 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       <View style={styles.userProfile}>
         <View style={styles.avatar}>
           {user ? (
-            <View style={styles.profileInitials}>
-              <Text style={styles.initialsText}>{getInitials()}</Text>
-            </View>
+            user.profileImage ? (
+              <Image
+                source={{uri: user.profileImage}}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profileInitials}>
+                <Text style={styles.initialsText}>{getInitials()}</Text>
+              </View>
+            )
           ) : (
             <Image
               source={{uri: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg'}}
