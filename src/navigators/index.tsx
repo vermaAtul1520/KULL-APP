@@ -92,6 +92,9 @@ interface User {
   createdAt: string;
   __v: number;
   profileImage?: string;
+  responsibilities?: string[];
+  permissions?: string[];
+  community?: string;
 }
 
 // Types
@@ -268,15 +271,51 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = async (updatedData: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updatedData };
-      setUser(updatedUser);
-      
-      // Update AsyncStorage
       try {
-        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
-        console.log('User data updated locally');
+        // Call API endpoint to update user profile
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${BASE_URL}/api/users/profile`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(updatedData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const apiResponse = await response.json();
+
+        if (apiResponse.success && apiResponse.user) {
+          // Update local state with the response from API
+          const updatedUser = { ...user, ...apiResponse.user };
+          setUser(updatedUser);
+
+          // Update AsyncStorage with the complete user data from API
+          try {
+            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+            console.log('User data updated successfully from API');
+          } catch (storageError) {
+            console.error('Error updating user data in storage:', storageError);
+          }
+        } else {
+          throw new Error(apiResponse.message || 'Failed to update profile');
+        }
       } catch (error) {
-        console.error('Error updating user data in storage:', error);
+        console.error('Error updating user profile:', error);
+
+        // Fallback: update locally if API call fails
+        const updatedUser = { ...user, ...updatedData };
+        setUser(updatedUser);
+
+        try {
+          await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+          console.log('User data updated locally (fallback)');
+        } catch (storageError) {
+          console.error('Error updating user data in storage (fallback):', storageError);
+        }
+
+        throw error; // Re-throw to let calling components handle the error
       }
     }
   };
