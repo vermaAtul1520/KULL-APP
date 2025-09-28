@@ -59,6 +59,8 @@ interface JoinFormData {
   dob: string;
   referralCode: string;
   profileImage: string;
+  password: string;
+  confirmPassword: string;
 }
 
 const JoinCommunityScreen: React.FC = () => {
@@ -86,6 +88,8 @@ const JoinCommunityScreen: React.FC = () => {
     dob: '',
     referralCode: '',
     profileImage: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const updateFormData = (field: keyof JoinFormData, value: string) => {
@@ -139,7 +143,7 @@ const JoinCommunityScreen: React.FC = () => {
         }
         return ['referralCode', 'name', 'lastName', 'gotra', 'subGotra', 'fatherName'];
       case 2:
-        return ['maritalStatus', 'phoneNumber', 'email', 'profession'];
+        return ['maritalStatus', 'phoneNumber', 'email', 'profession', 'password', 'confirmPassword'];
       case 3:
         return ageOrDob === 'age' ? ['age'] : ['dob'];
       default:
@@ -176,6 +180,24 @@ const JoinCommunityScreen: React.FC = () => {
 
       if (formData.phoneNumber.length !== 10) {
         Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+        return false;
+      }
+
+      // Password validation - simplified (only check length > 3)
+      if (formData.password.length <= 3) {
+        Alert.alert('Error', 'Password must be greater than 3 characters');
+        return false;
+      }
+
+      // Commented out hard password rules for now
+      // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+      // if (!passwordRegex.test(formData.password)) {
+      //   Alert.alert('Error', 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+      //   return false;
+      // }
+
+      if (formData.password !== formData.confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
         return false;
       }
     }
@@ -215,7 +237,7 @@ const JoinCommunityScreen: React.FC = () => {
         lastName: formData.lastName,
         email: formData.email,
         phone: `+91${formData.phoneNumber}`,
-        password: 'temp123@',
+        password: formData.password,
         gender: 'not specified',
         occupation: formData.profession,
         religion: 'Hindu',
@@ -306,19 +328,6 @@ const JoinCommunityScreen: React.FC = () => {
             placeholderTextColor={AppColors.gray}
             editable={!referralCodeVerified}
           />
-          {!referralCodeVerified && (
-            <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={() => fetchGotraOptions(formData.referralCode)}
-              disabled={loadingGotra}
-            >
-              {loadingGotra ? (
-                <ActivityIndicator size="small" color={AppColors.white} />
-              ) : (
-                <Text style={styles.verifyButtonText}>Verify</Text>
-              )}
-            </TouchableOpacity>
-          )}
           {referralCodeVerified && (
             <View style={styles.verifiedIcon}>
               <Text style={styles.verifiedText}>✓</Text>
@@ -327,10 +336,16 @@ const JoinCommunityScreen: React.FC = () => {
         </View>
         <Text style={styles.helpText}>
           {referralCodeVerified
-            ? 'Referral code verified successfully!'
-            : 'You need a referral code from an existing community member to join'
+            ? 'Referral code verified successfully! Please fill in your details below.'
+            : 'Enter your referral code and click "Verify Code" below to continue'
           }
         </Text>
+        {loadingGotra && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={AppColors.teal} />
+            <Text style={styles.loadingText}>Verifying referral code...</Text>
+          </View>
+        )}
       </View>
 
       {/* Show remaining fields only after referral code verification */}
@@ -492,6 +507,38 @@ const JoinCommunityScreen: React.FC = () => {
           placeholder="Enter your profession"
           placeholderTextColor={AppColors.gray}
         />
+      </View>
+
+      {/* Password */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.password}
+          onChangeText={(value) => updateFormData('password', value)}
+          placeholder="Create a strong password"
+          placeholderTextColor={AppColors.gray}
+          secureTextEntry={true}
+        />
+        <Text style={styles.helpText}>
+          Password must be greater than 3 characters
+        </Text>
+      </View>
+
+      {/* Confirm Password */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Confirm Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.confirmPassword}
+          onChangeText={(value) => updateFormData('confirmPassword', value)}
+          placeholder="Confirm your password"
+          placeholderTextColor={AppColors.gray}
+          secureTextEntry={true}
+        />
+        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+          <Text style={styles.errorText}>Passwords do not match</Text>
+        )}
       </View>
     </View>
   );
@@ -893,25 +940,11 @@ const styles = StyleSheet.create({
   },
   referralInput: {
     flex: 1,
+    marginRight: moderateScale(10),
   },
   inputVerified: {
     backgroundColor: AppColors.lightGray,
     borderColor: AppColors.green,
-  },
-  verifyButton: {
-    backgroundColor: AppColors.teal,
-    paddingHorizontal: moderateScale(15),
-    paddingVertical: moderateScale(8),
-    borderRadius: moderateScale(8),
-    marginLeft: moderateScale(10),
-    minWidth: moderateScale(60),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifyButtonText: {
-    color: AppColors.white,
-    fontSize: moderateScale(12),
-    fontWeight: '600',
   },
   verifiedIcon: {
     backgroundColor: AppColors.green,
@@ -926,6 +959,24 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontSize: moderateScale(16),
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: AppColors.red,
+    fontSize: moderateScale(12),
+    marginTop: moderateScale(5),
+    fontStyle: 'italic',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: moderateScale(10),
+    paddingHorizontal: moderateScale(10),
+  },
+  loadingText: {
+    marginLeft: moderateScale(8),
+    fontSize: moderateScale(14),
+    color: AppColors.teal,
+    fontWeight: '500',
   },
 });
 

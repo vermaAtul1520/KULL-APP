@@ -47,6 +47,8 @@ interface FormData {
   gotra: string;
   subGotra: string;
   profileImage: string;
+  password: string;
+  confirmPassword: string;
 }
 
 const RequestCommunityScreen: React.FC = () => {
@@ -73,6 +75,8 @@ const RequestCommunityScreen: React.FC = () => {
     gotra: '',
     subGotra: '',
     profileImage: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const updateFormData = (field: keyof FormData, value: string) => {
@@ -85,7 +89,7 @@ const RequestCommunityScreen: React.FC = () => {
       case 1:
         return ['cast', 'cGotNo', 'name', 'position', 'fatherName'];
       case 2:
-        return ['address', 'pinCode', 'phoneNo', 'email', 'profession'];
+        return ['address', 'pinCode', 'phoneNo', 'email', 'profession', 'password', 'confirmPassword'];
       case 3:
         return ['estimatedMembers', 'thoughtOfMaking', 'gotra', 'subGotra'];
       default:
@@ -112,6 +116,24 @@ const RequestCommunityScreen: React.FC = () => {
 
       if (formData.phoneNo.length !== 10) {
         Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+        return false;
+      }
+
+      // Password validation - simplified (only check length > 3)
+      if (formData.password.length <= 3) {
+        Alert.alert('Error', 'Password must be greater than 3 characters');
+        return false;
+      }
+
+      // Commented out hard password rules for now
+      // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+      // if (!passwordRegex.test(formData.password)) {
+      //   Alert.alert('Error', 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+      //   return false;
+      // }
+
+      if (formData.password !== formData.confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
         return false;
       }
     }
@@ -151,7 +173,7 @@ const RequestCommunityScreen: React.FC = () => {
         lastName: formData.name.split(' ').slice(1).join(' ') || formData.name,
         email: formData.email,
         phone: `+91${formData.phoneNo}`,
-        password: 'temp123@',
+        password: formData.password,
         gender: 'not specified',
         occupation: formData.profession,
         religion: 'Hindu',
@@ -367,6 +389,38 @@ const RequestCommunityScreen: React.FC = () => {
           placeholder="Enter your profession"
           placeholderTextColor={AppColors.gray}
         />
+      </View>
+
+      {/* Password */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.password}
+          onChangeText={(value) => updateFormData('password', value)}
+          placeholder="Create a strong password"
+          placeholderTextColor={AppColors.gray}
+          secureTextEntry={true}
+        />
+        <Text style={styles.helpText}>
+          Password must be greater than 3 characters
+        </Text>
+      </View>
+
+      {/* Confirm Password */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Confirm Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.confirmPassword}
+          onChangeText={(value) => updateFormData('confirmPassword', value)}
+          placeholder="Confirm your password"
+          placeholderTextColor={AppColors.gray}
+          secureTextEntry={true}
+        />
+        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+          <Text style={styles.errorText}>Passwords do not match</Text>
+        )}
       </View>
     </View>
   );
@@ -715,6 +769,18 @@ const styles = StyleSheet.create({
   },
   submitButtonTextDisabled: {
     color: AppColors.lightGray,
+  },
+  helpText: {
+    fontSize: 12,
+    color: AppColors.gray,
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  errorText: {
+    color: AppColors.red,
+    fontSize: 12,
+    marginTop: 5,
+    fontStyle: 'italic',
   },
 });
 
