@@ -19,7 +19,7 @@ import { BASE_URL } from '@app/constants/constant';
 import { useAuth } from '@app/navigators';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
-import { getAuthHeaders } from '@app/constants/apiUtils';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -139,20 +139,11 @@ const EducationScreen = () => {
     { key: 'guidance', label: 'Guidance', icon: DocumentIcon },
   ];
 
-  // API Functions
-  // const getAuthHeaders = async () => {
-  //   const userToken = await AsyncStorage.getItem('userToken');
-  //   return {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${userToken || token}`,
-  //   };
-  // };
 
   const fetchEducationResources = async () => {
     try {
       setLoading(true);
-      const communityId = 12334567;
-      console.log('Fetching education resources for community:', communityId);
+      const communityId = await getCommunityId();
 
       const headers = await getAuthHeaders();
       const response = await fetch(`${BASE_URL}/api/communities/${communityId}/education`, {
@@ -180,88 +171,15 @@ const EducationScreen = () => {
 
     } catch (error) {
       console.error('Error fetching education resources:', error);
-      // Use dummy data for demo
-      const dummyResources = generateDummyResources();
-      setResources(dummyResources);
-      setFilteredResources(dummyResources);
+      Alert.alert('Error', 'Failed to load education resources. Please try again.');
+      setResources([]);
+      setFilteredResources([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Generate dummy data for demo
-  const generateDummyResources = (): EducationResource[] => [
-    {
-      _id: '1',
-      title: 'React Native Masterclass',
-      description: 'Complete React Native development course covering all essential concepts.',
-      type: 'class_link',
-      category: 'Mobile Development',
-      url: 'https://meet.google.com/abc-defg-hij',
-      instructor: 'Rajesh Kumar',
-      level: 'Intermediate',
-      duration: '3 hours',
-      isActive: true,
-      createdAt: '2024-08-15T10:30:00Z',
-      updatedAt: '2024-08-15T10:30:00Z',
-    },
-    {
-      _id: '2',
-      title: 'JavaScript Fundamentals PDF',
-      description: 'Comprehensive guide covering JavaScript basics to advanced topics.',
-      type: 'course_material',
-      category: 'Web Development',
-      fileUrl: 'https://example.com/js-fundamentals.pdf',
-      instructor: 'Priya Sharma',
-      level: 'Beginner',
-      duration: 'Self-paced',
-      isActive: true,
-      createdAt: '2024-08-14T09:15:00Z',
-      updatedAt: '2024-08-14T09:15:00Z',
-    },
-    {
-      _id: '3',
-      title: 'Career Guidance for IT Students',
-      description: 'Essential guidance for building a successful career in Information Technology.',
-      type: 'guidance',
-      category: 'Career Development',
-      instructor: 'Dr. Amit Singh',
-      level: 'Beginner',
-      duration: '45 minutes',
-      isActive: true,
-      createdAt: '2024-08-13T14:45:00Z',
-      updatedAt: '2024-08-13T14:45:00Z',
-    },
-    {
-      _id: '4',
-      title: 'Python Programming Workshop',
-      description: 'Live workshop on Python programming for beginners.',
-      type: 'class_link',
-      category: 'Programming',
-      url: 'https://zoom.us/j/123456789',
-      instructor: 'Neha Gupta',
-      level: 'Beginner',
-      duration: '2 hours',
-      isActive: true,
-      createdAt: '2024-08-12T16:20:00Z',
-      updatedAt: '2024-08-12T16:20:00Z',
-    },
-    {
-      _id: '5',
-      title: 'Data Structures Study Material',
-      description: 'Complete notes and examples for data structures and algorithms.',
-      type: 'course_material',
-      category: 'Computer Science',
-      fileUrl: 'https://example.com/data-structures.pdf',
-      instructor: 'Prof. Suresh Patel',
-      level: 'Advanced',
-      duration: 'Self-paced',
-      isActive: true,
-      createdAt: '2024-08-11T11:10:00Z',
-      updatedAt: '2024-08-11T11:10:00Z',
-    },
-  ];
 
   useEffect(() => {
     fetchEducationResources();
