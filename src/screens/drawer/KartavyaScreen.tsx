@@ -6,7 +6,7 @@
  */
 
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,15 @@ import {
   Modal,
   StatusBar,
   SafeAreaView,
+  ActivityIndicator,
+  RefreshControl,
+  TextInput,
+  FlatList,
 } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { WebView } from 'react-native-webview';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import { BASE_URL } from '@app/constants/constant';
 
 const { width, height } = Dimensions.get('window');
 
@@ -144,6 +150,12 @@ const GridIcon = ({ size = 16, color = AppColors.gray }) => (
   </Svg>
 );
 
+const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+  </Svg>
+);
+
 // Data structures
 interface KartavyaCategory {
   id: string;
@@ -156,15 +168,28 @@ interface KartavyaCategory {
 }
 
 interface KartyaItem {
-  id: string;
+  _id: string;
   title: string;
-  author: string;
-  type: 'pdf' | 'image';
-  url: string;
-  thumbnailUrl?: string;
   description: string;
   category: string;
+  filetype: 'pdf' | 'image';
+  attachment: string;
+  thumbnailUrl?: string;
   language: string;
+  community: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface KartavyaApiResponse {
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  count: number;
+  data: KartyaItem[];
 }
 
 const kartavyaCategories: KartavyaCategory[] = [
@@ -215,91 +240,6 @@ const kartavyaCategories: KartavyaCategory[] = [
   },
 ];
 
-const kartyaItems: KartyaItem[] = [
-  {
-    id: '1',
-    title: 'Voter Registration Guidelines',
-    author: 'Election Commission',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    description: 'Complete guide for voter registration process',
-    category: 'Elections',
-    language: 'Hindi',
-  },
-  {
-    id: '2',
-    title: 'Polling Booth Map',
-    author: 'District Collector',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    description: 'Detailed map of polling booths in the constituency',
-    category: 'Elections',
-    language: 'Visual',
-  },
-  {
-    id: '3',
-    title: 'District Officer Directory',
-    author: 'Administration',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    description: 'Contact information and responsibilities of district officers',
-    category: 'Officers',
-    language: 'Hindi',
-  },
-  {
-    id: '4',
-    title: 'Monthly Gram Sabha Minutes',
-    author: 'Gram Panchayat',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    description: 'Minutes from the latest gram sabha meeting',
-    category: 'Meetings',
-    language: 'Hindi',
-  },
-  {
-    id: '5',
-    title: 'Road Construction Progress',
-    author: 'PWD Department',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    description: 'Current status of road construction projects',
-    category: 'Work Progress',
-    language: 'Hindi',
-  },
-  {
-    id: '6',
-    title: 'Community Service Guidelines',
-    author: 'Social Welfare',
-    type: 'pdf',
-    url: 'https://morth.nic.in/sites/default/files/dd12-13_0.pdf',
-    description: 'Guidelines for community service and social responsibilities',
-    category: 'Community Duties',
-    language: 'Hindi',
-  },
-  {
-    id: '7',
-    title: 'Election Results Chart',
-    author: 'Election Commission',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    description: 'Visual representation of election results',
-    category: 'Elections',
-    language: 'Visual',
-  },
-  {
-    id: '8',
-    title: 'Officer Contact List',
-    author: 'Administration',
-    type: 'image',
-    url: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    thumbnailUrl: 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png',
-    description: 'Quick reference contact list for officers',
-    category: 'Officers',
-    language: 'Visual',
-  },
-];
 
 const typeFilters = ['All', 'PDF', 'Image'];
 
@@ -329,23 +269,100 @@ export default function KartavyaScreen() {
   const [currentView, setCurrentView] = useState<'main' | 'details'>('main');
   const [selectedCategory, setSelectedCategory] = useState<KartavyaCategory | null>(null);
   const [selectedType, setSelectedType] = useState('All');
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<KartyaItem | null>(null);
 
+  // API related state
+  const [kartyaItems, setKartyaItems] = useState<KartyaItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<KartyaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const navigation = useNavigation();
 
-  // Filter items based on selected category and type
-  const filteredItems = kartyaItems.filter(item => {
-    const categoryFilter = selectedCategory 
-      ? item.category === getCategoryFromId(selectedCategory.id)
-      : true;
-    const typeFilter = selectedType === 'All' || 
-      (selectedType === 'PDF' && item.type === 'pdf') ||
-      (selectedType === 'Image' && item.type === 'image');
-    return categoryFilter && typeFilter;
-  });
+  // Fetch kartavya data from API
+  const fetchKartavyaData = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const communityId = await getCommunityId();
+      const response = await fetch(`${BASE_URL}/api/kartavya?filter={"community":"${communityId}"}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: KartavyaApiResponse = await response.json();
+
+      if (result.success && result.data) {
+        setKartyaItems(result.data);
+        setFilteredItems(result.data);
+      } else {
+        console.error('API returned unsuccessful response:', result);
+        setKartyaItems([]);
+        setFilteredItems([]);
+      }
+    } catch (error) {
+      console.error('Error fetching kartavya data:', error);
+      Alert.alert('Error', 'Failed to load kartavya data. Please try again.');
+      setKartyaItems([]);
+      setFilteredItems([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchKartavyaData();
+  }, []);
+
+  // Filter items based on search, category and type
+  useEffect(() => {
+    filterItems();
+  }, [searchQuery, selectedCategory, selectedType, kartyaItems]);
+
+  const filterItems = () => {
+    let filtered = kartyaItems;
+
+    // Apply category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(item => item.category === selectedCategory.id);
+    }
+
+    // Apply type filter
+    if (selectedType !== 'All') {
+      filtered = filtered.filter(item =>
+        (selectedType === 'PDF' && item.filetype === 'pdf') ||
+        (selectedType === 'Image' && item.filetype === 'image')
+      );
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(item => {
+        const query = searchQuery.toLowerCase();
+        return (
+          item.title?.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query) ||
+          item.category?.toLowerCase().includes(query) ||
+          item.language?.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    setFilteredItems(filtered);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchKartavyaData();
+  };
 
   const handleCategorySelect = (category: KartavyaCategory) => {
     setSelectedCategory(category);
@@ -357,11 +374,12 @@ export default function KartavyaScreen() {
     setCurrentView('main');
     setSelectedCategory(null);
     setSelectedType('All');
+    setSearchQuery('');
   };
 
   const openKartyaItem = (item: KartyaItem) => {
     setSelectedItem(item);
-    if (item.type === 'image') {
+    if (item.filetype === 'image') {
       setImageModalVisible(true);
     } else {
       setPdfModalVisible(true);
@@ -374,13 +392,6 @@ export default function KartavyaScreen() {
     setSelectedItem(null);
   };
 
-  const toggleFavorite = (itemId: string) => {
-    setFavorites(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
 
   // PDF Modal Component
   const PdfModal = () => {
@@ -414,7 +425,7 @@ export default function KartavyaScreen() {
           <View style={styles.pdfContent}>
             {selectedItem && (
               <WebView
-                source={{ uri: getPdfViewerUrl(selectedItem.url) }}
+                source={{ uri: getPdfViewerUrl(selectedItem.attachment) }}
                 style={styles.webView}
                 startInLoadingState={true}
                 javaScriptEnabled={true}
@@ -537,7 +548,7 @@ export default function KartavyaScreen() {
         <View style={styles.imageModalContent}>
           {selectedItem && (
             <Image
-              source={{ uri: selectedItem.url }}
+              source={{ uri: selectedItem.attachment }}
               style={styles.fullScreenImage}
               resizeMode="contain"
             />
@@ -576,7 +587,7 @@ export default function KartavyaScreen() {
             </Text>
             <View style={styles.itemCountContainer}>
               <Text style={styles.itemCountText}>
-                {kartyaItems.filter(item => item.category === getCategoryFromId(category.id)).length} items available
+                {kartyaItems.filter(item => item.category === category.id).length} items available
               </Text>
             </View>
           </View>
@@ -647,10 +658,10 @@ export default function KartavyaScreen() {
       >
         <View style={styles.cardHeader}>
           <View style={[
-            styles.typeIndicator, 
-            { backgroundColor: item.type === 'pdf' ? getCategoryColor(item.category) : AppColors.blue }
+            styles.typeIndicator,
+            { backgroundColor: item.filetype === 'pdf' ? getCategoryColor(item.category) : AppColors.blue }
           ]}>
-            {item.type === 'pdf' ? (
+            {item.filetype === 'pdf' ? (
               <PdfIcon size={24} color={AppColors.white} />
             ) : (
               <ImageIcon size={24} color={AppColors.white} />
@@ -659,7 +670,7 @@ export default function KartavyaScreen() {
 
         </View>
 
-        {item.type === 'image' && item.thumbnailUrl && (
+        {item.filetype === 'image' && item.thumbnailUrl && (
           <View style={styles.imagePreview}>
             <Image 
               source={{ uri: item.thumbnailUrl }} 
@@ -744,11 +755,11 @@ export default function KartavyaScreen() {
             <Text style={styles.statLabel}>Items</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{filteredItems.filter(i => i.type === 'pdf').length}</Text>
+            <Text style={styles.statNumber}>{filteredItems.filter(i => i.filetype === 'pdf').length}</Text>
             <Text style={styles.statLabel}>PDFs</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{filteredItems.filter(i => i.type === 'image').length}</Text>
+            <Text style={styles.statNumber}>{filteredItems.filter(i => i.filetype === 'image').length}</Text>
             <Text style={styles.statLabel}>Images</Text>
           </View>
           <View style={styles.statCard}>
@@ -757,16 +768,40 @@ export default function KartavyaScreen() {
           </View>
         </View>
 
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <SearchIcon size={20} color={AppColors.gray} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search kartavya documents..."
+            placeholderTextColor={AppColors.gray}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+              <CloseIcon size={20} color={AppColors.gray} />
+            </TouchableOpacity>
+          )}
+        </View>
+
         <TypeFilter />
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[AppColors.primary]}
+            />
+          }
         >
           <View style={styles.kartyaGrid}>
             {filteredItems.map((item) => (
-              <KartyaCard key={item.id} item={item} />
+              <KartyaCard key={item._id} item={item} />
             ))}
           </View>
 
@@ -790,13 +825,38 @@ export default function KartavyaScreen() {
     );
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
+            <BackIcon size={24} color={AppColors.white} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Kartavya</Text>
+            <Text style={styles.headerSubtitle}>Loading...</Text>
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingSpinner}>
+            <Text style={styles.loadingEmoji}>📋</Text>
+          </View>
+          <Text style={styles.loadingText}>Loading kartavya data...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Render the appropriate view
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
       {currentView === 'main' ? <MainView /> : <DetailView />}
       <ImageModal />
       <PdfModal />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -953,6 +1013,30 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.white,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    margin: 16,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: AppColors.dark,
+    marginLeft: 8,
+    paddingVertical: 4,
+  },
+  clearSearchIcon: {
+    padding: 4,
   },
   statCard: {
     flex: 1,
