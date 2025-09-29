@@ -146,7 +146,7 @@ const EducationScreen = () => {
       const communityId = await getCommunityId();
 
       const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/api/communities/${communityId}/education`, {
+      const response = await fetch(`${BASE_URL}/api/educationResources?filter={ "community": "${communityId}" }`, {
         method: 'GET',
         headers,
       });

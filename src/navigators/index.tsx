@@ -26,7 +26,7 @@ import DrawerContent from '@app/screens/DrawerContent';
 import Logo from '@app/assets/images/hamburger.svg';
 import { Text, Alert } from 'react-native';
 import { StyleSheet } from 'react-native';
-import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
+import { useLanguage } from '@app/hooks/LanguageContext';
 
 // Import auth screens
 import WelcomeScreen from '@app/screens/Login/WelcomeScreen';
@@ -106,7 +106,6 @@ type AuthStackParamList = {
   JoinCommunity: undefined;
 };
 
-// Updated RootDrawerParamList to match implemented screens
 type RootDrawerParamList = {
   HomeTab: undefined;
   Occasions: undefined;
@@ -148,7 +147,7 @@ interface AuthContextType {
   login: (userData: User, token: string) => void;
   logout: () => void;
   isLoading: boolean;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<User>) => Promise<void>;
   bannerData: {id: number, image: string, textColor: string}[];
   setBannerData: (banners: {id: number, image: string, textColor: string}[]) => void;
   bannerLoading: boolean;
@@ -161,7 +160,7 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
   isLoading: true,
-  updateUser: () => {},
+  updateUser: async () => {},
   bannerData: [],
   setBannerData: () => {},
   bannerLoading: true,
@@ -173,7 +172,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const [bannerData, setBannerDataState] = useState<{id: number, image: string, textColor: string}[]>([]);
   const [bannerLoading, setBannerLoading] = useState(true);
 
@@ -190,7 +188,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   ];
 
-  // Check for existing login on app start
   useEffect(() => {
     checkAuthState();
   }, []);
@@ -232,7 +229,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Fetch banner data on app start
   useEffect(() => {
     if (isLoggedIn) {
       fetchBannerData();
@@ -253,7 +249,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setToken(storedToken);
         setUser(userData);
         setIsLoggedIn(true);
-        console.log('User auto-logged in:', userData.firstName);
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
@@ -263,75 +258,51 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const login = (userData: User, userToken: string) => {
-    console.log('User logged in successfully:', userData.firstName);
     setUser(userData);
     setToken(userToken);
     setIsLoggedIn(true);
   };
 
   const updateUser = async (updatedData: Partial<User>) => {
-    if (user) {
-      try {
-        // Call API endpoint to update user profile
-        const headers = await getAuthHeaders();
-        const response = await fetch(`${BASE_URL}/api/users/profile`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(updatedData),
-        });
+    if (!user) {
+      throw new Error('No user data available');
+    }
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch(`${BASE_URL}/api/users/profile`, {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedData),
+    });
 
-        const apiResponse = await response.json();
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update profile: ${response.status}`);
+    }
 
-        if (apiResponse.success && apiResponse.user) {
-          // Update local state with the response from API
-          const updatedUser = { ...user, ...apiResponse.user };
-          setUser(updatedUser);
+    const apiResponse = await response.json();
 
-          // Update AsyncStorage with the complete user data from API
-          try {
-            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
-            console.log('User data updated successfully from API');
-          } catch (storageError) {
-            console.error('Error updating user data in storage:', storageError);
-          }
-        } else {
-          throw new Error(apiResponse.message || 'Failed to update profile');
-        }
-      } catch (error) {
-        console.error('Error updating user profile:', error);
-
-        // Fallback: update locally if API call fails
-        const updatedUser = { ...user, ...updatedData };
-        setUser(updatedUser);
-
-        try {
-          await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
-          console.log('User data updated locally (fallback)');
-        } catch (storageError) {
-          console.error('Error updating user data in storage (fallback):', storageError);
-        }
-
-        throw error; // Re-throw to let calling components handle the error
-      }
+    if (apiResponse.success && apiResponse.user) {
+      const updatedUser = { ...user, ...apiResponse.user };
+      setUser(updatedUser);
+      await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+    } else {
+      throw new Error(apiResponse.message || 'Failed to update profile');
     }
   };
 
   const logout = async () => {
     try {
-      // Clear AsyncStorage
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
-      
-      // Clear state
       setUser(null);
       setToken(null);
       setIsLoggedIn(false);
-      
-      console.log('User logged out successfully');
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -355,7 +326,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Hook to use auth context
 export const useAuth = () => useContext(AuthContext);
 
 // Profile Avatar Component
@@ -376,13 +346,12 @@ const ProfileAvatar = (): React.JSX.Element => {
       style={styles.profileAvatarContainer}
     >
       <View style={styles.profileAvatar}>
-        <Text style={styles.profileAvatarText}>{getInitials()}</Text>
+        <Image source={{ uri: user.profileImage }} style={styles.navbarImage} />
       </View>
     </Pressable>
   );
 };
 
-// Shared components
 const DrawerButton = (): React.JSX.Element => {
   const {toggleDrawer} = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   return (
@@ -395,12 +364,9 @@ const DrawerButton = (): React.JSX.Element => {
 const CustomHeaderTitle = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   const { user } = useAuth();
-  const { t } = useLanguage(); // Add this line
+  const { t } = useLanguage();
   
-  // Get current route name
   const currentRouteName = navigation.getState()?.routes[navigation.getState()?.index || 0]?.name;
-
-  console.log('currentRouteName', currentRouteName);
   
   const navigateToHome = () => {
     navigation.navigate('HomeTab');
@@ -413,14 +379,11 @@ const CustomHeaderTitle = () => {
     return 'KULL-APP'; 
   };
 
-  // Function to get display title based on route with translations
   const getDisplayTitle = () => {
-    // If on HomeTab, show community name
     if (currentRouteName === 'HomeTab') {
       return getCommunityName();
     }
     
-    // For other screens, show the translated screen name
     const screenTitles = {
       'Occasions': t('Occasions') || 'OCCASIONS',
       'Kartavya': t('Kartavya') || 'KARTAVYA',
@@ -475,12 +438,10 @@ const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
 const ProfileScreen = (): React.JSX.Element => {
   const navigation = useNavigation();
   const { user, logout, updateUser } = useAuth();
-  const { t } = useLanguage(); // Add this line
+  console.log("Profile Screen - User data:", user);
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
-
-  console.log('userArvind', user, updateUser);
-  
 
   useEffect(() => {
     if (user) {
@@ -495,15 +456,12 @@ const ProfileScreen = (): React.JSX.Element => {
   }, [user]);
 
   const handleSave = async () => {
-    console.log('Saving user data:', editedUser);
-    
     try {
-      updateUser(editedUser);
+      await updateUser(editedUser);
       setIsEditing(false);
       Alert.alert(t('Success') || 'Success', t('Profile updated successfully!') || 'Profile updated successfully!');
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert(t('Error') || 'Error', t('Failed to update profile. Please try again.') || 'Failed to update profile. Please try again.');
+      Alert.alert(t('Error') || 'Error', error.message || 'Failed to update profile');
     }
   };
 
@@ -557,7 +515,6 @@ const ProfileScreen = (): React.JSX.Element => {
 
   return (
     <View style={styles.container}>
-      {/* Clean Header */}
       <View style={styles.profileHeader}>
         <Pressable 
           onPress={() => navigation.goBack()}
@@ -579,7 +536,6 @@ const ProfileScreen = (): React.JSX.Element => {
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Profile Header Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             {isEditing ? (
@@ -609,36 +565,32 @@ const ProfileScreen = (): React.JSX.Element => {
           </View>
         </View>
 
-        {/* Form Section */}
         <View style={styles.formSection}>
-          
-          {/* Personal Details */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>{t('Personal Information') || 'Personal Information'}</Text>
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('First Name') || 'First Name'}</Text>
-                <View style={styles.readOnlyField}>
-                  <Text style={styles.fieldValue}>{user.firstName}</Text>
-                </View>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.fieldValue}>{user.firstName}</Text>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('Last Name') || 'Last Name'}</Text>
-                <View style={styles.readOnlyField}>
-                  <Text style={styles.fieldValue}>{user.lastName}</Text>
-                </View>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.fieldValue}>{user.lastName}</Text>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('Email') || 'Email'}</Text>
-                <View style={styles.readOnlyField}>
-                  <Text style={styles.fieldValue}>{user.email}</Text>
-                </View>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.fieldValue}>{user.email}</Text>
+              </View>
             </View>
           </View>
 
-          {/* Community Information */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>{t('Community Details') || 'Community Details'}</Text>
             
@@ -664,7 +616,6 @@ const ProfileScreen = (): React.JSX.Element => {
             </View>
           </View>
 
-          {/* Interests */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>{t('Interests') || 'Interests'}</Text>
             
@@ -691,7 +642,6 @@ const ProfileScreen = (): React.JSX.Element => {
             )}
           </View>
 
-          {/* Action Buttons */}
           <View style={styles.buttonSection}>
             {isEditing && (
               <Pressable style={styles.saveButton} onPress={handleSave}>
@@ -762,7 +712,7 @@ const AuthStack = (): React.JSX.Element => {
 // Home Tab Navigator
 const HomeTab = (): React.JSX.Element => {
   const {Navigator, Screen} = createBottomTabNavigator<HomeTabParamList>();
-  const { t } = useLanguage(); // Add this line
+  const { t } = useLanguage();
   
   return (
     <Navigator
@@ -831,7 +781,7 @@ const HomeStack = (): React.JSX.Element => {
 
 const DrawerNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createDrawerNavigator<RootDrawerParamList>();
-  const { t } = useLanguage(); // Add this line
+  const { t } = useLanguage();
   
   return (
     <Navigator
@@ -990,7 +940,7 @@ const RootStack = (): React.JSX.Element => {
 };
 
 const LoadingScreen = () => {
-  const { t } = useLanguage(); // Add this line
+  const { t } = useLanguage();
   
   return (
     <View style={styles.loadingContainer}>
@@ -1053,8 +1003,6 @@ const styles = StyleSheet.create({
     color: AppColors.teal,
     fontWeight: '600',
   },
-  
-  // Profile Avatar Styles
   profileAvatarContainer: {
     paddingVertical: 8,
     paddingHorizontal: 5,
@@ -1076,8 +1024,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-
-  // Profile Screen Styles
   container: {
     flex: 1,
     backgroundColor: AppColors.white,
@@ -1300,4 +1246,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+navbarImage: {
+  width: 40,
+  height: 40,
+  borderRadius: 20, // Half of width/height for perfect circle
+  resizeMode: 'cover',
+}
+
 });

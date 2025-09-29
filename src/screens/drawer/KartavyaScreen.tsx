@@ -284,20 +284,22 @@ export default function KartavyaScreen() {
 
   // Fetch kartavya data from API
   const fetchKartavyaData = async () => {
+ 
     try {
       const headers = await getAuthHeaders();
       const communityId = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/kartavya?filter={"community":"${communityId}"}`, {
+      console.log("Fetching kartavya data...", communityId);
+      const response = await fetch(`${BASE_URL}/api/kartavya`, {
         method: 'GET',
         headers,
       });
-
+        
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result: KartavyaApiResponse = await response.json();
-
+        console.log('Fetched kartavya data:', result);
       if (result.success && result.data) {
         setKartyaItems(result.data);
         setFilteredItems(result.data);
@@ -320,11 +322,13 @@ export default function KartavyaScreen() {
   // Initial load
   useEffect(() => {
     fetchKartavyaData();
+    console.log("hello");
   }, []);
 
   // Filter items based on search, category and type
   useEffect(() => {
     filterItems();
+    console.log("hello")
   }, [searchQuery, selectedCategory, selectedType, kartyaItems]);
 
   const filterItems = () => {
