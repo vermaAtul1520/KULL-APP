@@ -95,6 +95,7 @@ interface Officer {
   status: boolean;
   communityStatus: string;
   roleInCommunity: string;
+  positionInCommunity: string;
   gender: string;
   occupation: string;
   religion: string;
@@ -124,8 +125,8 @@ interface OfficersAPIResponse {
   data: Officer[];
 }
 
-const getPositionColor = (roleInCommunity: string) => {
-  switch(roleInCommunity) {
+const getPositionColor = (positionInCommunity: string) => {
+  switch(positionInCommunity) {
     case 'president': return AppColors.sport;
     case 'secretary': return AppColors.blue;
     case 'treasurer': return AppColors.green;
@@ -159,7 +160,7 @@ const getYearsOfService = (joinedDate: string) => {
   }
 };
 
-const getPositionTitle = (roleInCommunity: string, occupation?: string) => {
+const getPositionTitle = (positionInCommunity: string, occupation?: string) => {
   const titles: { [key: string]: string } = {
     'president': 'President',
     'secretary': 'Secretary',
@@ -175,11 +176,11 @@ const getPositionTitle = (roleInCommunity: string, occupation?: string) => {
   };
 
   // Return occupation if roleInCommunity is just 'member', otherwise return the mapped title
-  if (roleInCommunity === 'member' && occupation) {
+  if (positionInCommunity === 'member' && occupation) {
     return occupation;
   }
 
-  return titles[roleInCommunity] || roleInCommunity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return titles[positionInCommunity] || positionInCommunity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 const getInitials = (firstName: string, lastName: string) => {
@@ -207,7 +208,7 @@ const OfficersScreen = () => {
 
       console.log('Fetching organization officers for:', COMMUNITY_ID);
 
-      const response = await fetch(`${BASE_URL}/api/${COMMUNITY_ID}/users/orgofficers`, {
+      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/users/orgofficers`, {
         method: 'GET',
         headers,
       });
@@ -255,14 +256,14 @@ const OfficersScreen = () => {
     if (searchQuery.trim()) {
       filtered = filtered.filter(officer => {
         const query = searchQuery.toLowerCase();
-        const position = getPositionTitle(officer.roleInCommunity, officer.occupation);
+        const position = getPositionTitle(officer.positionInCommunity, officer.occupation);
         return (
           officer.firstName.toLowerCase().includes(query) ||
           officer.lastName.toLowerCase().includes(query) ||
           position.toLowerCase().includes(query) ||
           officer.occupation?.toLowerCase().includes(query) ||
           officer.email.toLowerCase().includes(query) ||
-          officer.roleInCommunity.toLowerCase().includes(query) ||
+          officer.positionInCommunity.toLowerCase().includes(query) ||
           officer.cGotNo?.toLowerCase().includes(query) ||
           officer.address?.toLowerCase().includes(query)
         );
@@ -288,7 +289,7 @@ const OfficersScreen = () => {
   // Officer Card Component
   const OfficerCard = ({ item }: { item: Officer }) => {
     const phoneNumber = item.phone || item.alternativePhone;
-    const position = getPositionTitle(item.roleInCommunity, item.occupation);
+    const position = getPositionTitle(item.positionInCommunity, item.occupation);
 
     return (
       <View style={styles.officerCard}>
@@ -314,7 +315,7 @@ const OfficersScreen = () => {
               <Text style={styles.officerName}>
                 {item.firstName} {item.lastName}
               </Text>
-              <View style={[styles.positionBadge, { backgroundColor: getPositionColor(item.roleInCommunity) }]}>
+              <View style={[styles.positionBadge, { backgroundColor: getPositionColor(item.positionInCommunity) }]}>
                 <CrownIcon size={14} color={AppColors.white} />
                 <Text style={styles.positionText}>{position}</Text>
               </View>
@@ -432,7 +433,7 @@ const OfficersScreen = () => {
             <Text style={styles.statLabel}>Occupations</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{new Set(officers.map(o => o.roleInCommunity).filter(Boolean)).size}</Text>
+            <Text style={styles.statNumber}>{new Set(officers.map(o => o.positionInCommunity).filter(Boolean)).size}</Text>
             <Text style={styles.statLabel}>Roles</Text>
           </View>
         </View>
