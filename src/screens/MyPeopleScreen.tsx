@@ -21,6 +21,7 @@ import { useAuth } from '@app/navigators';
 import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import Svg, { Path } from 'react-native-svg';
 import BannerComponent from '@app/navigators/BannerComponent';
+import { useConfiguration } from '@app/hooks/ConfigContext';
 
 const { width } = Dimensions.get('window');
 
@@ -64,6 +65,8 @@ interface CommunityUser {
   thoughtOfMaking: string;
   maritalStatus: string;
   gotra: string;
+  subgotra?: string;
+  profileImage?: string;
   code: string;
   createdAt: string;
   __v: number;
@@ -83,23 +86,26 @@ interface FilterOptions {
   roleInCommunity: string;
   religion: string;
   cast: string;
+  gotra: string;
+  subgotra: string;
 }
 
 const MyPeopleScreen = () => {
   const { user, token } = useAuth();
-  
+  const { gotraData } = useConfiguration();
+
   // State management
   const [users, setUsers] = useState<CommunityUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<CommunityUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Modal states
   const [selectedUser, setSelectedUser] = useState<CommunityUser | null>(null);
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  
+
   // Filter states
   const [filters, setFilters] = useState<FilterOptions>({
     gender: '',
@@ -109,6 +115,8 @@ const MyPeopleScreen = () => {
     roleInCommunity: '',
     religion: '',
     cast: '',
+    gotra: '',
+    subgotra: '',
   });
   const [tempFilters, setTempFilters] = useState<FilterOptions>({ ...filters });
 
@@ -272,6 +280,8 @@ const MyPeopleScreen = () => {
       roleInCommunity: '',
       religion: '',
       cast: '',
+      gotra: '',
+      subgotra: '',
     };
     setTempFilters(emptyFilters);
     setFilters(emptyFilters);
@@ -282,16 +292,36 @@ const MyPeopleScreen = () => {
     return Object.values(filters).filter(value => value !== '').length;
   };
 
+  const getInitials = (firstName: string, lastName: string) => {
+    const firstInitial = firstName?.charAt(0)?.toUpperCase() || '';
+    const lastInitial = lastName?.charAt(0)?.toUpperCase() || '';
+    return `${firstInitial}${lastInitial}`;
+  };
+
   // Render functions
   const renderUserCard = ({ item }: { item: CommunityUser }) => (
     <TouchableOpacity style={styles.userCard} onPress={() => handleUserPress(item)}>
       <View style={styles.userCardHeader}>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>
-            {item.firstName} {item.lastName}
-          </Text>
-          <Text style={styles.userRole}>{item.occupation}</Text>
-          <Text style={styles.userCode}>{item.cGotNo}</Text>
+        <View style={styles.userCardLeft}>
+          {item.profileImage ? (
+            <Image
+              source={{ uri: item.profileImage }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.profileInitials}>
+              <Text style={styles.initialsText}>
+                {getInitials(item.firstName, item.lastName)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>
+              {item.firstName} {item.lastName}
+            </Text>
+            <Text style={styles.userRole}>{item.occupation}</Text>
+            <Text style={styles.userCode}>{item.cGotNo}</Text>
+          </View>
         </View>
         <View style={styles.statusContainer}>
           <View style={[
@@ -302,7 +332,7 @@ const MyPeopleScreen = () => {
           </View>
         </View>
       </View>
-      
+
       <View style={styles.userDetails}>
         <View style={styles.detailRow}>
         <EmailIcon size={14} color={AppColors.gray} />
@@ -321,15 +351,23 @@ const MyPeopleScreen = () => {
   );
 
   const renderFilterModal = () => {
-    const filterOptions = {
+    const filterOptions: { [key: string]: string[] } = {
       gender: ['male', 'female', 'other'],
       maritalStatus: ['single', 'married', 'divorced', 'widowed'],
-      gotra: ['malha','biddu']
-      // communityStatus: ['pending', 'approved', 'rejected'],
-      // roleInCommunity: ['member', 'admin', 'moderator'],
-      // religion: ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain'],
-      // cast: ['Brahmin', 'Kshatriya', 'Vaishya', 'Shudra', 'Other'],
     };
+
+    // Add gotra options from ConfigContext
+    if (gotraData && gotraData.length > 0) {
+      filterOptions.gotra = gotraData.map(g => g.name);
+    }
+
+    // Add subgotra options based on selected gotra
+    if (tempFilters.gotra) {
+      const selectedGotraData = gotraData?.find(g => g.name === tempFilters.gotra);
+      if (selectedGotraData && selectedGotraData.subgotra && selectedGotraData.subgotra.length > 0) {
+        filterOptions.subgotra = selectedGotraData.subgotra;
+      }
+    }
 
     return (
       <Modal
@@ -359,7 +397,14 @@ const MyPeopleScreen = () => {
                         styles.filterOption,
                         tempFilters[filterKey as keyof FilterOptions] === '' && styles.filterOptionSelected
                       ]}
-                      onPress={() => setTempFilters({ ...tempFilters, [filterKey]: '' })}
+                      onPress={() => {
+                        const updatedFilters = { ...tempFilters, [filterKey]: '' };
+                        // Clear subgotra if gotra is cleared
+                        if (filterKey === 'gotra') {
+                          updatedFilters.subgotra = '';
+                        }
+                        setTempFilters(updatedFilters);
+                      }}
                     >
                       <Text style={[
                         styles.filterOptionText,
@@ -368,14 +413,21 @@ const MyPeopleScreen = () => {
                         All
                       </Text>
                     </TouchableOpacity>
-                    {filterOptions[filterKey as keyof typeof filterOptions].map((option) => (
+                    {filterOptions[filterKey].map((option) => (
                       <TouchableOpacity
                         key={option}
                         style={[
                           styles.filterOption,
                           tempFilters[filterKey as keyof FilterOptions] === option && styles.filterOptionSelected
                         ]}
-                        onPress={() => setTempFilters({ ...tempFilters, [filterKey]: option })}
+                        onPress={() => {
+                          const updatedFilters = { ...tempFilters, [filterKey]: option };
+                          // Clear subgotra if gotra changes
+                          if (filterKey === 'gotra' && tempFilters.gotra !== option) {
+                            updatedFilters.subgotra = '';
+                          }
+                          setTempFilters(updatedFilters);
+                        }}
                       >
                         <Text style={[
                           styles.filterOptionText,
@@ -463,6 +515,12 @@ const MyPeopleScreen = () => {
                   <Text style={styles.detailLabel}>Gotra:</Text>
                   <Text style={styles.detailValue}>{selectedUser.gotra}</Text>
                 </View>
+                {selectedUser.subgotra && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Subgotra:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.subgotra}</Text>
+                  </View>
+                )}
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Mother Tongue:</Text>
                   <Text style={styles.detailValue}>{selectedUser.motherTongue}</Text>
@@ -710,6 +768,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
+  },
+  userCardLeft: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  profileInitials: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  initialsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.dark,
   },
   userInfo: {
     flex: 1,
