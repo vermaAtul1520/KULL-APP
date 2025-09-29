@@ -13,8 +13,11 @@ import {
   SafeAreaView,
   Image,
   Linking,
+  Alert,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { BASE_URL } from '@app/constants/constant';
+import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 
 // Custom SVG Icons
 const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
@@ -82,155 +85,29 @@ const AppColors = {
   sport: '#e74c3c',
 };
 
-// Officer Interface based on your user profile structure
+// Officer Interface based on API response
 interface Officer {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone?: string;
+  alternativePhone?: string;
   role: string;
-  status: string;
+  status: boolean;
   roleInCommunity: string;
   createdAt: string;
-  
   profileImage?: string;
-  joinedDate: string;
-  isActive: boolean;
-  position: string; // Officer position
+  position?: string;
   department?: string;
   responsibilities?: string[];
 }
 
-// Dummy officers data based on your user structure
-const officers: Officer[] = [
-  {
-    _id: "689cdacc78b58ec1abd03a31",
-    firstName: "Rajesh",
-    lastName: "Sharma",
-    email: "rajesh.sharma@example.com",
-    phone: "9876543210",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "president",
-    createdAt: "2025-08-13T18:34:52.916+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-01-15",
-    isActive: true,
-    position: "Community President",
-    department: "Administration",
-    responsibilities: ["Overall community leadership", "Strategic planning", "External relations", "Board meetings"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a32",
-    firstName: "Priya",
-    lastName: "Patel",
-    email: "priya.patel@example.com",
-    phone: "9876543211",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "secretary",
-    createdAt: "2024-02-20T10:15:30.500+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-03-10",
-    isActive: true,
-    position: "Secretary",
-    department: "Administration",
-    responsibilities: ["Meeting minutes", "Document management", "Communication", "Record keeping"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a33",
-    firstName: "Amit",
-    lastName: "Kumar",
-    email: "amit.kumar@example.com",
-    phone: "9876543212",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "treasurer",
-    createdAt: "2024-03-15T14:22:45.750+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-04-05",
-    isActive: true,
-    position: "Treasurer",
-    department: "Finance",
-    responsibilities: ["Financial management", "Budget planning", "Expense tracking", "Financial reports"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a34",
-    firstName: "Sunita",
-    lastName: "Reddy",
-    email: "sunita.reddy@example.com",
-    phone: "9876543213",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "welfare_head",
-    createdAt: "2024-04-10T16:30:20.200+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-05-20",
-    isActive: true,
-    position: "Welfare Head",
-    department: "Community Welfare",
-    responsibilities: ["Resident welfare", "Event planning", "Community services", "Support programs"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a35",
-    firstName: "Ravi",
-    lastName: "Singh",
-    email: "ravi.singh@example.com",
-    phone: "9876543214",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "security_head",
-    createdAt: "2024-05-08T12:45:10.100+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-06-12",
-    isActive: true,
-    position: "Security Head",
-    department: "Security & Safety",
-    responsibilities: ["Security management", "Safety protocols", "Emergency response", "Vendor coordination"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a36",
-    firstName: "Meera",
-    lastName: "Joshi",
-    email: "meera.joshi@example.com",
-    phone: "9876543215",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "maintenance_head",
-    createdAt: "2024-06-12T09:20:35.300+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-07-18",
-    isActive: true,
-    position: "Maintenance Head",
-    department: "Infrastructure",
-    responsibilities: ["Maintenance oversight", "Infrastructure planning", "Contractor management", "Facility upkeep"]
-  },
-  {
-    _id: "689cdacc78b58ec1abd03a37",
-    firstName: "Vikash",
-    lastName: "Agrawal",
-    email: "vikash.agrawal@example.com",
-    phone: "9876543216",
-    role: "officer",
-    status: "active",
-    roleInCommunity: "cultural_head",
-    createdAt: "2024-07-20T11:15:25.800+00:00",
-    
-    profileImage: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face",
-    joinedDate: "2023-08-25",
-    isActive: true,
-    position: "Cultural Head",
-    department: "Events & Culture",
-    responsibilities: ["Cultural events", "Festival organization", "Entertainment programs", "Community engagement"]
-  }
-];
+interface OfficersAPIResponse {
+  success: boolean;
+  count: number;
+  data: Officer[];
+}
 
 const getPositionColor = (roleInCommunity: string) => {
   switch(roleInCommunity) {
@@ -247,10 +124,10 @@ const getPositionColor = (roleInCommunity: string) => {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return date.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   });
 };
 
@@ -259,7 +136,7 @@ const getYearsOfService = (joinedDate: string) => {
   const now = new Date();
   const years = Math.floor((now.getTime() - joined.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   const months = Math.floor(((now.getTime() - joined.getTime()) % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
-  
+
   if (years > 0) {
     return `${years}+ year${years > 1 ? 's' : ''}`;
   } else {
@@ -267,17 +144,85 @@ const getYearsOfService = (joinedDate: string) => {
   }
 };
 
+const getPositionTitle = (roleInCommunity: string) => {
+  const titles: { [key: string]: string } = {
+    'president': 'Community President',
+    'secretary': 'Secretary',
+    'treasurer': 'Treasurer',
+    'welfare_head': 'Welfare Head',
+    'security_head': 'Security Head',
+    'maintenance_head': 'Maintenance Head',
+    'cultural_head': 'Cultural Head',
+  };
+  return titles[roleInCommunity] || roleInCommunity;
+};
+
+const getInitials = (firstName: string, lastName: string) => {
+  const firstInitial = firstName?.charAt(0)?.toUpperCase() || '';
+  const lastInitial = lastName?.charAt(0)?.toUpperCase() || '';
+  return `${firstInitial}${lastInitial}`;
+};
+
 const OfficersScreen = () => {
   const navigation = useNavigation();
-  const [filteredOfficers, setFilteredOfficers] = useState<Officer[]>(officers);
-  const [loading, setLoading] = useState(false);
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [filteredOfficers, setFilteredOfficers] = useState<Officer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch officers from API
+  const fetchOfficers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const headers = await getAuthHeaders();
+      const COMMUNITY_ID = await getCommunityId();
+
+      console.log('Fetching organization officers for:', COMMUNITY_ID);
+
+      const response = await fetch(`${BASE_URL}/api/${COMMUNITY_ID}/users/orgofficers`, {
+        method: 'GET',
+        headers,
+      });
+
+      console.log('Officers API response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: OfficersAPIResponse = await response.json();
+      console.log('Loaded officers count:', data.count);
+
+      if (data.success && data.data) {
+        setOfficers(data.data);
+        setFilteredOfficers(data.data);
+      } else {
+        setOfficers([]);
+        setFilteredOfficers([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching organization officers:', error);
+      setError('Failed to load organization officers');
+      setOfficers([]);
+      setFilteredOfficers([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOfficers();
+  }, []);
 
   // Filter officers based on search
   useEffect(() => {
     filterOfficers();
-  }, [searchQuery]);
+  }, [searchQuery, officers]);
 
   const filterOfficers = () => {
     let filtered = officers;
@@ -285,10 +230,11 @@ const OfficersScreen = () => {
     if (searchQuery.trim()) {
       filtered = filtered.filter(officer => {
         const query = searchQuery.toLowerCase();
+        const position = officer.position || getPositionTitle(officer.roleInCommunity);
         return (
           officer.firstName.toLowerCase().includes(query) ||
           officer.lastName.toLowerCase().includes(query) ||
-          officer.position.toLowerCase().includes(query) ||
+          position.toLowerCase().includes(query) ||
           officer.department?.toLowerCase().includes(query) ||
           officer.email.toLowerCase().includes(query) ||
           officer.roleInCommunity.toLowerCase().includes(query)
@@ -301,10 +247,7 @@ const OfficersScreen = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    // Simulate API refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    fetchOfficers();
   };
 
   const handleCall = (phone: string) => {
@@ -316,96 +259,111 @@ const OfficersScreen = () => {
   };
 
   // Officer Card Component
-  const OfficerCard = ({ item }: { item: Officer }) => (
-    <View style={styles.officerCard}>
-      <View style={styles.cardHeader}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileImageContainer}>
-            <Image 
-              source={{ uri: item.profileImage || 'https://via.placeholder.com/80' }} 
-              style={styles.profileImage}
-            />
-            <View style={[styles.statusIndicator, { backgroundColor: item.isActive ? AppColors.success : AppColors.gray }]} />
-          </View>
-          
-          <View style={styles.profileInfo}>
-            <Text style={styles.officerName}>
-              {item.firstName} {item.lastName}
-            </Text>
-            <View style={[styles.positionBadge, { backgroundColor: getPositionColor(item.roleInCommunity) }]}>
-              <CrownIcon size={14} color={AppColors.white} />
-              <Text style={styles.positionText}>{item.position}</Text>
+  const OfficerCard = ({ item }: { item: Officer }) => {
+    const phoneNumber = item.phone || item.alternativePhone;
+    const position = item.position || getPositionTitle(item.roleInCommunity);
+
+    return (
+      <View style={styles.officerCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.profileSection}>
+            <View style={styles.profileImageContainer}>
+              {item.profileImage ? (
+                <Image
+                  source={{ uri: item.profileImage }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={styles.profileInitials}>
+                  <Text style={styles.initialsText}>
+                    {getInitials(item.firstName, item.lastName)}
+                  </Text>
+                </View>
+              )}
+              <View style={[styles.statusIndicator, { backgroundColor: item.status ? AppColors.success : AppColors.gray }]} />
             </View>
-            {item.department && (
-              <Text style={styles.departmentText}>{item.department}</Text>
-            )}
-          </View>
-        </View>
 
-        <View style={styles.serviceInfo}>
-          <Text style={styles.serviceYears}>{getYearsOfService(item.joinedDate)}</Text>
-          <Text style={styles.serviceLabel}>of service</Text>
-        </View>
-      </View>
-
-      {/* Responsibilities */}
-      {item.responsibilities && item.responsibilities.length > 0 && (
-        <View style={styles.responsibilitiesSection}>
-          <Text style={styles.responsibilitiesTitle}>Key Responsibilities:</Text>
-          <View style={styles.responsibilitiesList}>
-            {item.responsibilities.slice(0, 2).map((responsibility, index) => (
-              <Text key={index} style={styles.responsibilityItem}>• {responsibility}</Text>
-            ))}
-            {item.responsibilities.length > 2 && (
-              <Text style={styles.moreResponsibilities}>
-                +{item.responsibilities.length - 2} more...
+            <View style={styles.profileInfo}>
+              <Text style={styles.officerName}>
+                {item.firstName} {item.lastName}
               </Text>
-            )}
+              <View style={[styles.positionBadge, { backgroundColor: getPositionColor(item.roleInCommunity) }]}>
+                <CrownIcon size={14} color={AppColors.white} />
+                <Text style={styles.positionText}>{position}</Text>
+              </View>
+              {item.department && (
+                <Text style={styles.departmentText}>{item.department}</Text>
+              )}
+            </View>
           </View>
-        </View>
-      )}
 
-      {/* Contact Information */}
-      <View style={styles.contactSection}>
-        <View style={styles.contactRow}>
-          <View style={styles.contactItem}>
-            <EmailIcon size={14} color={AppColors.gray} />
-            <Text style={styles.contactText}>{item.email}</Text>
+          <View style={styles.serviceInfo}>
+            <Text style={styles.serviceYears}>{getYearsOfService(item.createdAt)}</Text>
+            <Text style={styles.serviceLabel}>of service</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.contactButton}
-            onPress={() => handleEmail(item.email)}
-          >
-            <Text style={styles.contactButtonText}>Email</Text>
-          </TouchableOpacity>
         </View>
-        
-        <View style={styles.contactRow}>
-          <View style={styles.contactItem}>
-            <PhoneIcon size={14} color={AppColors.gray} />
-            <Text style={styles.contactText}>{item.phone}</Text>
+
+        {/* Responsibilities */}
+        {item.responsibilities && item.responsibilities.length > 0 && (
+          <View style={styles.responsibilitiesSection}>
+            <Text style={styles.responsibilitiesTitle}>Key Responsibilities:</Text>
+            <View style={styles.responsibilitiesList}>
+              {item.responsibilities.slice(0, 2).map((responsibility, index) => (
+                <Text key={index} style={styles.responsibilityItem}>• {responsibility}</Text>
+              ))}
+              {item.responsibilities.length > 2 && (
+                <Text style={styles.moreResponsibilities}>
+                  +{item.responsibilities.length - 2} more...
+                </Text>
+              )}
+            </View>
           </View>
-          <TouchableOpacity 
-            style={styles.contactButton}
-            onPress={() => handleCall(item.phone)}
-          >
-            <Text style={styles.contactButtonText}>Call</Text>
-          </TouchableOpacity>
+        )}
+
+        {/* Contact Information */}
+        <View style={styles.contactSection}>
+          <View style={styles.contactRow}>
+            <View style={styles.contactItem}>
+              <EmailIcon size={14} color={AppColors.gray} />
+              <Text style={styles.contactText}>{item.email}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.contactButton}
+              onPress={() => handleEmail(item.email)}
+            >
+              <Text style={styles.contactButtonText}>Email</Text>
+            </TouchableOpacity>
+          </View>
+
+          {phoneNumber && (
+            <View style={styles.contactRow}>
+              <View style={styles.contactItem}>
+                <PhoneIcon size={14} color={AppColors.gray} />
+                <Text style={styles.contactText}>{phoneNumber}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.contactButton}
+                onPress={() => handleCall(phoneNumber)}
+              >
+                <Text style={styles.contactButtonText}>Call</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Footer Info */}
+        <View style={styles.cardFooter}>
+          <View style={styles.footerItem}>
+            <CalendarIcon size={12} color={AppColors.gray} />
+            <Text style={styles.footerText}>Joined: {formatDate(item.createdAt)}</Text>
+          </View>
+          <View style={[styles.statusChip, { backgroundColor: item.status ? AppColors.success : AppColors.gray }]}>
+            <Text style={styles.statusChipText}>{item.status ? 'ACTIVE' : 'INACTIVE'}</Text>
+          </View>
         </View>
       </View>
-
-      {/* Footer Info */}
-      <View style={styles.cardFooter}>
-        <View style={styles.footerItem}>
-          <CalendarIcon size={12} color={AppColors.gray} />
-          <Text style={styles.footerText}>Joined: {formatDate(item.joinedDate)}</Text>
-        </View>
-        <View style={[styles.statusChip, { backgroundColor: item.status === 'active' ? AppColors.success : AppColors.gray }]}>
-          <Text style={styles.statusChipText}>{item.status.toUpperCase()}</Text>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -431,24 +389,29 @@ const OfficersScreen = () => {
       </View>
 
       {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{officers.length}</Text>
-          <Text style={styles.statLabel}>Total Officers</Text>
+      {officers.length > 0 && (
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{officers.length}</Text>
+            <Text style={styles.statLabel}>Total Officers</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{officers.filter(o => o.status).length}</Text>
+            <Text style={styles.statLabel}>Active</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{new Set(officers.map(o => o.department).filter(Boolean)).size || 'N/A'}</Text>
+            <Text style={styles.statLabel}>Departments</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{officers.length > 0 ? Math.round(officers.reduce((sum, o) => {
+              const years = (new Date().getTime() - new Date(o.createdAt).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+              return sum + years;
+            }, 0) / officers.length * 10) / 10 : 0}</Text>
+            <Text style={styles.statLabel}>Avg. Experience</Text>
+          </View>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{officers.filter(o => o.status === 'active').length}</Text>
-          <Text style={styles.statLabel}>Active</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{new Set(officers.map(o => o.department)).size}</Text>
-          <Text style={styles.statLabel}>Departments</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{Math.round(officers.reduce((sum, o) => sum + parseFloat(getYearsOfService(o.joinedDate)), 0) / officers.length * 10) / 10}</Text>
-          <Text style={styles.statLabel}>Avg. Experience</Text>
-        </View>
-      </View>
+      )}
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -483,12 +446,27 @@ const OfficersScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No Officers Found</Text>
-            <Text style={styles.emptyText}>
-              {searchQuery
-                ? 'Try adjusting your search terms'
-                : 'No officers available'}
-            </Text>
+            {error ? (
+              <>
+                <Text style={styles.emptyTitle}>Error Loading Officers</Text>
+                <Text style={styles.emptyText}>{error}</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={fetchOfficers}
+                >
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyTitle}>No Officers Found</Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery
+                    ? 'Try adjusting your search terms'
+                    : 'No organization officers available'}
+                </Text>
+              </>
+            )}
           </View>
         }
       />
@@ -618,6 +596,19 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: AppColors.lightGray,
+  },
+  profileInitials: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initialsText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: AppColors.dark,
   },
   statusIndicator: {
     position: 'absolute',
@@ -788,6 +779,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.gray,
     textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    color: AppColors.dark,
+    fontWeight: '600',
   },
 });
 
