@@ -85,22 +85,37 @@ const AppColors = {
   sport: '#e74c3c',
 };
 
-// Officer Interface based on API response
+// Officer Interface - same as CommunityUser
 interface Officer {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
-  alternativePhone?: string;
   role: string;
   status: boolean;
+  communityStatus: string;
   roleInCommunity: string;
-  createdAt: string;
+  gender: string;
+  occupation: string;
+  religion: string;
+  motherTongue: string;
+  interests: string[];
+  cast: string;
+  cGotNo: string;
+  fatherName: string;
+  address: string;
+  pinCode: string;
+  alternativePhone: string;
+  estimatedMembers: number;
+  thoughtOfMaking: string;
+  maritalStatus: string;
+  gotra: string;
+  subgotra?: string;
   profileImage?: string;
-  position?: string;
-  department?: string;
-  responsibilities?: string[];
+  code: string;
+  createdAt: string;
+  __v: number;
+  phone?: string;
 }
 
 interface OfficersAPIResponse {
@@ -144,17 +159,27 @@ const getYearsOfService = (joinedDate: string) => {
   }
 };
 
-const getPositionTitle = (roleInCommunity: string) => {
+const getPositionTitle = (roleInCommunity: string, occupation?: string) => {
   const titles: { [key: string]: string } = {
-    'president': 'Community President',
+    'president': 'President',
     'secretary': 'Secretary',
     'treasurer': 'Treasurer',
     'welfare_head': 'Welfare Head',
     'security_head': 'Security Head',
     'maintenance_head': 'Maintenance Head',
     'cultural_head': 'Cultural Head',
+    'vice_president': 'Vice President',
+    'member': 'Member',
+    'admin': 'Admin',
+    'moderator': 'Moderator',
   };
-  return titles[roleInCommunity] || roleInCommunity;
+
+  // Return occupation if roleInCommunity is just 'member', otherwise return the mapped title
+  if (roleInCommunity === 'member' && occupation) {
+    return occupation;
+  }
+
+  return titles[roleInCommunity] || roleInCommunity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 const getInitials = (firstName: string, lastName: string) => {
@@ -230,14 +255,16 @@ const OfficersScreen = () => {
     if (searchQuery.trim()) {
       filtered = filtered.filter(officer => {
         const query = searchQuery.toLowerCase();
-        const position = officer.position || getPositionTitle(officer.roleInCommunity);
+        const position = getPositionTitle(officer.roleInCommunity, officer.occupation);
         return (
           officer.firstName.toLowerCase().includes(query) ||
           officer.lastName.toLowerCase().includes(query) ||
           position.toLowerCase().includes(query) ||
-          officer.department?.toLowerCase().includes(query) ||
+          officer.occupation?.toLowerCase().includes(query) ||
           officer.email.toLowerCase().includes(query) ||
-          officer.roleInCommunity.toLowerCase().includes(query)
+          officer.roleInCommunity.toLowerCase().includes(query) ||
+          officer.cGotNo?.toLowerCase().includes(query) ||
+          officer.address?.toLowerCase().includes(query)
         );
       });
     }
@@ -261,7 +288,7 @@ const OfficersScreen = () => {
   // Officer Card Component
   const OfficerCard = ({ item }: { item: Officer }) => {
     const phoneNumber = item.phone || item.alternativePhone;
-    const position = item.position || getPositionTitle(item.roleInCommunity);
+    const position = getPositionTitle(item.roleInCommunity, item.occupation);
 
     return (
       <View style={styles.officerCard}>
@@ -280,7 +307,7 @@ const OfficersScreen = () => {
                   </Text>
                 </View>
               )}
-              <View style={[styles.statusIndicator, { backgroundColor: item.status ? AppColors.success : AppColors.gray }]} />
+              <View style={[styles.statusIndicator, { backgroundColor: item.communityStatus === 'approved' ? AppColors.success : AppColors.orange }]} />
             </View>
 
             <View style={styles.profileInfo}>
@@ -291,41 +318,39 @@ const OfficersScreen = () => {
                 <CrownIcon size={14} color={AppColors.white} />
                 <Text style={styles.positionText}>{position}</Text>
               </View>
-              {item.department && (
-                <Text style={styles.departmentText}>{item.department}</Text>
+              {item.occupation && (
+                <Text style={styles.departmentText}>{item.occupation}</Text>
               )}
             </View>
           </View>
 
           <View style={styles.serviceInfo}>
             <Text style={styles.serviceYears}>{getYearsOfService(item.createdAt)}</Text>
-            <Text style={styles.serviceLabel}>of service</Text>
+            <Text style={styles.serviceLabel}>member</Text>
           </View>
         </View>
 
-        {/* Responsibilities */}
-        {item.responsibilities && item.responsibilities.length > 0 && (
-          <View style={styles.responsibilitiesSection}>
-            <Text style={styles.responsibilitiesTitle}>Key Responsibilities:</Text>
-            <View style={styles.responsibilitiesList}>
-              {item.responsibilities.slice(0, 2).map((responsibility, index) => (
-                <Text key={index} style={styles.responsibilityItem}>• {responsibility}</Text>
-              ))}
-              {item.responsibilities.length > 2 && (
-                <Text style={styles.moreResponsibilities}>
-                  +{item.responsibilities.length - 2} more...
-                </Text>
-              )}
-            </View>
+        {/* Additional Info */}
+        <View style={styles.responsibilitiesSection}>
+          <View style={styles.responsibilitiesList}>
+            {item.cGotNo && (
+              <Text style={styles.responsibilityItem}>• ID: {item.cGotNo}</Text>
+            )}
+            {item.gotra && (
+              <Text style={styles.responsibilityItem}>• Gotra: {item.gotra}{item.subgotra ? ` (${item.subgotra})` : ''}</Text>
+            )}
+            {item.address && (
+              <Text style={styles.responsibilityItem}>• Location: {item.address}</Text>
+            )}
           </View>
-        )}
+        </View>
 
         {/* Contact Information */}
         <View style={styles.contactSection}>
           <View style={styles.contactRow}>
             <View style={styles.contactItem}>
               <EmailIcon size={14} color={AppColors.gray} />
-              <Text style={styles.contactText}>{item.email}</Text>
+              <Text style={styles.contactText} numberOfLines={1}>{item.email}</Text>
             </View>
             <TouchableOpacity
               style={styles.contactButton}
@@ -357,8 +382,11 @@ const OfficersScreen = () => {
             <CalendarIcon size={12} color={AppColors.gray} />
             <Text style={styles.footerText}>Joined: {formatDate(item.createdAt)}</Text>
           </View>
-          <View style={[styles.statusChip, { backgroundColor: item.status ? AppColors.success : AppColors.gray }]}>
-            <Text style={styles.statusChipText}>{item.status ? 'ACTIVE' : 'INACTIVE'}</Text>
+          <View style={[styles.statusChip, {
+            backgroundColor: item.communityStatus === 'approved' ? AppColors.success :
+                           item.communityStatus === 'pending' ? AppColors.orange : AppColors.gray
+          }]}>
+            <Text style={styles.statusChipText}>{item.communityStatus.toUpperCase()}</Text>
           </View>
         </View>
       </View>
@@ -396,19 +424,16 @@ const OfficersScreen = () => {
             <Text style={styles.statLabel}>Total Officers</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{officers.filter(o => o.status).length}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statNumber}>{officers.filter(o => o.communityStatus === 'approved').length}</Text>
+            <Text style={styles.statLabel}>Approved</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{new Set(officers.map(o => o.department).filter(Boolean)).size || 'N/A'}</Text>
-            <Text style={styles.statLabel}>Departments</Text>
+            <Text style={styles.statNumber}>{new Set(officers.map(o => o.occupation).filter(Boolean)).size}</Text>
+            <Text style={styles.statLabel}>Occupations</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{officers.length > 0 ? Math.round(officers.reduce((sum, o) => {
-              const years = (new Date().getTime() - new Date(o.createdAt).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-              return sum + years;
-            }, 0) / officers.length * 10) / 10 : 0}</Text>
-            <Text style={styles.statLabel}>Avg. Experience</Text>
+            <Text style={styles.statNumber}>{new Set(officers.map(o => o.roleInCommunity).filter(Boolean)).size}</Text>
+            <Text style={styles.statLabel}>Roles</Text>
           </View>
         </View>
       )}
