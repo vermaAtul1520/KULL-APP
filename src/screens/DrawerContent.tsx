@@ -293,16 +293,42 @@ const SettingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
 
 const LogoutIcon = ({ size = 24, color = "#7dd3c0" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
           strokeLinejoin="round"/>
-    <Path d="M16 17l5-5-5-5M21 12H9" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
+    <Path d="M16 17l5-5-5-5M21 12H9"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
           strokeLinejoin="round"/>
+  </Svg>
+);
+
+const FamilyTreeIcon = ({ size = 24, color = "#7dd3c0" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="6" r="3"
+            stroke={color}
+            strokeWidth="2"
+            fill="none"/>
+    <Path d="M12 9v3M12 12h-6v3M12 12h6v3"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"/>
+    <Circle cx="6" cy="18" r="2"
+            stroke={color}
+            strokeWidth="2"
+            fill="none"/>
+    <Circle cx="12" cy="18" r="2"
+            stroke={color}
+            strokeWidth="2"
+            fill="none"/>
+    <Circle cx="18" cy="18" r="2"
+            stroke={color}
+            strokeWidth="2"
+            fill="none"/>
   </Svg>
 );
 
@@ -329,10 +355,14 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       { key: 'meetings', name: 'Meetings', icon: 'meetings' },
       { key: 'appeal', name: 'Appeal', icon: 'appeal' },
       { key: 'vote', name: 'Vote', icon: 'vote' },
+      { key: 'familyTree', name: 'FamilyTree', icon: 'family-tree', alwaysShow: true },
     ];
 
     // Filter menu items based on drorData visibility
     return menuMapping.filter(item => {
+      // Always show items with alwaysShow flag (like FamilyTree)
+      if (item.alwaysShow) return true;
+
       const drorOption = drorData[item.key];
       return drorOption && drorOption.visible === true;
     });
@@ -377,7 +407,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
   const renderIcon = (iconName: string) => {
     const iconProps = { size: 24, color: "#7dd3c0" };
-    
+
     switch (iconName) {
       case 'calendar':
         return <CalendarIcon {...iconProps} />;
@@ -405,6 +435,8 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         return <AppealIcon {...iconProps} />;
       case 'vote':
         return <VoteIcon {...iconProps} />;
+      case 'family-tree':
+        return <FamilyTreeIcon {...iconProps} />;
       default:
         return <BriefcaseIcon {...iconProps} />;
     }

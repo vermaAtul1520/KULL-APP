@@ -57,6 +57,8 @@ import SportsScreen from '@app/screens/drawer/SportsScreen';
 import MeetingsScreen from '@app/screens/drawer/MeetingsScreen';
 import AppealScreen from '@app/screens/drawer/AppealScreen';
 import VoteScreen from '@app/screens/drawer/VoteScreen';
+import FamilyTreeScreen from '@app/screens/drawer/FamilyTreeScreen';
+import AddFamilyMemberScreen from '@app/screens/drawer/AddFamilyMemberScreen';
 import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
 import SettingsScreen from '@app/screens/drawer/SettingScreen';
@@ -124,6 +126,8 @@ type RootDrawerParamList = {
   Appeal: undefined;
   Vote: undefined;
   Settings: undefined;
+  FamilyTree: undefined;
+  AddFamilyMember: undefined;
 };
 
 type HomeTabParamList = {
@@ -401,6 +405,8 @@ const CustomHeaderTitle = () => {
       'Appeal': t('Appeal') || 'APPEAL',
       'Vote': t('Vote') || 'VOTE',
       'Settings': t('Settings') || 'SETTINGS',
+      'FamilyTree': t('Family Tree') || 'FAMILY TREE',
+      'AddFamilyMember': t('Add Family Member') || 'ADD FAMILY MEMBER',
     };
 
     return screenTitles[currentRouteName] || getCommunityName();
@@ -909,11 +915,26 @@ const DrawerNavigator = (): React.JSX.Element => {
           drawerLabel: t('Vote') || 'Vote',
         }}
       />
-      <Screen 
-        name="Settings" 
+      <Screen
+        name="Settings"
         component={SettingsScreen}
         options={{
           drawerLabel: t('Settings') || 'Settings',
+        }}
+      />
+      <Screen
+        name="FamilyTree"
+        component={FamilyTreeScreen}
+        options={{
+          drawerLabel: t('Family Tree') || 'Family Tree',
+        }}
+      />
+      <Screen
+        name="AddFamilyMember"
+        component={AddFamilyMemberScreen}
+        options={{
+          drawerLabel: t('Add Family Member') || 'Add Family Member',
+          drawerItemStyle: { display: 'none' },
         }}
       />
     </Navigator>
