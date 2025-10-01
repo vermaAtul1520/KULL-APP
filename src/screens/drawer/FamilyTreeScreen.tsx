@@ -298,6 +298,89 @@ const FamilyTreeScreen = ({ navigation }: any) => {
     );
   }
 
+  const renderTreeMember = (member: FamilyMember) => {
+    const getInitials = () => {
+      return `${member.firstName.charAt(0)}${member.lastName.charAt(0)}`.toUpperCase();
+    };
+
+    return (
+      <View key={member._id} style={styles.treeMember}>
+        <TouchableOpacity
+          style={styles.treeMemberCard}
+          onPress={() => handleEditMember(member)}>
+          <View style={styles.treeMemberAvatar}>
+            {member.profileImage ? (
+              <Image source={{ uri: member.profileImage }} style={styles.treeAvatarImage} />
+            ) : (
+              <View style={[styles.treeAvatarPlaceholder, { backgroundColor: member.gender === 'male' ? '#4A90E2' : '#E24A90' }]}>
+                <Text style={styles.treeAvatarText}>{getInitials()}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.treeMemberName}>{member.firstName}</Text>
+          <Text style={styles.treeMemberRelation}>{member.relationType}</Text>
+          <TouchableOpacity
+            style={styles.treeRemoveButton}
+            onPress={() => handleRemoveMember(member)}>
+            <Icon name="close-circle" size={18} color={AppColors.danger} />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderTreeRow = (members: FamilyMember[], showConnector = false) => {
+    if (!members || members.length === 0) return null;
+
+    return (
+      <View style={styles.treeRow}>
+        {showConnector && <View style={styles.verticalConnector} />}
+        <View style={styles.treeRowMembers}>
+          {members.map((member, index) => (
+            <React.Fragment key={member._id}>
+              {renderTreeMember(member)}
+              {index < members.length - 1 && <View style={styles.horizontalConnector} />}
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderCurrentUser = () => {
+    return (
+      <View style={styles.treeRow}>
+        <View style={styles.verticalConnector} />
+        <View style={styles.currentUserRow}>
+          <View style={styles.treeMember}>
+            <View style={styles.currentUserCard}>
+              <View style={styles.treeMemberAvatar}>
+                {user?.profileImage ? (
+                  <Image source={{ uri: user.profileImage }} style={styles.treeAvatarImage} />
+                ) : (
+                  <View style={[styles.treeAvatarPlaceholder, { backgroundColor: AppColors.teal }]}>
+                    <Text style={styles.treeAvatarText}>
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.treeMemberName}>{user?.firstName}</Text>
+              <Text style={[styles.treeMemberRelation, { color: AppColors.teal }]}>You</Text>
+            </View>
+          </View>
+
+          {familyTree?.spouse && familyTree.spouse.length > 0 && (
+            <>
+              <View style={styles.spouseConnector} />
+              {renderTreeMember(familyTree.spouse[0])}
+            </>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -326,20 +409,61 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             </Text>
           </View>
         ) : (
-          <>
-            {/* Family Sections */}
-            {familyTree && (
+          <View style={styles.treeContainer}>
+            {/* Grandparents */}
+            {familyTree?.grandparents && familyTree.grandparents.length > 0 && (
               <>
-                {renderSection(t('Parents') || 'Parents', familyTree.parents, 'account-supervisor')}
-                {renderSection(t('Spouse') || 'Spouse', familyTree.spouse, 'heart')}
-                {renderSection(t('Children') || 'Children', familyTree.children, 'human-child')}
-                {renderSection(t('Siblings') || 'Siblings', familyTree.siblings, 'account-multiple')}
-                {renderSection(t('Grandparents') || 'Grandparents', familyTree.grandparents, 'account-supervisor-circle')}
-                {renderSection(t('Grandchildren') || 'Grandchildren', familyTree.grandchildren, 'baby-face')}
-                {renderSection(t('Extended Family') || 'Extended Family', familyTree.extended, 'account-group-outline')}
+                <Text style={styles.generationLabel}>{t('Grandparents') || 'Grandparents'}</Text>
+                {renderTreeRow(familyTree.grandparents, false)}
               </>
             )}
-          </>
+
+            {/* Parents */}
+            {familyTree?.parents && familyTree.parents.length > 0 && (
+              <>
+                <Text style={styles.generationLabel}>{t('Parents') || 'Parents'}</Text>
+                {renderTreeRow(familyTree.parents, familyTree.grandparents.length > 0)}
+              </>
+            )}
+
+            {/* Siblings */}
+            {familyTree?.siblings && familyTree.siblings.length > 0 && (
+              <>
+                <Text style={styles.generationLabel}>{t('Siblings') || 'Siblings'}</Text>
+                {renderTreeRow(familyTree.siblings, true)}
+              </>
+            )}
+
+            {/* Current User & Spouse */}
+            <Text style={styles.generationLabel}>{t('You & Spouse') || 'You & Spouse'}</Text>
+            {renderCurrentUser()}
+
+            {/* Children */}
+            {familyTree?.children && familyTree.children.length > 0 && (
+              <>
+                <Text style={styles.generationLabel}>{t('Children') || 'Children'}</Text>
+                {renderTreeRow(familyTree.children, true)}
+              </>
+            )}
+
+            {/* Grandchildren */}
+            {familyTree?.grandchildren && familyTree.grandchildren.length > 0 && (
+              <>
+                <Text style={styles.generationLabel}>{t('Grandchildren') || 'Grandchildren'}</Text>
+                {renderTreeRow(familyTree.grandchildren, true)}
+              </>
+            )}
+
+            {/* Extended Family */}
+            {familyTree?.extended && familyTree.extended.length > 0 && (
+              <View style={styles.extendedSection}>
+                <Text style={styles.generationLabel}>{t('Extended Family') || 'Extended Family'}</Text>
+                <View style={styles.extendedGrid}>
+                  {familyTree.extended.map(member => renderTreeMember(member))}
+                </View>
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
 
@@ -662,6 +786,135 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  treeContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  generationLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.teal,
+    marginTop: 24,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  treeRow: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  treeRowMembers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  treeMember: {
+    margin: 8,
+  },
+  treeMemberCard: {
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: AppColors.white,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: AppColors.border,
+    width: 100,
+    position: 'relative',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  currentUserCard: {
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: AppColors.white,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: AppColors.teal,
+    width: 100,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  treeMemberAvatar: {
+    marginBottom: 8,
+  },
+  treeAvatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  treeAvatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  treeAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AppColors.white,
+  },
+  treeMemberName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AppColors.dark,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  treeMemberRelation: {
+    fontSize: 10,
+    color: AppColors.gray,
+    textTransform: 'capitalize',
+    textAlign: 'center',
+  },
+  treeRemoveButton: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: AppColors.white,
+    borderRadius: 10,
+  },
+  verticalConnector: {
+    width: 2,
+    height: 30,
+    backgroundColor: AppColors.border,
+    marginBottom: -10,
+  },
+  horizontalConnector: {
+    height: 2,
+    width: 20,
+    backgroundColor: AppColors.border,
+    marginHorizontal: 4,
+  },
+  currentUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spouseConnector: {
+    height: 2,
+    width: 30,
+    backgroundColor: AppColors.teal,
+    marginHorizontal: 8,
+  },
+  extendedSection: {
+    marginTop: 32,
+    width: '100%',
+    alignItems: 'center',
+  },
+  extendedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 8,
   },
 });
 
