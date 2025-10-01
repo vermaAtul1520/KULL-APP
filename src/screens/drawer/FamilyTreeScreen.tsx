@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import { getFamilyTree, removeFamilyMember, updateFamilyRelationship } from '@app/utils/familyTreeApi';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const AppColors = {
@@ -160,6 +161,13 @@ const FamilyTreeScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadFamilyTree();
   }, []);
+
+  // Reload family tree when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadFamilyTree();
+    }, [])
+  );
 
   const loadFamilyTree = async () => {
     setLoading(true);
@@ -383,18 +391,33 @@ const FamilyTreeScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
+      {/* Header with Back Button */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color={AppColors.dark} />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>{t('Family Tree') || 'Family Tree'}</Text>
+        <TouchableOpacity
+          style={styles.infoButton}
+          onPress={() => Alert.alert(t('Family Tree'), t('View and manage your family relationships in a hierarchical tree format.'))}>
+          <Icon name="information-outline" size={24} color={AppColors.dark} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.statsCard}>
-            <Icon name="account-group" size={40} color={AppColors.primary} />
+            <Icon name="family-tree" size={40} color={AppColors.primary} />
             <Text style={styles.statsNumber}>{totalMembers}</Text>
             <Text style={styles.statsLabel}>{t('Total Family Members') || 'Total Family Members'}</Text>
           </View>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => navigation.navigate('AddFamilyMember')}>
-            <Icon name="plus-circle" size={24} color={AppColors.white} />
+            <Icon name="account-plus" size={24} color={AppColors.white} />
             <Text style={styles.addButtonText}>{t('Add Member') || 'Add Member'}</Text>
           </TouchableOpacity>
         </View>
@@ -402,7 +425,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
         {/* Empty State */}
         {totalMembers === 0 ? (
           <View style={styles.emptyState}>
-            <Icon name="account-multiple-outline" size={80} color={AppColors.gray} />
+            <Icon name="tree-outline" size={80} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>{t('No Family Members Yet') || 'No Family Members Yet'}</Text>
             <Text style={styles.emptyMessage}>
               {t('Start building your family tree by adding members') || 'Start building your family tree by adding members'}
@@ -413,7 +436,10 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {/* Grandparents */}
             {familyTree?.grandparents && familyTree.grandparents.length > 0 && (
               <>
-                <Text style={styles.generationLabel}>{t('Grandparents') || 'Grandparents'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="account-tie" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Grandparents') || 'Grandparents'}</Text>
+                </View>
                 {renderTreeRow(familyTree.grandparents, false)}
               </>
             )}
@@ -421,7 +447,10 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {/* Parents */}
             {familyTree?.parents && familyTree.parents.length > 0 && (
               <>
-                <Text style={styles.generationLabel}>{t('Parents') || 'Parents'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="account-supervisor" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Parents') || 'Parents'}</Text>
+                </View>
                 {renderTreeRow(familyTree.parents, familyTree.grandparents.length > 0)}
               </>
             )}
@@ -429,19 +458,28 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {/* Siblings */}
             {familyTree?.siblings && familyTree.siblings.length > 0 && (
               <>
-                <Text style={styles.generationLabel}>{t('Siblings') || 'Siblings'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="account-multiple" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Siblings') || 'Siblings'}</Text>
+                </View>
                 {renderTreeRow(familyTree.siblings, true)}
               </>
             )}
 
             {/* Current User & Spouse */}
-            <Text style={styles.generationLabel}>{t('You & Spouse') || 'You & Spouse'}</Text>
+            <View style={styles.generationHeader}>
+              <Icon name="account-heart" size={16} color={AppColors.teal} />
+              <Text style={styles.generationLabel}>{t('You & Spouse') || 'You & Spouse'}</Text>
+            </View>
             {renderCurrentUser()}
 
             {/* Children */}
             {familyTree?.children && familyTree.children.length > 0 && (
               <>
-                <Text style={styles.generationLabel}>{t('Children') || 'Children'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="human-child" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Children') || 'Children'}</Text>
+                </View>
                 {renderTreeRow(familyTree.children, true)}
               </>
             )}
@@ -449,7 +487,10 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {/* Grandchildren */}
             {familyTree?.grandchildren && familyTree.grandchildren.length > 0 && (
               <>
-                <Text style={styles.generationLabel}>{t('Grandchildren') || 'Grandchildren'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="baby-face-outline" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Grandchildren') || 'Grandchildren'}</Text>
+                </View>
                 {renderTreeRow(familyTree.grandchildren, true)}
               </>
             )}
@@ -457,7 +498,10 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {/* Extended Family */}
             {familyTree?.extended && familyTree.extended.length > 0 && (
               <View style={styles.extendedSection}>
-                <Text style={styles.generationLabel}>{t('Extended Family') || 'Extended Family'}</Text>
+                <View style={styles.generationHeader}>
+                  <Icon name="account-group" size={16} color={AppColors.teal} />
+                  <Text style={styles.generationLabel}>{t('Extended Family') || 'Extended Family'}</Text>
+                </View>
                 <View style={styles.extendedGrid}>
                   {familyTree.extended.map(member => renderTreeMember(member))}
                 </View>
@@ -787,18 +831,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: AppColors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+  },
+  backButton: {
+    padding: 8,
+  },
+  topHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: AppColors.dark,
+  },
+  infoButton: {
+    padding: 8,
+  },
   treeContainer: {
     padding: 20,
     alignItems: 'center',
+  },
+  generationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    marginBottom: 12,
   },
   generationLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: AppColors.teal,
-    marginTop: 24,
-    marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    marginLeft: 6,
   },
   treeRow: {
     alignItems: 'center',
