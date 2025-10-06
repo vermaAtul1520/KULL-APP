@@ -11,14 +11,9 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppColors } from './constants';
 import { BackIcon } from './components/OccasionIcons';
-
-interface Gotra {
-  name: string;
-  subGotras?: string[];
-}
+import { useConfiguration, GotraData } from '@app/hooks/ConfigContext';
 
 export const FiltersScreen = () => {
   const navigation = useNavigation();
@@ -29,43 +24,25 @@ export const FiltersScreen = () => {
     categoryName: string;
   };
 
-  const [gotras, setGotras] = useState<Gotra[]>([]);
+  // Get gotra data from ConfigContext
+  const { gotraData } = useConfiguration();
+
   const [selectedGotra, setSelectedGotra] = useState('');
   const [selectedSubGotra, setSelectedSubGotra] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [subGotras, setSubGotras] = useState<string[]>([]);
 
   useEffect(() => {
-    loadCommunityConfig();
-  }, []);
-
-  useEffect(() => {
     // Update sub-gotras when gotra changes
     if (selectedGotra) {
-      const gotraObj = gotras.find(g => g.name === selectedGotra);
-      setSubGotras(gotraObj?.subGotras || []);
+      const gotraObj = gotraData.find(g => g.name === selectedGotra);
+      setSubGotras(gotraObj?.subgotra || []);
       setSelectedSubGotra(''); // Reset sub-gotra selection
     } else {
       setSubGotras([]);
       setSelectedSubGotra('');
     }
-  }, [selectedGotra, gotras]);
-
-  const loadCommunityConfig = async () => {
-    try {
-      // Load community config from local storage
-      const configStr = await AsyncStorage.getItem('communityConfig');
-      if (configStr) {
-        const config = JSON.parse(configStr);
-        // Assuming gotras are stored in community config
-        setGotras(config.gotras || []);
-      }
-    } catch (error) {
-      console.error('Error loading community config:', error);
-      // Fallback to empty array if config not available
-      setGotras([]);
-    }
-  };
+  }, [selectedGotra, gotraData]);
 
   const handleApplyFilters = () => {
     navigation.navigate('OccasionContent', {
@@ -117,7 +94,7 @@ export const FiltersScreen = () => {
                 style={styles.picker}
               >
                 <Picker.Item label="Select Gotra" value="" />
-                {gotras.map((gotra) => (
+                {gotraData.map((gotra) => (
                   <Picker.Item key={gotra.name} label={gotra.name} value={gotra.name} />
                 ))}
               </Picker>

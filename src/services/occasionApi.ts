@@ -70,8 +70,9 @@ export class OccasionApiService {
   /**
    * Fetch categories for the current user's community
    * Backend auto-filters by user's community based on token
+   * @param occasionType - Optional: Filter categories by occasion type
    */
-  static async fetchCategories(): Promise<CategoriesResponse> {
+  static async fetchCategories(occasionType?: string): Promise<CategoriesResponse> {
     try {
       const headers = await getAuthHeaders();
 
@@ -79,7 +80,15 @@ export class OccasionApiService {
         throw new Error('Authentication token not found');
       }
 
-      const response = await fetch(`${BASE_URL}/api/occasion-categories`, {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (occasionType) {
+        params.append('occasionType', occasionType);
+      }
+
+      const url = `${BASE_URL}/api/occasion-categories${params.toString() ? `?${params.toString()}` : ''}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers,
       });
@@ -174,12 +183,12 @@ export class OccasionApiService {
   /**
    * Fetch categories with retry logic
    */
-  static async fetchCategoriesWithRetry(maxRetries = 2): Promise<CategoriesResponse> {
+  static async fetchCategoriesWithRetry(occasionType?: string, maxRetries = 2): Promise<CategoriesResponse> {
     let lastError: Error;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        return await this.fetchCategories();
+        return await this.fetchCategories(occasionType);
       } catch (error) {
         lastError = error as Error;
 
@@ -240,7 +249,7 @@ export class OccasionApiService {
 }
 
 // Convenience exports
-export const fetchCategories = () => OccasionApiService.fetchCategories();
+export const fetchCategories = (occasionType?: string) => OccasionApiService.fetchCategories(occasionType);
 export const fetchOccasions = (
   occasionType: string,
   categoryId: string,

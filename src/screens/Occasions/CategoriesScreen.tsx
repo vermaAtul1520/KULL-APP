@@ -33,7 +33,7 @@ export const CategoriesScreen = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await OccasionApiService.fetchCategories();
+      const response = await OccasionApiService.fetchCategories(occasionType);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
