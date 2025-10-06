@@ -5,12 +5,15 @@ import { getAuthHeaders } from '@app/constants/apiUtils';
 /**
  * Response types for Occasion API
  */
-export interface Category {
+export interface OccasionCategory {
   _id: string;
   name: string;
   description: string;
+  occasionType: string;
   community: string;
   createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 export interface Content {
@@ -37,24 +40,22 @@ export interface Occasion {
 
 export interface CategoriesResponse {
   success: boolean;
-  data: Category[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  count: number;
+  data: OccasionCategory[];
+  message?: string;
 }
 
 export interface OccasionsResponse {
   success: boolean;
   data: Occasion[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  count: number;
+  message?: string;
 }
 
 export interface ApiError {
@@ -68,11 +69,11 @@ export interface ApiError {
  */
 export class OccasionApiService {
   /**
-   * Fetch categories for the current user's community
+   * Fetch all categories for the current user's community
    * Backend auto-filters by user's community based on token
-   * @param occasionType - Optional: Filter categories by occasion type
+   * Filtering by occasionType is done on the frontend
    */
-  static async fetchCategories(occasionType?: string): Promise<CategoriesResponse> {
+  static async fetchCategories(): Promise<CategoriesResponse> {
     try {
       const headers = await getAuthHeaders();
 
@@ -80,15 +81,7 @@ export class OccasionApiService {
         throw new Error('Authentication token not found');
       }
 
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (occasionType) {
-        params.append('occasionType', occasionType);
-      }
-
-      const url = `${BASE_URL}/api/occasion-categories${params.toString() ? `?${params.toString()}` : ''}`;
-
-      const response = await fetch(url, {
+      const response = await fetch(`${BASE_URL}/api/occasion-categories?limit=100`, {
         method: 'GET',
         headers,
       });
@@ -183,12 +176,12 @@ export class OccasionApiService {
   /**
    * Fetch categories with retry logic
    */
-  static async fetchCategoriesWithRetry(occasionType?: string, maxRetries = 2): Promise<CategoriesResponse> {
+  static async fetchCategoriesWithRetry(maxRetries = 2): Promise<CategoriesResponse> {
     let lastError: Error;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        return await this.fetchCategories(occasionType);
+        return await this.fetchCategories();
       } catch (error) {
         lastError = error as Error;
 
@@ -249,7 +242,7 @@ export class OccasionApiService {
 }
 
 // Convenience exports
-export const fetchCategories = (occasionType?: string) => OccasionApiService.fetchCategories(occasionType);
+export const fetchCategories = () => OccasionApiService.fetchCategories();
 export const fetchOccasions = (
   occasionType: string,
   categoryId: string,

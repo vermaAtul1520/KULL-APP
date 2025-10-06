@@ -22,9 +22,12 @@ export const CategoriesScreen = () => {
   const route = useRoute();
   const { occasionType } = route.params as { occasionType: string };
 
-  const [categories, setCategories] = useState<OccasionCategory[]>([]);
+  const [allCategories, setAllCategories] = useState<OccasionCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Filter categories based on selected occasion type
+  const categories = allCategories.filter((cat: OccasionCategory) => cat.occasionType === occasionType);
 
   useEffect(() => {
     fetchCategories();
@@ -33,8 +36,8 @@ export const CategoriesScreen = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await OccasionApiService.fetchCategories(occasionType);
-      setCategories(response.data);
+      const response = await OccasionApiService.fetchCategories();
+      setAllCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
       Alert.alert('Error', error.message || 'Failed to load categories');
