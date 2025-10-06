@@ -83,7 +83,7 @@ export class OccasionApiService {
         method: 'GET',
         headers,
       });
-
+      
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Unauthorized - Please login again');
@@ -93,8 +93,9 @@ export class OccasionApiService {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+     
       const data: CategoriesResponse = await response.json();
+       console.log("Fetched occasion categories:", data);
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch categories');
