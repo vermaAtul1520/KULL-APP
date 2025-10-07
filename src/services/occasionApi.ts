@@ -120,7 +120,7 @@ export class OccasionApiService {
    */
   static async fetchOccasions(
     occasionType: string,
-    categoryId: string,
+    categoryId: string | null,
     gotra?: string,
     subGotra?: string,
     gender?: string
@@ -135,8 +135,12 @@ export class OccasionApiService {
       // Build query parameters
       const params = new URLSearchParams({
         occasionType,
-        category: categoryId,
       });
+
+      // Add category if provided (may be null when no categories exist)
+      if (categoryId) {
+        params.append('category', categoryId);
+      }
 
       // Add optional filters if provided
       if (gotra) params.append('gotra', gotra);
@@ -208,7 +212,7 @@ export class OccasionApiService {
    */
   static async fetchOccasionsWithRetry(
     occasionType: string,
-    categoryId: string,
+    categoryId: string | null,
     gotra?: string,
     subGotra?: string,
     gender?: string,
@@ -245,7 +249,7 @@ export class OccasionApiService {
 export const fetchCategories = () => OccasionApiService.fetchCategories();
 export const fetchOccasions = (
   occasionType: string,
-  categoryId: string,
+  categoryId: string | null,
   gotra?: string,
   subGotra?: string,
   gender?: string

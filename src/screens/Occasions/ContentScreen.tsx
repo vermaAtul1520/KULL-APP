@@ -34,8 +34,8 @@ export const ContentScreen = () => {
     gender,
   } = route.params as {
     occasionType: string;
-    categoryId: string;
-    categoryName: string;
+    categoryId: string | null;
+    categoryName: string | null;
     gotra?: string;
     subGotra?: string;
     gender?: string;
@@ -49,8 +49,12 @@ export const ContentScreen = () => {
   const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(null);
 
   useEffect(() => {
-    // Always fetch occasions when component mounts with all provided filters
-    fetchOccasions();
+    // Only fetch when gender is selected (ensures all filters are applied)
+    if (gender !== undefined) {
+      fetchOccasions();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const fetchOccasions = async () => {
@@ -73,9 +77,12 @@ export const ContentScreen = () => {
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchOccasions();
-    setRefreshing(false);
+    // Only allow refresh if gender is selected
+    if (gender !== undefined) {
+      setRefreshing(true);
+      await fetchOccasions();
+      setRefreshing(false);
+    }
   };
 
   const handleOpenContent = (content: OccasionContent) => {
@@ -132,6 +139,36 @@ export const ContentScreen = () => {
       occasionId: occasion._id,
     }))
   );
+
+  // Show initial state if gender is not provided
+  if (gender === undefined) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <BackIcon size={24} color={AppColors.white} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>{categoryName || occasionType}</Text>
+            <Text style={styles.headerSubtitle}>Waiting for filter selection...</Text>
+          </View>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Please Select All Filters</Text>
+          <Text style={styles.emptyText}>
+            Please go back and complete all filter selections (Gotra, Sub-Gotra, and Gender) to view content.
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryButtonText}>Go Back to Select Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Show loading state
   if (loading) {
