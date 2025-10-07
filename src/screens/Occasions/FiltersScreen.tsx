@@ -29,7 +29,6 @@ export const FiltersScreen = () => {
 
   const [selectedGotra, setSelectedGotra] = useState('');
   const [selectedSubGotra, setSelectedSubGotra] = useState('');
-  const [selectedGender, setSelectedGender] = useState('');
   const [subGotras, setSubGotras] = useState<string[]>([]);
 
   useEffect(() => {
@@ -44,22 +43,14 @@ export const FiltersScreen = () => {
     }
   }, [selectedGotra, gotraData]);
 
-  const handleApplyFilters = () => {
-    navigation.navigate('OccasionContent', {
+  const handleContinue = () => {
+    // Navigate to Gender selection screen
+    navigation.navigate('OccasionGender', {
       occasionType,
       categoryId,
       categoryName,
       gotra: selectedGotra,
       subGotra: selectedSubGotra,
-      gender: selectedGender,
-    });
-  };
-
-  const handleSkipFilters = () => {
-    navigation.navigate('OccasionContent', {
-      occasionType,
-      categoryId,
-      categoryName,
     });
   };
 
@@ -79,9 +70,9 @@ export const FiltersScreen = () => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Apply Filters (Optional)</Text>
+          <Text style={styles.sectionTitle}>Select Gotra & Sub-Gotra</Text>
           <Text style={styles.sectionDescription}>
-            Refine your search by selecting gotra, sub-gotra, or gender filters
+            Select your gotra and sub-gotra to refine your search
           </Text>
 
           {/* Gotra Picker */}
@@ -120,44 +111,20 @@ export const FiltersScreen = () => {
             </View>
           )}
 
-          {/* Gender Picker */}
-          <View style={styles.pickerContainer}>
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={selectedGender}
-                onValueChange={(value) => setSelectedGender(value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="All" value="" />
-                <Picker.Item label="Male" value="male" />
-                <Picker.Item label="Female" value="female" />
-              </Picker>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
+          {/* Continue Button */}
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
               style={[styles.button, styles.applyButton]}
-              onPress={handleApplyFilters}
+              onPress={handleContinue}
               activeOpacity={0.8}
             >
-              <Text style={styles.applyButtonText}>Apply Filters</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.skipButton]}
-              onPress={handleSkipFilters}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.skipButtonText}>Skip Filters</Text>
+              <Text style={styles.applyButtonText}>Continue to Gender Selection</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              💡 Tip: You can skip filters to see all available content, or apply filters to narrow down results
+              💡 Tip: Select gotra and sub-gotra to get more relevant content
             </Text>
           </View>
         </View>

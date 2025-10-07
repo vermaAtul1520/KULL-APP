@@ -42,7 +42,7 @@ import DonationIcon from '@app/assets/images/donation.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import drawer screens
-import { OccasionTypesScreen, CategoriesScreen, FiltersScreen, ContentScreen } from '@app/screens/Occasions';
+import { OccasionTypesScreen, CategoriesScreen, FiltersScreen, GenderSelectionScreen, ContentScreen } from '@app/screens/Occasions';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
 import BhajanScreen from '@app/screens/drawer/BhajanScreen';
 import LawsScreen from '@app/screens/drawer/LawsScreen';
@@ -112,8 +112,9 @@ type RootDrawerParamList = {
   HomeTab: undefined;
   Occasions: undefined;
   OccasionCategories: { occasionType: string };
-  OccasionFilters: { occasionType: string; categoryId: string; categoryName: string };
-  OccasionContent: { occasionType: string; categoryId: string; categoryName: string; gotra?: string; subGotra?: string; gender?: string };
+  OccasionFilters: { occasionType: string; categoryId: string | null; categoryName: string | null };
+  OccasionGender: { occasionType: string; categoryId: string | null; categoryName: string | null; gotra?: string; subGotra?: string };
+  OccasionContent: { occasionType: string; categoryId: string | null; categoryName: string | null; gotra?: string; subGotra?: string; gender?: string };
   Kartavya: undefined;
   Bhajan: undefined;
   Games: undefined;
@@ -830,6 +831,13 @@ const DrawerNavigator = (): React.JSX.Element => {
       <Screen
         name="OccasionFilters"
         component={FiltersScreen}
+        options={{
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Screen
+        name="OccasionGender"
+        component={GenderSelectionScreen}
         options={{
           drawerItemStyle: { display: 'none' },
         }}

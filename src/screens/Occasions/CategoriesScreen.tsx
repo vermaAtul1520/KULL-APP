@@ -33,6 +33,18 @@ export const CategoriesScreen = () => {
     fetchCategories();
   }, []);
 
+  // Navigate to next screen based on category availability
+  useEffect(() => {
+    if (!loading && categories.length === 0) {
+      // No categories found, skip to Gotra selection
+      navigation.replace('OccasionFilters', {
+        occasionType,
+        categoryId: null,
+        categoryName: null,
+      });
+    }
+  }, [loading, categories]);
+
   const fetchCategories = async () => {
     try {
       setLoading(true);
