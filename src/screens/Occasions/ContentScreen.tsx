@@ -19,7 +19,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import { AppColors } from './constants';
 import { BackIcon, PdfIcon, VideoIcon, ImageIcon } from './components/OccasionIcons';
-import { OccasionApiService, Occasion, OccasionContent } from '@app/services/occasionApi';
+import { OccasionApiService, Occasion } from '@app/services/occasionApi';
+import OccasionContent from '@app/services/occasionApi';
 
 export const ContentScreen = () => {
   const navigation = useNavigation();
@@ -41,15 +42,18 @@ export const ContentScreen = () => {
   };
 
   const [occasions, setOccasions] = useState<Occasion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedContent, setSelectedContent] = useState<OccasionContent | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(null);
 
   useEffect(() => {
-    fetchOccasions();
-  }, []);
+    // Only fetch if filters are provided (user clicked "Apply Filters")
+    if (gotra || subGotra || gender) {
+      fetchOccasions();
+    }
+  }, [gotra, subGotra, gender]);
 
   const fetchOccasions = async () => {
     try {
@@ -71,9 +75,12 @@ export const ContentScreen = () => {
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchOccasions();
-    setRefreshing(false);
+    // Only allow refresh if filters are applied
+    if (gotra || subGotra || gender) {
+      setRefreshing(true);
+      await fetchOccasions();
+      setRefreshing(false);
+    }
   };
 
   const handleOpenContent = (content: OccasionContent) => {
@@ -131,6 +138,7 @@ export const ContentScreen = () => {
     }))
   );
 
+  // Show loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -147,6 +155,36 @@ export const ContentScreen = () => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppColors.primary} />
           <Text style={styles.loadingText}>Loading content...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show initial state - no filters applied yet
+  if (!gotra && !subGotra && !gender && occasions.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <BackIcon size={24} color={AppColors.white} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>{categoryName}</Text>
+            <Text style={styles.headerSubtitle}>{occasionType}</Text>
+          </View>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Please Apply Filters</Text>
+          <Text style={styles.emptyText}>
+            Go back and select filters (Gotra, Sub-Gotra, or Gender) to view content.
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryButtonText}>Select Filters</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
