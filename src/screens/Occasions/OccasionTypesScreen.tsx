@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { OCCASION_TYPES, AppColors } from './constants';
 import { FamilyIcon, BabyIcon, BoysMarriageIcon, GirlsMarriageIcon, DeathIcon, BackIcon } from './components/OccasionIcons';
+import { useOccasion } from '@app/contexts/OccasionContext';
 
 const OCCASION_DATA = [
   {
@@ -48,8 +49,10 @@ const OCCASION_DATA = [
 
 export const OccasionTypesScreen = () => {
   const navigation = useNavigation();
+  const { setOccasionType } = useOccasion();
 
   const handleSelectType = (occasionType: string) => {
+    setOccasionType(occasionType);
     navigation.navigate('OccasionCategories', { occasionType });
   };
 

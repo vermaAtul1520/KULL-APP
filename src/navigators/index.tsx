@@ -43,6 +43,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import drawer screens
 import { OccasionTypesScreen, CategoriesScreen, FiltersScreen, GenderSelectionScreen, ContentScreen } from '@app/screens/Occasions';
+import { OccasionProvider } from '@app/contexts/OccasionContext';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
 import BhajanScreen from '@app/screens/drawer/BhajanScreen';
 import LawsScreen from '@app/screens/drawer/LawsScreen';
@@ -1022,7 +1023,9 @@ const AppNavigator = (): React.JSX.Element => {
 export default (): React.JSX.Element => {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <OccasionProvider>
+        <AppNavigator />
+      </OccasionProvider>
     </AuthProvider>
   );
 };

@@ -21,25 +21,14 @@ import { AppColors } from './constants';
 import { BackIcon, PdfIcon, VideoIcon, ImageIcon } from './components/OccasionIcons';
 import { OccasionApiService, Occasion } from '@app/services/occasionApi';
 import OccasionContent from '@app/services/occasionApi';
+import { useOccasion } from '@app/contexts/OccasionContext';
 
 export const ContentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {
-    occasionType,
-    categoryId,
-    categoryName,
-    gotra,
-    subGotra,
-    gender,
-  } = route.params as {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    gotra?: string;
-    subGotra?: string;
-    gender?: string;
-  };
+
+  // Get filters from context
+  const { filters } = useOccasion();
 
   const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,24 +38,23 @@ export const ContentScreen = () => {
   const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(null);
 
   useEffect(() => {
-    // Only fetch when gender is selected (ensures all filters are applied)
-    if (gender !== undefined) {
-      fetchOccasions();
-    } else {
-      setLoading(false);
-    }
+    // Fetch occasions when component mounts - use filters from context
+    fetchOccasions();
   }, []);
 
   const fetchOccasions = async () => {
     try {
       setLoading(true);
+
+      // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
-        occasionType,
-        categoryId,
-        gotra,
-        subGotra,
-        gender
+        filters.occasionType!,  // Required - will always be set
+        filters.categoryId,     // Can be null
+        filters.gotra || undefined,       // Convert null to undefined for optional param
+        filters.subGotra || undefined,    // Convert null to undefined for optional param
+        filters.gender || undefined       // Convert null to undefined for optional param
       );
+
       setOccasions(response.data);
     } catch (error) {
       console.error('Error fetching occasions:', error);
@@ -77,12 +65,9 @@ export const ContentScreen = () => {
   };
 
   const onRefresh = async () => {
-    // Only allow refresh if gender is selected
-    if (gender !== undefined) {
-      setRefreshing(true);
-      await fetchOccasions();
-      setRefreshing(false);
-    }
+    setRefreshing(true);
+    await fetchOccasions();
+    setRefreshing(false);
   };
 
   const handleOpenContent = (content: OccasionContent) => {
@@ -140,36 +125,6 @@ export const ContentScreen = () => {
     }))
   );
 
-  // Show initial state if gender is not provided
-  if (gender === undefined) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <BackIcon size={24} color={AppColors.white} />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{categoryName || occasionType}</Text>
-            <Text style={styles.headerSubtitle}>Waiting for filter selection...</Text>
-          </View>
-        </View>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Please Select All Filters</Text>
-          <Text style={styles.emptyText}>
-            Please go back and complete all filter selections (Gotra, Sub-Gotra, and Gender) to view content.
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.retryButtonText}>Go Back to Select Filters</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // Show loading state
   if (loading) {
     return (
@@ -180,7 +135,7 @@ export const ContentScreen = () => {
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{categoryName || occasionType}</Text>
+            <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
             <Text style={styles.headerSubtitle}>Loading content...</Text>
           </View>
         </View>
@@ -201,10 +156,10 @@ export const ContentScreen = () => {
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{categoryName || occasionType}</Text>
+          <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
           <Text style={styles.headerSubtitle}>
-            {gotra && `${gotra}${subGotra ? ` - ${subGotra}` : ''}`}
-            {gender && ` • ${gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'All'}`}
+            {filters.gotra && `${filters.gotra}${filters.subGotra ? ` - ${filters.subGotra}` : ''}`}
+            {filters.gender && ` • ${filters.gender === 'male' ? 'Male' : filters.gender === 'female' ? 'Female' : 'All'}`}
           </Text>
         </View>
       </View>

@@ -14,6 +14,7 @@ import { Picker } from '@react-native-picker/picker';
 import { AppColors } from './constants';
 import { BackIcon } from './components/OccasionIcons';
 import { useConfiguration, GotraData } from '@app/hooks/ConfigContext';
+import { useOccasion } from '@app/contexts/OccasionContext';
 
 export const FiltersScreen = () => {
   const navigation = useNavigation();
@@ -26,6 +27,7 @@ export const FiltersScreen = () => {
 
   // Get gotra data from ConfigContext
   const { gotraData } = useConfiguration();
+  const { setGotraFilters } = useOccasion();
 
   const [selectedGotra, setSelectedGotra] = useState('');
   const [selectedSubGotra, setSelectedSubGotra] = useState('');
@@ -44,6 +46,12 @@ export const FiltersScreen = () => {
   }, [selectedGotra, gotraData]);
 
   const handleContinue = () => {
+    // Save gotra filters to context (convert empty strings to null)
+    setGotraFilters(
+      selectedGotra || null,
+      selectedSubGotra || null
+    );
+
     // Navigate to Gender selection screen
     navigation.navigate('OccasionGender', {
       occasionType,

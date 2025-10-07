@@ -16,11 +16,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppColors } from './constants';
 import { BackIcon } from './components/OccasionIcons';
 import { OccasionApiService, OccasionCategory } from '@app/services/occasionApi';
+import { useOccasion } from '@app/contexts/OccasionContext';
 
 export const CategoriesScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { occasionType } = route.params as { occasionType: string };
+  const { setCategory } = useOccasion();
 
   const [allCategories, setAllCategories] = useState<OccasionCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,8 @@ export const CategoriesScreen = () => {
   // Navigate to next screen based on category availability
   useEffect(() => {
     if (!loading && categories.length === 0) {
-      // No categories found, skip to Gotra selection
+      // No categories found, set null and skip to Gotra selection
+      setCategory(null, null);
       navigation.replace('OccasionFilters', {
         occasionType,
         categoryId: null,
@@ -65,6 +68,7 @@ export const CategoriesScreen = () => {
   };
 
   const handleSelectCategory = (category: OccasionCategory) => {
+    setCategory(category._id, category.name);
     navigation.navigate('OccasionFilters', {
       occasionType,
       categoryId: category._id,

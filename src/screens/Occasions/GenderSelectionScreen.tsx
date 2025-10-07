@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppColors } from './constants';
 import { BackIcon } from './components/OccasionIcons';
+import { useOccasion } from '@app/contexts/OccasionContext';
 
 export const GenderSelectionScreen = () => {
   const navigation = useNavigation();
@@ -29,6 +30,7 @@ export const GenderSelectionScreen = () => {
     subGotra?: string;
   };
 
+  const { setGender: setContextGender } = useOccasion();
   const [selectedGender, setSelectedGender] = useState<string>('');
 
   const genderOptions = [
@@ -38,7 +40,10 @@ export const GenderSelectionScreen = () => {
   ];
 
   const handleContinue = () => {
-    // Navigate to Content screen with all filters
+    // Save gender to context (convert empty string to null)
+    setContextGender(selectedGender || null);
+
+    // Navigate to Content screen
     navigation.navigate('OccasionContent', {
       occasionType,
       categoryId,
