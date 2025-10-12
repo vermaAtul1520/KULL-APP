@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppColors } from './constants';
 import { BackIcon } from './components/OccasionIcons';
 import { useOccasion } from '@app/contexts/OccasionContext';
-
+import OccasionApiService from '@app/services/occasionApi'; // <-- Import OccasionApiService
 export const GenderSelectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -30,7 +31,8 @@ export const GenderSelectionScreen = () => {
     subGotra?: string;
   };
 
-  const { setGender: setContextGender } = useOccasion();
+  const { setGender: setContextGender,  setOccasions, filters } = useOccasion();
+  
   const [selectedGender, setSelectedGender] = useState<string>('');
 
   const genderOptions = [
@@ -39,20 +41,42 @@ export const GenderSelectionScreen = () => {
     { value: '', label: 'All', icon: '👥' },
   ];
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Save gender to context (convert empty string to null)
     setContextGender(selectedGender || null);
-
+  
     // Navigate to Content screen
+    await fetchOccasions();
     navigation.navigate('OccasionContent', {
       occasionType,
       categoryId,
       categoryName,
       gotra,
-      subGotra,
-      gender: selectedGender,
-    });
+      subGotra,})
   };
+
+   const fetchOccasions = async () => {
+      try {
+  
+        // Use filters from context - pass non-null values to API
+        const response = await OccasionApiService.fetchOccasions(
+          filters.occasionType!,  // Required - will always be set
+          filters.categoryId,     // Can be null
+          filters.gotra || undefined,       // Convert null to undefined for optional param
+          filters.subGotra || undefined,    // Convert null to undefined for optional param
+          filters.gender || undefined       // Convert null to undefined for optional param
+        );
+  
+        setOccasions(response.data);
+        console.log('Fetched occasions:', response.data);
+      } catch (error) {
+        console.error('Error fetching occasions:', error);
+        Alert.alert('Error', error.message || 'Failed to load content');
+      } finally {
+       
+      }
+    };
+  
 
   return (
     <SafeAreaView style={styles.container}>

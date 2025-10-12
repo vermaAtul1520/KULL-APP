@@ -339,6 +339,9 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   
   // Remove static menu items and create dynamic menu based on drorData
   const getMenuItems = () => {
+
+  
+
     if (!drorData) return [];
     
     const menuMapping = [

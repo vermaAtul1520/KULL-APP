@@ -16,7 +16,6 @@ import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import { getFamilyTree, removeFamilyMember, updateFamilyRelationship } from '@app/utils/familyTreeApi';
 import { useFocusEffect } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -32,6 +31,73 @@ const AppColors = {
   warning: '#f59e0b',
   danger: '#ef4444',
 };
+
+// Simple Icon Components
+const ArrowLeftIcon = ({ size = 24, color = AppColors.dark }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.7 }]}>←</Text>
+  </View>
+);
+
+const InfoIcon = ({ size = 24, color = AppColors.dark }) => (
+  <View style={[styles.iconContainer, { width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: color }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.6 }]}>i</Text>
+  </View>
+);
+
+const FamilyTreeIcon = ({ size = 40, color = AppColors.primary }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.7 }]}>👨‍👩‍👧‍👦</Text>
+  </View>
+);
+
+const AccountPlusIcon = ({ size = 24, color = AppColors.white }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.7 }]}>👤+</Text>
+  </View>
+);
+
+const TreeOutlineIcon = ({ size = 80, color = AppColors.gray }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.6 }]}>🌳</Text>
+  </View>
+);
+
+const PencilIcon = ({ size = 20, color = AppColors.teal }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.8 }]}>✏️</Text>
+  </View>
+);
+
+const DeleteIcon = ({ size = 20, color = AppColors.danger }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.8 }]}>🗑️</Text>
+  </View>
+);
+
+const CloseIcon = ({ size = 24, color = AppColors.dark }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.8 }]}>✕</Text>
+  </View>
+);
+
+const CloseCircleIcon = ({ size = 18, color = AppColors.danger }) => (
+  <View style={[styles.iconContainer, { width: size, height: size, borderRadius: size / 2, backgroundColor: color }]}>
+    <Text style={[styles.iconText, { color: AppColors.white, fontSize: size * 0.5 }]}>✕</Text>
+  </View>
+);
+
+const ChevronIcon = ({ size = 24, color = AppColors.gray, up = false }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={[styles.iconText, { color, fontSize: size * 0.6 }]}>{up ? '▲' : '▼'}</Text>
+  </View>
+);
+
+const SectionIcon = ({ emoji, size = 16 }) => (
+  <View style={[styles.iconContainer, { width: size, height: size }]}>
+    <Text style={{ fontSize: size * 0.9 }}>{emoji}</Text>
+  </View>
+);
 
 interface FamilyMember {
   _id: string;
@@ -269,25 +335,25 @@ const FamilyTreeScreen = ({ navigation }: any) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleEditMember(member)}>
-            <Icon name="pencil" size={20} color={AppColors.teal} />
+            <PencilIcon size={20} color={AppColors.teal} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleRemoveMember(member)}>
-            <Icon name="delete" size={20} color={AppColors.danger} />
+            <DeleteIcon size={20} color={AppColors.danger} />
           </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  const renderSection = (title: string, members: FamilyMember[], icon: string) => {
+  const renderSection = (title: string, members: FamilyMember[], emoji: string) => {
     if (!members || members.length === 0) return null;
 
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name={icon} size={24} color={AppColors.teal} />
+          <SectionIcon emoji={emoji} size={24} />
           <Text style={styles.sectionTitle}>
             {title} ({members.length})
           </Text>
@@ -330,7 +396,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
           <TouchableOpacity
             style={styles.treeRemoveButton}
             onPress={() => handleRemoveMember(member)}>
-            <Icon name="close-circle" size={18} color={AppColors.danger} />
+            <CloseCircleIcon size={18} color={AppColors.danger} />
           </TouchableOpacity>
         </TouchableOpacity>
       </View>
@@ -396,13 +462,13 @@ const FamilyTreeScreen = ({ navigation }: any) => {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color={AppColors.dark} />
+          <ArrowLeftIcon size={24} color={AppColors.dark} />
         </TouchableOpacity>
         <Text style={styles.topHeaderTitle}>{t('Family Tree') || 'Family Tree'}</Text>
         <TouchableOpacity
           style={styles.infoButton}
           onPress={() => Alert.alert(t('Family Tree'), t('View and manage your family relationships in a hierarchical tree format.'))}>
-          <Icon name="information-outline" size={24} color={AppColors.dark} />
+          <InfoIcon size={24} color={AppColors.dark} />
         </TouchableOpacity>
       </View>
 
@@ -410,14 +476,14 @@ const FamilyTreeScreen = ({ navigation }: any) => {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.statsCard}>
-            <Icon name="family-tree" size={40} color={AppColors.primary} />
+            <FamilyTreeIcon size={40} color={AppColors.primary} />
             <Text style={styles.statsNumber}>{totalMembers}</Text>
             <Text style={styles.statsLabel}>{t('Total Family Members') || 'Total Family Members'}</Text>
           </View>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => navigation.navigate('AddFamilyMember')}>
-            <Icon name="account-plus" size={24} color={AppColors.white} />
+            <AccountPlusIcon size={24} color={AppColors.white} />
             <Text style={styles.addButtonText}>{t('Add Member') || 'Add Member'}</Text>
           </TouchableOpacity>
         </View>
@@ -425,7 +491,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
         {/* Empty State */}
         {totalMembers === 0 ? (
           <View style={styles.emptyState}>
-            <Icon name="tree-outline" size={80} color={AppColors.gray} />
+            <TreeOutlineIcon size={80} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>{t('No Family Members Yet') || 'No Family Members Yet'}</Text>
             <Text style={styles.emptyMessage}>
               {t('Start building your family tree by adding members') || 'Start building your family tree by adding members'}
@@ -437,7 +503,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.grandparents && familyTree.grandparents.length > 0 && (
               <>
                 <View style={styles.generationHeader}>
-                  <Icon name="account-tie" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="👴" size={16} />
                   <Text style={styles.generationLabel}>{t('Grandparents') || 'Grandparents'}</Text>
                 </View>
                 {renderTreeRow(familyTree.grandparents, false)}
@@ -448,7 +514,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.parents && familyTree.parents.length > 0 && (
               <>
                 <View style={styles.generationHeader}>
-                  <Icon name="account-supervisor" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="👨‍👩" size={16} />
                   <Text style={styles.generationLabel}>{t('Parents') || 'Parents'}</Text>
                 </View>
                 {renderTreeRow(familyTree.parents, familyTree.grandparents.length > 0)}
@@ -459,7 +525,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.siblings && familyTree.siblings.length > 0 && (
               <>
                 <View style={styles.generationHeader}>
-                  <Icon name="account-multiple" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="👫" size={16} />
                   <Text style={styles.generationLabel}>{t('Siblings') || 'Siblings'}</Text>
                 </View>
                 {renderTreeRow(familyTree.siblings, true)}
@@ -468,7 +534,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
 
             {/* Current User & Spouse */}
             <View style={styles.generationHeader}>
-              <Icon name="account-heart" size={16} color={AppColors.teal} />
+              <SectionIcon emoji="💑" size={16} />
               <Text style={styles.generationLabel}>{t('You & Spouse') || 'You & Spouse'}</Text>
             </View>
             {renderCurrentUser()}
@@ -477,7 +543,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.children && familyTree.children.length > 0 && (
               <>
                 <View style={styles.generationHeader}>
-                  <Icon name="human-child" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="👶" size={16} />
                   <Text style={styles.generationLabel}>{t('Children') || 'Children'}</Text>
                 </View>
                 {renderTreeRow(familyTree.children, true)}
@@ -488,7 +554,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.grandchildren && familyTree.grandchildren.length > 0 && (
               <>
                 <View style={styles.generationHeader}>
-                  <Icon name="baby-face-outline" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="🍼" size={16} />
                   <Text style={styles.generationLabel}>{t('Grandchildren') || 'Grandchildren'}</Text>
                 </View>
                 {renderTreeRow(familyTree.grandchildren, true)}
@@ -499,7 +565,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             {familyTree?.extended && familyTree.extended.length > 0 && (
               <View style={styles.extendedSection}>
                 <View style={styles.generationHeader}>
-                  <Icon name="account-group" size={16} color={AppColors.teal} />
+                  <SectionIcon emoji="👨‍👩‍👧‍👦" size={16} />
                   <Text style={styles.generationLabel}>{t('Extended Family') || 'Extended Family'}</Text>
                 </View>
                 <View style={styles.extendedGrid}>
@@ -522,7 +588,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('Edit Relationship') || 'Edit Relationship'}</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Icon name="close" size={24} color={AppColors.dark} />
+                <CloseIcon size={24} color={AppColors.dark} />
               </TouchableOpacity>
             </View>
 
@@ -534,7 +600,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
               <Text style={styles.dropdownButtonText}>
                 {newRelationType || t('Select...') || 'Select...'}
               </Text>
-              <Icon name={showDropdown ? "chevron-up" : "chevron-down"} size={24} color={AppColors.gray} />
+              <ChevronIcon size={24} color={AppColors.gray} up={showDropdown} />
             </Pressable>
 
             {showDropdown && (
@@ -576,6 +642,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.lightGray,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconText: {
+    fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,

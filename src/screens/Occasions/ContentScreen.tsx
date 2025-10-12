@@ -28,9 +28,8 @@ export const ContentScreen = () => {
   const route = useRoute();
 
   // Get filters from context
-  const { filters } = useOccasion();
+  const { filters, occasions, setOccasions } = useOccasion();
 
-  const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedContent, setSelectedContent] = useState<OccasionContent | null>(null);
@@ -39,6 +38,7 @@ export const ContentScreen = () => {
 
   useEffect(() => {
     // Fetch occasions when component mounts - use filters from context
+   console.log('Fetching occasions with filters:', filters);
     fetchOccasions();
   }, []);
 
@@ -56,6 +56,7 @@ export const ContentScreen = () => {
       );
 
       setOccasions(response.data);
+      console.log('Fetched occasions:', response.data);
     } catch (error) {
       console.error('Error fetching occasions:', error);
       Alert.alert('Error', error.message || 'Failed to load content');

@@ -419,10 +419,12 @@ export const ConfigurationProvider = ({ children }) => {
 
   // Public methods
   const fetchConfiguration = async () => {
+    
     await fetchConfigurationFromAPI(false);
   };
 
   const refreshConfiguration = async () => {
+   
     await fetchConfigurationFromAPI(true);
   };
 

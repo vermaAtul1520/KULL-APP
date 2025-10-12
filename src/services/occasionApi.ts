@@ -118,65 +118,67 @@ export class OccasionApiService {
    * @param subGotra - Optional: Sub-gotra filter from Screen 3
    * @param gender - Optional: Gender filter from Screen 3
    */
-  static async fetchOccasions(
-    occasionType: string,
-    categoryId: string | null,
-    gotra?: string,
-    subGotra?: string,
-    gender?: string
-  ): Promise<OccasionsResponse> {
-    try {
-      const headers = await getAuthHeaders();
 
-      if (!headers.Authorization) {
-        throw new Error('Authentication token not found');
-      }
+static async fetchOccasions(
+  occasionType: string,
+  categoryId: string | null,
+  gotra?: string,
+  subGotra?: string,
+  gender?: string
+): Promise<OccasionsResponse> {
+  try {
+    const headers = await getAuthHeaders();
 
-      // Build query parameters
-      const params = new URLSearchParams({
-        occasionType,
-      });
-
-      // Add category if provided (may be null when no categories exist)
-      if (categoryId) {
-        params.append('category', categoryId);
-      }
-
-      // Add optional filters if provided
-      if (gotra) params.append('gotra', gotra);
-      if (subGotra) params.append('subGotra', subGotra);
-      if (gender) params.append('gender', gender);
-
-      const url = `${BASE_URL}/api/occasions?${params.toString()}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized - Please login again');
-        }
-        if (response.status === 404) {
-          throw new Error('Occasions not found');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: OccasionsResponse = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch occasions');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('OccasionApiService.fetchOccasions error:', error);
-      throw error;
+    if (!headers.Authorization) {
+      throw new Error('Authentication token not found');
     }
-  }
 
+    // Build query parameters
+    const params = new URLSearchParams({
+      occasionType,
+    });
+
+    // Add category if provided (may be null when no categories exist)
+    if (categoryId) {
+      params.append('category', categoryId);
+    }
+
+    // Add optional filters if provided
+    if (gotra) params.append('gotra', gotra);
+    if (subGotra) params.append('subGotra', subGotra);
+    if (gender) params.append('gender', gender);
+    console.log('Fetching occasions with params:', params.toString());
+    const url = `${BASE_URL}/api/occasions?${params.toString()}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Unauthorized - Please login again');
+      }
+      if (response.status === 404) {
+        throw new Error('Occasions not found');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: OccasionsResponse = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to fetch occasions');
+    }
+
+    // No contentType or language filtering here, just return data
+    return data;
+  } catch (error) {
+    console.error('OccasionApiService.fetchOccasions error:', error);
+    throw error;
+  }
+}
+// ...existing code...
   /**
    * Fetch categories with retry logic
    */
