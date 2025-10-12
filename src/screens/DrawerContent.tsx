@@ -473,10 +473,10 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
           )}
         </View>
         <Text style={styles.userName}>
-          {user ? `${user.firstName} ${user.lastName}` : 'Innovgeist'}
+          {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
         </Text>
         <Text style={styles.userEmail}>
-          {user ? user.email : 'Innovgeist@gmail.com'}
+          {user ? user.email : 'No email available'}
         </Text>
       </View>
 

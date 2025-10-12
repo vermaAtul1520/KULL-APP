@@ -144,40 +144,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRelation, setSelectedRelation] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
-
-  // Dummy search results for when API is not available
-  const dummyUsers: SearchUser[] = [
-    {
-      _id: 'user-1',
-      firstName: 'Alice',
-      lastName: 'Johnson',
-      email: 'alice@example.com',
-      phone: '9876543215',
-      profileImage: null,
-      code: 'AJ3215',
-      gender: 'female',
-    },
-    {
-      _id: 'user-2',
-      firstName: 'Robert',
-      lastName: 'Williams',
-      email: 'robert@example.com',
-      phone: '9876543216',
-      profileImage: null,
-      code: 'RW3216',
-      gender: 'male',
-    },
-    {
-      _id: 'user-3',
-      firstName: 'Emily',
-      lastName: 'Brown',
-      email: 'emily@example.com',
-      phone: '9876543217',
-      profileImage: null,
-      code: 'EB3217',
-      gender: 'female',
-    },
-  ];
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (searchQuery.length < 2) {
@@ -186,28 +153,22 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
     }
 
     setLoading(true);
+    setSearchError(null);
     try {
       const response = await searchUsers(searchQuery);
       if (response.success) {
         setSearchResults(response.data);
+        if (response.data.length === 0) {
+          setSearchError(t('No users found matching your search') || 'No users found matching your search');
+        }
       } else {
-        // Use dummy data if API fails
-        const filtered = dummyUsers.filter(user =>
-          user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.code.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(filtered);
+        setSearchError(response.message || t('Failed to search users') || 'Failed to search users');
+        setSearchResults([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Search error:', error);
-      // Use dummy data on error
-      const filtered = dummyUsers.filter(user =>
-        user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.code.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setSearchResults(filtered);
+      setSearchError(error.message || t('Unable to search users. Please check your connection.') || 'Unable to search users. Please check your connection.');
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
@@ -358,6 +319,17 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppColors.primary} />
           <Text style={styles.loadingText}>{t('Searching...') || 'Searching...'}</Text>
+        </View>
+      ) : searchError ? (
+        <View style={styles.emptyState}>
+          <AccountSearchIcon size={80} color={AppColors.danger} />
+          <Text style={styles.emptyTitle}>{t('Search Failed') || 'Search Failed'}</Text>
+          <Text style={styles.emptyMessage}>{searchError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleSearch}>
+            <Text style={styles.retryButtonText}>{t('Try Again') || 'Try Again'}</Text>
+          </TouchableOpacity>
         </View>
       ) : searchResults.length > 0 ? (
         <FlatList
@@ -611,6 +583,18 @@ const styles = StyleSheet.create({
     color: AppColors.gray,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: AppColors.dark,
   },
   modalOverlay: {
     flex: 1,

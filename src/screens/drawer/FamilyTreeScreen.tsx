@@ -144,85 +144,7 @@ const FamilyTreeScreen = ({ navigation }: any) => {
   const [newRelationType, setNewRelationType] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Dummy data for initial state
-  const dummyFamilyTree: FamilyTreeData = {
-    parents: [
-      {
-        _id: 'dummy-1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        phone: '9876543210',
-        profileImage: null,
-        code: 'JD3210',
-        gender: 'male',
-        relationType: 'father',
-        relationshipId: 'rel-1',
-        addedOn: new Date().toISOString(),
-      },
-      {
-        _id: 'dummy-2',
-        firstName: 'Jane',
-        lastName: 'Doe',
-        email: 'jane@example.com',
-        phone: '9876543211',
-        profileImage: null,
-        code: 'JD3211',
-        gender: 'female',
-        relationType: 'mother',
-        relationshipId: 'rel-2',
-        addedOn: new Date().toISOString(),
-      },
-    ],
-    children: [
-      {
-        _id: 'dummy-3',
-        firstName: 'Tom',
-        lastName: 'Doe',
-        email: 'tom@example.com',
-        phone: '9876543212',
-        profileImage: null,
-        code: 'TD3212',
-        gender: 'male',
-        relationType: 'son',
-        relationshipId: 'rel-3',
-        addedOn: new Date().toISOString(),
-      },
-    ],
-    siblings: [],
-    spouse: [
-      {
-        _id: 'dummy-4',
-        firstName: 'Mary',
-        lastName: 'Doe',
-        email: 'mary@example.com',
-        phone: '9876543213',
-        profileImage: null,
-        code: 'MD3213',
-        gender: 'female',
-        relationType: 'wife',
-        relationshipId: 'rel-4',
-        addedOn: new Date().toISOString(),
-      },
-    ],
-    grandparents: [],
-    grandchildren: [],
-    extended: [
-      {
-        _id: 'dummy-5',
-        firstName: 'Bob',
-        lastName: 'Smith',
-        email: 'bob@example.com',
-        phone: '9876543214',
-        profileImage: null,
-        code: 'BS3214',
-        gender: 'male',
-        relationType: 'uncle',
-        relationshipId: 'rel-5',
-        addedOn: new Date().toISOString(),
-      },
-    ],
-  };
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFamilyTree();
@@ -237,21 +159,22 @@ const FamilyTreeScreen = ({ navigation }: any) => {
 
   const loadFamilyTree = async () => {
     setLoading(true);
+    setApiError(null);
     try {
       const response = await getFamilyTree();
       if (response.success) {
         setFamilyTree(response.data);
         setTotalMembers(response.totalMembers);
       } else {
-        // Use dummy data if no real data
-        setFamilyTree(dummyFamilyTree);
-        setTotalMembers(6);
+        setApiError(response.message || 'Failed to load family tree data');
+        setFamilyTree(null);
+        setTotalMembers(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading family tree:', error);
-      // Use dummy data on error
-      setFamilyTree(dummyFamilyTree);
-      setTotalMembers(6);
+      setApiError(error.message || 'Unable to load family tree. Please check your connection.');
+      setFamilyTree(null);
+      setTotalMembers(0);
     } finally {
       setLoading(false);
     }
@@ -488,8 +411,19 @@ const FamilyTreeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Empty State */}
-        {totalMembers === 0 ? (
+        {/* Empty State or Error State */}
+        {apiError ? (
+          <View style={styles.emptyState}>
+            <TreeOutlineIcon size={80} color={AppColors.danger} />
+            <Text style={styles.emptyTitle}>{t('Unable to Load Family Tree') || 'Unable to Load Family Tree'}</Text>
+            <Text style={styles.emptyMessage}>{apiError}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={loadFamilyTree}>
+              <Text style={styles.retryButtonText}>{t('Retry') || 'Retry'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : totalMembers === 0 ? (
           <View style={styles.emptyState}>
             <TreeOutlineIcon size={80} color={AppColors.gray} />
             <Text style={styles.emptyTitle}>{t('No Family Members Yet') || 'No Family Members Yet'}</Text>
@@ -723,6 +657,18 @@ const styles = StyleSheet.create({
     color: AppColors.gray,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: AppColors.dark,
   },
   section: {
     marginTop: 20,
