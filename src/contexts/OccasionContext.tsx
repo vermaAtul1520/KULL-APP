@@ -13,6 +13,8 @@ export interface OccasionFilters {
 // Context interface
 interface OccasionContextType {
   filters: OccasionFilters;
+  occasions: any[];
+  setOccasions: (occasions: any[]) => void;
   setOccasionType: (type: string) => void;
   setCategory: (id: string | null, name: string | null) => void;
   setGotraFilters: (gotra: string | null, subGotra: string | null) => void;
@@ -36,6 +38,7 @@ const OccasionContext = createContext<OccasionContextType | undefined>(undefined
 // Provider component
 export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [filters, setFilters] = useState<OccasionFilters>(initialFilters);
+  const [occasions, setOccasions] = useState<any[]>([]);
 
   const setOccasionType = (type: string) => {
     setFilters(prev => ({
@@ -81,12 +84,15 @@ export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const resetFilters = () => {
     setFilters(initialFilters);
+    setOccasions([]);
   };
 
   return (
     <OccasionContext.Provider
       value={{
         filters,
+        occasions,
+        setOccasions,
         setOccasionType,
         setCategory,
         setGotraFilters,

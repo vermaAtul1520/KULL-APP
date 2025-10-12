@@ -13,10 +13,10 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
+import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useAuth } from '@app/navigators';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import { searchUsers, addFamilyMember } from '@app/utils/familyTreeApi';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -32,6 +32,81 @@ const AppColors = {
   warning: '#f59e0b',
   danger: '#ef4444',
 };
+
+// SVG Icon Components
+const ArrowLeftIcon = ({ size = 24, color = AppColors.dark }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 12H5M5 12L12 19M5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const MagnifyIcon = ({ size = 24, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const CloseCircleIcon = ({ size = 24, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" fill={color} />
+    <Path
+      d="M15 9L9 15M9 9L15 15"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const AccountSearchIcon = ({ size = 80, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2" />
+    <Path
+      d="M2 20C2 16.6863 4.68629 14 8 14C9.38169 14 10.6633 14.4689 11.6841 15.2571"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <Circle cx="17.5" cy="17.5" r="3" stroke={color} strokeWidth="2" />
+    <Path d="M19.5 19.5L22 22" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
+const PlusCircleIcon = ({ size = 32, color = AppColors.teal }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 8V16M8 12H16"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const CloseIcon = ({ size = 24, color = AppColors.dark }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 6L6 18M6 6L18 18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 interface SearchUser {
   _id: string;
@@ -209,7 +284,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
         <TouchableOpacity
           style={styles.addIconButton}
           onPress={() => handleSelectUser(item)}>
-          <Icon name="plus-circle" size={32} color={AppColors.teal} />
+          <PlusCircleIcon size={32} color={AppColors.teal} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -248,7 +323,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color={AppColors.dark} />
+          <ArrowLeftIcon size={24} color={AppColors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('Add Family Member') || 'Add Family Member'}</Text>
         <View style={styles.placeholder} />
@@ -257,7 +332,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Icon name="magnify" size={24} color={AppColors.gray} />
+          <MagnifyIcon size={24} color={AppColors.gray} />
           <TextInput
             style={styles.searchInput}
             placeholder={t('Search by name, phone, or code') || 'Search by name, phone, or code'}
@@ -269,7 +344,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="close-circle" size={24} color={AppColors.gray} />
+              <CloseCircleIcon size={24} color={AppColors.gray} />
             </TouchableOpacity>
           )}
         </View>
@@ -294,7 +369,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
         />
       ) : searchQuery.length > 0 ? (
         <View style={styles.emptyState}>
-          <Icon name="account-search" size={80} color={AppColors.gray} />
+          <AccountSearchIcon size={80} color={AppColors.gray} />
           <Text style={styles.emptyTitle}>{t('No Results Found') || 'No Results Found'}</Text>
           <Text style={styles.emptyMessage}>
             {t('Try searching with a different name, phone, or code') || 'Try searching with a different name, phone, or code'}
@@ -302,7 +377,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <Icon name="account-search" size={80} color={AppColors.gray} />
+          <AccountSearchIcon size={80} color={AppColors.gray} />
           <Text style={styles.emptyTitle}>{t('Search for Family Members') || 'Search for Family Members'}</Text>
           <Text style={styles.emptyMessage}>
             {t('Enter at least 2 characters to start searching') || 'Enter at least 2 characters to start searching'}
@@ -321,7 +396,7 @@ const AddFamilyMemberScreen = ({ navigation }: any) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('Select Relationship') || 'Select Relationship'}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={24} color={AppColors.dark} />
+                <CloseIcon size={24} color={AppColors.dark} />
               </TouchableOpacity>
             </View>
 

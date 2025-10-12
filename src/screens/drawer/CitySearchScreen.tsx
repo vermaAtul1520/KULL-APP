@@ -11,7 +11,7 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useLanguage } from '@app/hooks/LanguageContext';
 import { getAuthHeaders } from '@app/constants/apiUtils';
 import { BASE_URL } from '@app/constants/constant';
@@ -28,6 +28,121 @@ const AppColors = {
   teal: '#1e6b5c',
   danger: '#ef4444',
 };
+
+// SVG Icon Components
+const MagnifyIcon = ({ size = 24, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const CloseCircleIcon = ({ size = 20, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" fill={color} />
+    <Path
+      d="M15 9L9 15M9 9L15 15"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const GenderMaleIcon = ({ size = 16, color = '#3b82f6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="10" cy="14" r="6" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M15 9L20 4M20 4H16M20 4V8"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const GenderFemaleIcon = ({ size = 16, color = '#ec4899' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="9" r="6" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 15V22M9 19H15"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const BriefcaseIcon = ({ size = 14, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M5 7H19C20.1046 7 21 7.89543 21 9V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V9C3 7.89543 3.89543 7 5 7Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const MapMarkerIcon = ({ size = 14, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const MapMarkerRadiusIcon = ({ size = 14, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" fill={color} />
+    <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth="2" fill="none" strokeDasharray="2 2" />
+  </Svg>
+);
+
+const AlertCircleIcon = ({ size = 64, color = AppColors.danger }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Path d="M12 8V12" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Circle cx="12" cy="16" r="1" fill={color} />
+  </Svg>
+);
+
+const MapSearchIcon = ({ size = 64, color = AppColors.primary }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M15 3L21 6V16L15 13M15 3L9 6M15 3V13M9 6L3 3V13L9 16M9 6V16M9 16L15 13"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="17" cy="18" r="3" stroke={color} strokeWidth="2" />
+    <Path d="M19.5 20.5L22 23" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
+const AccountSearchIcon = ({ size = 64, color = AppColors.gray }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2" />
+    <Path
+      d="M2 20C2 16.6863 4.68629 14 8 14C9.38169 14 10.6633 14.4689 11.6841 15.2571"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <Circle cx="17.5" cy="17.5" r="3" stroke={color} strokeWidth="2" />
+    <Path d="M19.5 19.5L22 22" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
 
 interface User {
   _id: string;
@@ -197,12 +312,13 @@ export default function CitySearchScreen() {
               {item.firstName} {item.lastName}
             </Text>
             {item.gender && (
-              <Icon
-                name={item.gender === 'male' ? 'gender-male' : 'gender-female'}
-                size={16}
-                color={item.gender === 'male' ? '#3b82f6' : '#ec4899'}
-                style={styles.genderIcon}
-              />
+              <View style={styles.genderIcon}>
+                {item.gender === 'male' ? (
+                  <GenderMaleIcon size={16} color="#3b82f6" />
+                ) : (
+                  <GenderFemaleIcon size={16} color="#ec4899" />
+                )}
+              </View>
             )}
           </View>
 
@@ -210,13 +326,13 @@ export default function CitySearchScreen() {
 
           {item.occupation && (
             <View style={styles.infoRow}>
-              <Icon name="briefcase-outline" size={14} color={AppColors.gray} />
+              <BriefcaseIcon size={14} color={AppColors.gray} />
               <Text style={styles.infoText}>{item.occupation}</Text>
             </View>
           )}
 
           <View style={styles.infoRow}>
-            <Icon name="map-marker-outline" size={14} color={AppColors.gray} />
+            <MapMarkerIcon size={14} color={AppColors.gray} />
             <Text style={styles.infoText} numberOfLines={2}>
               {item.address}
             </Text>
@@ -224,7 +340,7 @@ export default function CitySearchScreen() {
 
           {item.pinCode && (
             <View style={styles.infoRow}>
-              <Icon name="map-marker-radius" size={14} color={AppColors.gray} />
+              <MapMarkerRadiusIcon size={14} color={AppColors.gray} />
               <Text style={styles.infoText}>PIN: {item.pinCode}</Text>
             </View>
           )}
@@ -261,7 +377,7 @@ export default function CitySearchScreen() {
     if (error) {
       return (
         <View style={styles.emptyContainer}>
-          <Icon name="alert-circle-outline" size={64} color={AppColors.danger} />
+          <AlertCircleIcon size={64} color={AppColors.danger} />
           <Text style={styles.emptyTitle}>{t('Error') || 'Error'}</Text>
           <Text style={styles.emptyText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => performSearch(searchQuery)}>
@@ -274,7 +390,7 @@ export default function CitySearchScreen() {
     if (!hasSearched) {
       return (
         <View style={styles.emptyContainer}>
-          <Icon name="map-search-outline" size={64} color={AppColors.primary} />
+          <MapSearchIcon size={64} color={AppColors.primary} />
           <Text style={styles.emptyTitle}>
             {t('Search Members by Location') || 'Search Members by Location'}
           </Text>
@@ -294,7 +410,7 @@ export default function CitySearchScreen() {
 
     return (
       <View style={styles.emptyContainer}>
-        <Icon name="account-search-outline" size={64} color={AppColors.gray} />
+        <AccountSearchIcon size={64} color={AppColors.gray} />
         <Text style={styles.emptyTitle}>
           {t('No Members Found') || 'No Members Found'}
         </Text>
@@ -311,12 +427,9 @@ export default function CitySearchScreen() {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Icon
-            name="magnify"
-            size={24}
-            color={AppColors.gray}
-            style={styles.searchIcon}
-          />
+          <View style={styles.searchIcon}>
+            <MagnifyIcon size={24} color={AppColors.gray} />
+          </View>
           <TextInput
             style={styles.searchInput}
             placeholder={t('Search by city, area, or pincode') || 'Search by city, area, or pincode'}
@@ -335,7 +448,7 @@ export default function CitySearchScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <Icon name="close-circle" size={20} color={AppColors.gray} />
+              <CloseCircleIcon size={20} color={AppColors.gray} />
             </TouchableOpacity>
           )}
         </View>
