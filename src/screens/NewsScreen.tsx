@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,14 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
-import { moderateScale } from '@app/constants/scaleUtils';
+import Svg, {Path} from 'react-native-svg';
+import {moderateScale} from '@app/constants/scaleUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@app/navigators';
-import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
-import { BASE_URL } from '@app/constants/constant';
+import {useAuth} from '@app/navigators';
+import {useLanguage} from '@app/hooks/LanguageContext'; // Add this import
+import {BASE_URL} from '@app/constants/constant';
 import BannerComponent from '@app/navigators/BannerComponent';
-import { getAuthHeaders } from '@app/constants/apiUtils';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -62,21 +62,27 @@ interface NewsResponse {
 }
 
 // SVG Icon Components
-const SearchIcon = ({ size = 20, color = "#666" }) => (
+const SearchIcon = ({size = 20, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    <Path
+      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      fill={color}
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 20, color = "#666" }) => (
+const CloseIcon = ({size = 20, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    <Path
+      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      fill={color}
+    />
   </Svg>
 );
 
 const NewsScreen = () => {
-  const { user, token } = useAuth();
-  const { t } = useLanguage(); // Add this line
+  const {user, token} = useAuth();
+  const {t} = useLanguage(); // Add this line
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [filteredNews, setFilteredNews] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,12 +99,15 @@ const NewsScreen = () => {
       setFilteredNews(newsData);
     } else {
       const query = searchQuery.toLowerCase().trim();
-      const filtered = newsData.filter(news => 
-        news.title.toLowerCase().includes(query) ||
-        news.content.toLowerCase().includes(query) ||
-        news.category.toLowerCase().includes(query) ||
-        `${news.author.firstName} ${news.author.lastName}`.toLowerCase().includes(query) ||
-        news.tags.some(tag => tag.toLowerCase().includes(query))
+      const filtered = newsData.filter(
+        news =>
+          news.title.toLowerCase().includes(query) ||
+          news.content.toLowerCase().includes(query) ||
+          news.category.toLowerCase().includes(query) ||
+          `${news.author.firstName} ${news.author.lastName}`
+            .toLowerCase()
+            .includes(query) ||
+          news.tags.some(tag => tag.toLowerCase().includes(query)),
       );
       setFilteredNews(filtered);
     }
@@ -112,24 +121,35 @@ const NewsScreen = () => {
         setLoading(true);
       }
       const headers = await getAuthHeaders();
+      const communityId = await getCommunityId();
 
-      const response = await fetch(`${BASE_URL}/api/news/`, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/news/community/${communityId}`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
       const result: NewsResponse = await response.json();
 
       console.log('result', result);
-      
+
       if (result.success) {
         setNewsData(result.data);
         setFilteredNews(result.data);
       } else {
-        Alert.alert(t('Error') || 'Error', t('Failed to fetch news') || 'Failed to fetch news');
+        Alert.alert(
+          t('Error') || 'Error',
+          t('Failed to fetch news') || 'Failed to fetch news',
+        );
       }
     } catch (error) {
       console.error('Error fetching news:', error);
-      Alert.alert(t('Error') || 'Error', t('Network error. Please try again.') || 'Network error. Please try again.');
+      Alert.alert(
+        t('Error') || 'Error',
+        t('Network error. Please try again.') ||
+          'Network error. Please try again.',
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -173,13 +193,15 @@ const NewsScreen = () => {
     }
   };
 
-  const renderNewsItem = ({ item }: { item: NewsItem }) => (
+  const renderNewsItem = ({item}: {item: NewsItem}) => (
     <TouchableOpacity style={styles.newsCard} activeOpacity={0.7}>
       {/* News Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ 
-            uri: item.imageUrl || 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg'
+          source={{
+            uri:
+              item.imageUrl ||
+              'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
           }}
           style={styles.newsImage}
         />
@@ -193,7 +215,7 @@ const NewsScreen = () => {
         <Text style={styles.newsTitle} numberOfLines={2}>
           {item.title}
         </Text>
-        
+
         <Text style={styles.newsContent} numberOfLines={3}>
           {item.content}
         </Text>
@@ -207,7 +229,9 @@ const NewsScreen = () => {
               </View>
             ))}
             {item.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{item.tags.length - 3} {t('more') || 'more'}</Text>
+              <Text style={styles.moreTagsText}>
+                +{item.tags.length - 3} {t('more') || 'more'}
+              </Text>
             )}
           </View>
         )}
@@ -217,14 +241,18 @@ const NewsScreen = () => {
           <View style={styles.authorContainer}>
             <View style={styles.authorAvatar}>
               <Text style={styles.avatarText}>
-                {`${item.author.firstName.charAt(0)}${item.author.lastName.charAt(0)}`}
+                {`${item.author.firstName.charAt(
+                  0,
+                )}${item.author.lastName.charAt(0)}`}
               </Text>
             </View>
             <View style={styles.authorInfo}>
               <Text style={styles.authorName}>
                 {`${item.author.firstName} ${item.author.lastName}`}
               </Text>
-              <Text style={styles.publishDate}>{getTimeAgo(item.createdAt)}</Text>
+              <Text style={styles.publishDate}>
+                {getTimeAgo(item.createdAt)}
+              </Text>
             </View>
           </View>
         </View>
@@ -235,14 +263,22 @@ const NewsScreen = () => {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {searchQuery.trim() !== '' ? (t('No news matches your search') || 'No news matches your search') : (t('No news available') || 'No news available')}
+        {searchQuery.trim() !== ''
+          ? t('No news matches your search') || 'No news matches your search'
+          : t('No news available') || 'No news available'}
       </Text>
       <Text style={styles.emptySubText}>
-        {searchQuery.trim() !== '' ? (t('Try different keywords') || 'Try different keywords') : (t('Pull down to refresh') || 'Pull down to refresh')}
+        {searchQuery.trim() !== ''
+          ? t('Try different keywords') || 'Try different keywords'
+          : t('Pull down to refresh') || 'Pull down to refresh'}
       </Text>
       {searchQuery.trim() !== '' && (
-        <TouchableOpacity style={styles.clearSearchButton} onPress={() => setSearchQuery('')}>
-          <Text style={styles.clearSearchText}>{t('Clear Search') || 'Clear Search'}</Text>
+        <TouchableOpacity
+          style={styles.clearSearchButton}
+          onPress={() => setSearchQuery('')}>
+          <Text style={styles.clearSearchText}>
+            {t('Clear Search') || 'Clear Search'}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -250,8 +286,13 @@ const NewsScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{t('Community News') || 'Community News'}</Text>
-      <Text style={styles.headerSubtitle}>{t('Stay updated with latest happenings') || 'Stay updated with latest happenings'}</Text>
+      <Text style={styles.headerTitle}>
+        {t('Community News') || 'Community News'}
+      </Text>
+      <Text style={styles.headerSubtitle}>
+        {t('Stay updated with latest happenings') ||
+          'Stay updated with latest happenings'}
+      </Text>
     </View>
   );
 
@@ -261,24 +302,34 @@ const NewsScreen = () => {
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder={t('Search news by title, content, author, category...') || 'Search news by title, content, author, category...'}
+          placeholder={
+            t('Search news by title, content, author, category...') ||
+            'Search news by title, content, author, category...'
+          }
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={AppColors.gray}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            style={styles.clearButton}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>
         )}
       </View>
-      
+
       {/* Results Count */}
       {searchQuery.trim() !== '' && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsText}>
-            {filteredNews.length} {filteredNews.length !== 1 ? (t('articles') || 'articles') : (t('article') || 'article')} {t('found') || 'found'}
-            {filteredNews.length !== newsData.length && ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
+            {filteredNews.length}{' '}
+            {filteredNews.length !== 1
+              ? t('articles') || 'articles'
+              : t('article') || 'article'}{' '}
+            {t('found') || 'found'}
+            {filteredNews.length !== newsData.length &&
+              ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
           </Text>
         </View>
       )}
@@ -291,7 +342,9 @@ const NewsScreen = () => {
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppColors.teal} />
-          <Text style={styles.loadingText}>{t('Loading news...') || 'Loading news...'}</Text>
+          <Text style={styles.loadingText}>
+            {t('Loading news...') || 'Loading news...'}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -302,7 +355,7 @@ const NewsScreen = () => {
       <FlatList
         data={filteredNews}
         renderItem={renderNewsItem}
-        keyExtractor={(item) => item._id}
+        keyExtractor={item => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -353,7 +406,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: moderateScale(5),
   },
-  
+
   // Search Bar Styles
   searchContainer: {
     paddingHorizontal: moderateScale(15),
@@ -406,7 +459,7 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     fontWeight: '600',
   },
-  
+
   listContainer: {
     paddingHorizontal: moderateScale(15),
     paddingBottom: moderateScale(20),
