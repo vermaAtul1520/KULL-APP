@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -13,16 +13,16 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Image } from 'react-native';
-import { useAuth } from '@app/navigators';
+import {useNavigation} from '@react-navigation/native';
+import {Image} from 'react-native';
+import {useAuth} from '@app/navigators';
 import PasswordHideIcon from '@app/assets/images/hideeye.svg';
 import PasswordShowIcon from '@app/assets/images/showeye.svg';
-import { BASE_URL } from '@app/constants/constant';
+import {BASE_URL} from '@app/constants/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Scaling functions
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 const moderateScale = (size: number) => {
   const scale = width / 380;
   return Math.round(size * scale);
@@ -67,17 +67,19 @@ interface LoginError {
   error?: string;
 }
 
-
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { login } = useAuth();
-  
+  const {login} = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loginAPI = async (emailOrPhone: string, password: string): Promise<LoginResponse> => {
+  const loginAPI = async (
+    emailOrPhone: string,
+    password: string,
+  ): Promise<LoginResponse> => {
     const response = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -88,6 +90,7 @@ const LoginScreen: React.FC = () => {
         password,
       }),
     });
+    console.log('Login API Response:', response);
 
     const data = await response.json();
 
@@ -98,10 +101,9 @@ const LoginScreen: React.FC = () => {
     return data;
   };
 
-
   const handleLogin = async () => {
     // Validation
-    if (!email|| !password) {
+    if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -109,7 +111,7 @@ const LoginScreen: React.FC = () => {
     // Email validation (basic)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[+]?[\d\s\-()]+$/;
-    
+
     if (!emailRegex.test(email) && !phoneRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email or phone number');
       return;
@@ -119,22 +121,21 @@ const LoginScreen: React.FC = () => {
 
     try {
       const response = await loginAPI(email, password);
-      
+
       // Store user data and token (you might want to use AsyncStorage or secure storage)
       console.log('Login successful:', response);
-      
+
       // You can store the token and user data here
       await AsyncStorage.setItem('userToken', response.token);
       await AsyncStorage.setItem('userData', JSON.stringify(response.user));
 
       login(response.user, response.token); // Update auth context
       Alert.alert('Success', 'Login successful!');
-      
     } catch (error: any) {
       console.error('Login error:', error);
       Alert.alert(
-        'Login Failed', 
-        error.message || 'An error occurred during login. Please try again.'
+        'Login Failed',
+        error.message || 'An error occurred during login. Please try again.',
       );
     } finally {
       setIsLoading(false);
@@ -145,18 +146,16 @@ const LoginScreen: React.FC = () => {
     return email.trim().length > 0 && password.trim().length > 0;
   };
 
-
   return (
     <>
       <StatusBar backgroundColor={AppColors.cream} barStyle="dark-content" />
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardDismissMode="on-drag"
-          >
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardDismissMode="on-drag">
           {/* Logo Section */}
           <View style={styles.logoContainer}>
             <Image
@@ -204,41 +203,36 @@ const LoginScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.eyeButton}
                 onPress={() => setShowPassword(!showPassword)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
+                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
                 {showPassword ? (
-                  <PasswordHideIcon 
-                    width={moderateScale(20)} 
-                    height={moderateScale(20)} 
+                  <PasswordHideIcon
+                    width={moderateScale(20)}
+                    height={moderateScale(20)}
                     fill={AppColors.white}
                   />
                 ) : (
-                  <PasswordShowIcon 
-                    width={moderateScale(20)} 
-                    height={moderateScale(20)} 
+                  <PasswordShowIcon
+                    width={moderateScale(20)}
+                    height={moderateScale(20)}
                     fill={AppColors.white}
                   />
                 )}
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
-              style={styles.loginButton} 
+            <TouchableOpacity
+              style={styles.loginButton}
               onPress={handleLogin}
               activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              {isLoading ? 
-              <ActivityIndicator />
-              :
-              <Text style={styles.loginButtonText}>LOG IN</Text>
-              }
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator />
+              ) : (
+                <Text style={styles.loginButtonText}>LOG IN</Text>
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.forgotPassword}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
               <Text style={styles.forgotPasswordText}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
@@ -247,12 +241,11 @@ const LoginScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
         </ScrollView>
-        </View>
+      </View>
     </>
   );
 };
@@ -265,7 +258,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: moderateScale(30),
-    paddingTop: Platform.OS === 'android' ? moderateScale(40) : moderateScale(60),
+    paddingTop:
+      Platform.OS === 'android' ? moderateScale(40) : moderateScale(60),
     paddingBottom: moderateScale(30),
   },
   logoContainer: {
@@ -312,7 +306,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.lightGray,
     borderRadius: moderateScale(10),
     paddingHorizontal: moderateScale(15),
-    paddingVertical: Platform.OS === 'android' ? moderateScale(12) : moderateScale(15),
+    paddingVertical:
+      Platform.OS === 'android' ? moderateScale(12) : moderateScale(15),
     fontSize: moderateScale(16),
     color: AppColors.black,
     height: Platform.OS === 'android' ? moderateScale(50) : moderateScale(45),

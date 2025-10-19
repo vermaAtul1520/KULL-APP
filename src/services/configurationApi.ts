@@ -180,7 +180,7 @@ export class ConfigurationApiService {
 
       // Validate response structure
       if (!data.success) {
-        throw new Error(data.message || 'API request failed');
+        throw new Error(data?.message || 'API request failed');
       }
 
       if (!('data' in data) || !data.data) {
@@ -195,7 +195,7 @@ export class ConfigurationApiService {
 
       return data as ConfigurationAPIResponse;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('ConfigurationApiService.fetchCommunityConfiguration error:', error);
       
       // Re-throw with additional context
@@ -204,8 +204,8 @@ export class ConfigurationApiService {
       }
       
       // Network or other errors
-      const apiError = new Error(error.message || 'Failed to fetch configuration') as ConfigurationApiError;
-      if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+      const apiError = new Error(error?.message || 'Failed to fetch configuration') as ConfigurationApiError;
+      if (error?.name === 'TypeError' && error?.message.includes('Network request failed')) {
         apiError.message = 'Network error - please check your connection';
       }
       throw apiError;

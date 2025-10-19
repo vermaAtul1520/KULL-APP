@@ -128,7 +128,13 @@ export default function DukanScreen() {
   const fetchShops = async () => {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/api/dukaans/`, {
+      const communityId = await getCommunityId();
+      
+      // Build query with community filter
+      const filter = JSON.stringify({ community: communityId });
+      const url = `${BASE_URL}/api/dukaans?filter=${encodeURIComponent(filter)}`;
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers,
       });

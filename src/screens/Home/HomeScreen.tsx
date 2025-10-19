@@ -659,12 +659,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5dc',
   },
   bannerSlide: {
-    height: 100,
+    height: 180,
     padding: 8,
     borderRadius: 20
   },
   bannerImage: {
-    height: 240,
+    height: 280,
     justifyContent: 'center',
     alignItems: 'center',
   },

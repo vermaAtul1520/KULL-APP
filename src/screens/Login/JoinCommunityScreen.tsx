@@ -16,6 +16,8 @@ import { moderateScale } from '@app/constants/scaleUtils';
 import { BASE_URL } from '@app/constants/constant';
 import { getCommunityId } from '@app/constants/apiUtils';
 import ImagePickerComponent from '@app/components/ImagePicker';
+import PasswordHideIcon from '@app/assets/images/hideeye.svg';
+import PasswordShowIcon from '@app/assets/images/showeye.svg';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -61,6 +63,10 @@ interface JoinFormData {
   profileImage: string;
   password: string;
   confirmPassword: string;
+  gender: string;
+  religion: string;
+  motherTongue: string;
+  interests: string;
 }
 
 const JoinCommunityScreen: React.FC = () => {
@@ -72,6 +78,8 @@ const JoinCommunityScreen: React.FC = () => {
   const [gotraOptions, setGotraOptions] = useState<GotraOption[]>([]);
   const [loadingGotra, setLoadingGotra] = useState(false);
   const [referralCodeVerified, setReferralCodeVerified] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState<JoinFormData>({
     name: '',
@@ -90,6 +98,10 @@ const JoinCommunityScreen: React.FC = () => {
     profileImage: '',
     password: '',
     confirmPassword: '',
+    gender: '',
+    religion: '',
+    motherTongue: '',
+    interests: '',
   });
 
   const updateFormData = (field: keyof JoinFormData, value: string) => {
@@ -238,11 +250,11 @@ const JoinCommunityScreen: React.FC = () => {
         email: formData.email,
         phone: `+91${formData.phoneNumber}`,
         password: formData.password,
-        gender: 'not specified',
+        gender: formData.gender || 'not specified',
         occupation: formData.profession,
-        religion: 'Hindu',
-        motherTongue: 'Hindi',
-        interests: ['community participation'],
+        religion: formData.religion || 'Hindu',
+        motherTongue: formData.motherTongue || 'Hindi',
+        interests: formData.interests ? formData.interests.split(',').map(i => i.trim()) : ['community participation'],
         gotra: formData.gotra,
         subGotra: formData.subGotra,
         fatherName: formData.fatherName,
@@ -512,14 +524,27 @@ const JoinCommunityScreen: React.FC = () => {
       {/* Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Password *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.password}
-          onChangeText={(value) => updateFormData('password', value)}
-          placeholder="Create a strong password"
-          placeholderTextColor={AppColors.gray}
-          secureTextEntry={true}
-        />
+        <View style={{ position: 'relative' }}>
+          <TextInput
+            style={styles.input}
+            value={formData.password}
+            onChangeText={(value) => updateFormData('password', value)}
+            placeholder="Create a strong password"
+            placeholderTextColor={AppColors.gray}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            {showPassword ? (
+              <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
+            ) : (
+              <PasswordShowIcon width={20} height={20} fill={AppColors.gray} />
+            )}
+          </TouchableOpacity>
+        </View>
         <Text style={styles.helpText}>
           Password must be greater than 3 characters
         </Text>
@@ -528,14 +553,27 @@ const JoinCommunityScreen: React.FC = () => {
       {/* Confirm Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Confirm Password *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.confirmPassword}
-          onChangeText={(value) => updateFormData('confirmPassword', value)}
-          placeholder="Confirm your password"
-          placeholderTextColor={AppColors.gray}
-          secureTextEntry={true}
-        />
+        <View style={{ position: 'relative' }}>
+          <TextInput
+            style={styles.input}
+            value={formData.confirmPassword}
+            onChangeText={(value) => updateFormData('confirmPassword', value)}
+            placeholder="Confirm your password"
+            placeholderTextColor={AppColors.gray}
+            secureTextEntry={!showConfirmPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            {showConfirmPassword ? (
+              <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
+            ) : (
+              <PasswordShowIcon width={20} height={20} fill={AppColors.gray} />
+            )}
+          </TouchableOpacity>
+        </View>
         {formData.confirmPassword && formData.password !== formData.confirmPassword && (
           <Text style={styles.errorText}>Passwords do not match</Text>
         )}
@@ -547,6 +585,88 @@ const JoinCommunityScreen: React.FC = () => {
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Additional Information</Text>
       
+      {/* Gender */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Gender</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.gender}
+            onValueChange={(value) => updateFormData('gender', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Gender" value="" />
+            <Picker.Item label="Male" value="male" />
+            <Picker.Item label="Female" value="female" />
+            <Picker.Item label="Other" value="other" />
+            <Picker.Item label="Prefer not to say" value="not specified" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Religion */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Religion</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.religion}
+            onValueChange={(value) => updateFormData('religion', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Religion" value="" />
+            <Picker.Item label="Hindu" value="Hindu" />
+            <Picker.Item label="Muslim" value="Muslim" />
+            <Picker.Item label="Christian" value="Christian" />
+            <Picker.Item label="Sikh" value="Sikh" />
+            <Picker.Item label="Buddhist" value="Buddhist" />
+            <Picker.Item label="Jain" value="Jain" />
+            <Picker.Item label="Other" value="Other" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Mother Tongue */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Mother Tongue</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.motherTongue}
+            onValueChange={(value) => updateFormData('motherTongue', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Language" value="" />
+            <Picker.Item label="Hindi" value="Hindi" />
+            <Picker.Item label="English" value="English" />
+            <Picker.Item label="Punjabi" value="Punjabi" />
+            <Picker.Item label="Bengali" value="Bengali" />
+            <Picker.Item label="Marathi" value="Marathi" />
+            <Picker.Item label="Telugu" value="Telugu" />
+            <Picker.Item label="Tamil" value="Tamil" />
+            <Picker.Item label="Gujarati" value="Gujarati" />
+            <Picker.Item label="Kannada" value="Kannada" />
+            <Picker.Item label="Malayalam" value="Malayalam" />
+            <Picker.Item label="Oriya" value="Oriya" />
+            <Picker.Item label="Urdu" value="Urdu" />
+            <Picker.Item label="Other" value="Other" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Interests */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Interests (comma separated)</Text>
+        <TextInput
+          style={[styles.input, { height: moderateScale(80), textAlignVertical: 'top' }]}
+          value={formData.interests}
+          onChangeText={(value) => updateFormData('interests', value)}
+          placeholder="e.g., community service, music, sports"
+          placeholderTextColor={AppColors.gray}
+          multiline
+        />
+        <Text style={styles.helpText}>
+          Enter your interests separated by commas
+        </Text>
+      </View>
+
       {/* Blood Group */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Blood Group (Optional for Blood Donation)</Text>
@@ -977,6 +1097,15 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: AppColors.teal,
     fontWeight: '500',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: moderateScale(15),
+    top: moderateScale(15),
+    width: moderateScale(24),
+    height: moderateScale(24),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

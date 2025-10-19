@@ -1,10 +1,18 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
-import {Image, Pressable, useColorScheme, View, TextInput, ScrollView} from 'react-native';
+import React, {useState, useEffect, createContext, useContext} from 'react';
+import {
+  Image,
+  Pressable,
+  useColorScheme,
+  View,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {
   createDrawerNavigator,
   DrawerNavigationProp,
+  DrawerNavigationOptions,
 } from '@react-navigation/drawer';
 import {
   createNativeStackNavigator,
@@ -24,9 +32,9 @@ import MyPeopleScreen from '@app/screens/MyPeopleScreen';
 import DonationScreen from '@app/screens/DonationScreen';
 import DrawerContent from '@app/screens/DrawerContent';
 import Logo from '@app/assets/images/hamburger.svg';
-import { Text, Alert } from 'react-native';
-import { StyleSheet } from 'react-native';
-import { useLanguage } from '@app/hooks/LanguageContext';
+import {Text, Alert} from 'react-native';
+import {StyleSheet} from 'react-native';
+import {useLanguage} from '@app/hooks/LanguageContext';
 
 // Import auth screens
 import WelcomeScreen from '@app/screens/Login/WelcomeScreen';
@@ -42,8 +50,14 @@ import DonationIcon from '@app/assets/images/donation.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import drawer screens
-import { OccasionTypesScreen, CategoriesScreen, FiltersScreen, GenderSelectionScreen, ContentScreen } from '@app/screens/Occasions';
-import { OccasionProvider } from '@app/contexts/OccasionContext';
+import {
+  OccasionTypesScreen,
+  CategoriesScreen,
+  FiltersScreen,
+  GenderSelectionScreen,
+  ContentScreen,
+} from '@app/screens/Occasions';
+import {OccasionProvider} from '@app/contexts/OccasionContext';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
 import BhajanScreen from '@app/screens/drawer/BhajanScreen';
 import LawsScreen from '@app/screens/drawer/LawsScreen';
@@ -60,8 +74,8 @@ import AppealScreen from '@app/screens/drawer/AppealScreen';
 import VoteScreen from '@app/screens/drawer/VoteScreen';
 import FamilyTreeScreen from '@app/screens/drawer/FamilyTreeScreen';
 import AddFamilyMemberScreen from '@app/screens/drawer/AddFamilyMemberScreen';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
-import { BASE_URL } from '@app/constants/constant';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+import {BASE_URL} from '@app/constants/constant';
 import SettingsScreen from '@app/screens/drawer/SettingScreen';
 import ImagePickerComponent from '@app/components/ImagePicker';
 
@@ -97,7 +111,10 @@ interface User {
   profileImage?: string;
   responsibilities?: string[];
   permissions?: string[];
-  community?: string;
+  community?: {
+    _id: string;
+    name: string;
+  };
 }
 
 // Types
@@ -112,16 +129,33 @@ type AuthStackParamList = {
 type RootDrawerParamList = {
   HomeTab: undefined;
   Occasions: undefined;
-  OccasionCategories: { occasionType: string };
-  OccasionFilters: { occasionType: string; categoryId: string | null; categoryName: string | null };
-  OccasionGender: { occasionType: string; categoryId: string | null; categoryName: string | null; gotra?: string; subGotra?: string };
-  OccasionContent: { occasionType: string; categoryId: string | null; categoryName: string | null; gotra?: string; subGotra?: string; gender?: string };
+  OccasionCategories: {occasionType: string};
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+  };
+  OccasionGender: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    gotra?: string;
+    subGotra?: string;
+  };
+  OccasionContent: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    gotra?: string;
+    subGotra?: string;
+    gender?: string;
+  };
   Kartavya: undefined;
   Bhajan: undefined;
   Games: undefined;
   'Laws and Decisions': undefined;
-  'CitySearch': undefined;
-  'OrganizationOfficer': undefined;
+  CitySearch: undefined;
+  OrganizationOfficer: undefined;
   Education: undefined;
   Employment: undefined;
   Sports: undefined;
@@ -157,8 +191,10 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   updateUser: (userData: Partial<User>) => Promise<void>;
-  bannerData: {id: number, image: string, textColor: string}[];
-  setBannerData: (banners: {id: number, image: string, textColor: string}[]) => void;
+  bannerData: {id: number; image: string; textColor: string}[];
+  setBannerData: (
+    banners: {id: number; image: string; textColor: string}[],
+  ) => void;
   bannerLoading: boolean;
 }
 
@@ -176,25 +212,29 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 // Auth Provider
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+const AuthProvider = ({children}: {children: React.ReactNode}) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [bannerData, setBannerDataState] = useState<{id: number, image: string, textColor: string}[]>([]);
+  const [bannerData, setBannerDataState] = useState<
+    {id: number; image: string; textColor: string}[]
+  >([]);
   const [bannerLoading, setBannerLoading] = useState(true);
 
   const defaultBannerData = [
     {
       id: 1,
       textColor: '#000',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+      image:
+        'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
     },
     {
       id: 2,
       textColor: '#FFF',
-      image: 'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    }
+      image:
+        'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+    },
   ];
 
   useEffect(() => {
@@ -206,11 +246,14 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setBannerLoading(true);
       const COMMUNITY_ID = await getCommunityId();
       const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`, {
-        method: 'GET',
-        headers,
-      });
+
+      const response = await fetch(
+        `${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
 
       if (!response.ok) {
         setBannerDataState(defaultBannerData);
@@ -220,12 +263,19 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const responseText = await response.text();
       const data = JSON.parse(responseText);
 
-      if (data.success && data.data && data.data.banner && Array.isArray(data.data.banner)) {
-        const banners = data.data.banner.map((imageUrl, index) => ({
-          id: index + 1,
-          image: imageUrl,
-          textColor: index % 2 === 0 ? '#000' : '#FFF'
-        }));
+      if (
+        data.success &&
+        data.data &&
+        data.data.banner &&
+        Array.isArray(data.data.banner)
+      ) {
+        const banners = data.data.banner.map(
+          (imageUrl: string, index: number) => ({
+            id: index + 1,
+            image: imageUrl,
+            textColor: index % 2 === 0 ? '#000' : '#FFF',
+          }),
+        );
         setBannerDataState(banners.length > 0 ? banners : defaultBannerData);
       } else {
         setBannerDataState(defaultBannerData);
@@ -244,7 +294,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isLoggedIn]);
 
-  const setBannerData = (banners: {id: number, image: string, textColor: string}[]) => {
+  const setBannerData = (
+    banners: {id: number; image: string; textColor: string}[],
+  ) => {
     setBannerDataState(banners);
   };
 
@@ -278,7 +330,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const headers = await getAuthHeaders();
-    
+
     const response = await fetch(`${BASE_URL}/api/users/profile`, {
       method: 'PUT',
       headers: {
@@ -288,7 +340,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       body: JSON.stringify(updatedData),
     });
 
-    
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update profile: ${response.status}`);
@@ -297,7 +348,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const apiResponse = await response.json();
 
     if (apiResponse.success && apiResponse.user) {
-      const updatedUser = { ...user, ...apiResponse.user };
+      const updatedUser = {...user, ...apiResponse.user};
       setUser(updatedUser);
       await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
     } else {
@@ -318,18 +369,19 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isLoggedIn, 
-      user, 
-      token, 
-      login, 
-      logout, 
-      isLoading,
-      updateUser,
-      bannerData,
-      setBannerData,
-      bannerLoading,
-    }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        token,
+        login,
+        logout,
+        isLoading,
+        updateUser,
+        bannerData,
+        setBannerData,
+        bannerLoading,
+      }}>
       {children}
     </AuthContext.Provider>
   );
@@ -339,30 +391,37 @@ export const useAuth = () => useContext(AuthContext);
 
 // Profile Avatar Component
 const ProfileAvatar = (): React.JSX.Element => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
-  
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {user} = useAuth();
+
   const getInitials = () => {
     if (user) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(
+        0,
+      )}`.toUpperCase();
     }
     return 'U';
   };
 
   return (
-    <Pressable 
+    <Pressable
       onPress={() => navigation.navigate('Profile')}
-      style={styles.profileAvatarContainer}
-    >
+      style={styles.profileAvatarContainer}>
       <View style={styles.profileAvatar}>
-        <Image source={{ uri: user.profileImage }} style={styles.navbarImage} />
+        {user?.profileImage ? (
+          <Image source={{uri: user.profileImage}} style={styles.navbarImage} />
+        ) : (
+          <Text style={styles.profileAvatarText}>{getInitials()}</Text>
+        )}
       </View>
     </Pressable>
   );
 };
 
 const DrawerButton = (): React.JSX.Element => {
-  const {toggleDrawer} = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+  const {toggleDrawer} =
+    useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   return (
     <Pressable onPress={toggleDrawer} style={styles.drawerButtonContainer}>
       <Logo width={20} height={20} color={AppColors.black} />
@@ -372,11 +431,13 @@ const DrawerButton = (): React.JSX.Element => {
 
 const CustomHeaderTitle = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
-  const { user } = useAuth();
-  const { t } = useLanguage();
-  
-  const currentRouteName = navigation.getState()?.routes[navigation.getState()?.index || 0]?.name;
-  
+  const {user} = useAuth();
+  const {t} = useLanguage();
+
+  const currentRouteName = navigation.getState()?.routes[
+    navigation.getState()?.index || 0
+  ]?.name as keyof RootDrawerParamList | undefined;
+
   const navigateToHome = () => {
     navigation.navigate('HomeTab');
   };
@@ -385,36 +446,42 @@ const CustomHeaderTitle = () => {
     if (user?.community?.name) {
       return user.community.name.toUpperCase();
     }
-    return 'KULL-APP'; 
+    return 'KULL-APP';
   };
 
   const getDisplayTitle = () => {
     if (currentRouteName === 'HomeTab') {
       return getCommunityName();
     }
-    
-    const screenTitles = {
-      'Occasions': t('Occasions') || 'OCCASIONS',
-      'Kartavya': t('Kartavya') || 'KARTAVYA',
-      'Bhajan': t('Bhajan') || 'BHAJAN',
-      'Games': t('Games') || 'GAMES',
+
+    const screenTitles: Record<string, string> = {
+      Occasions: t('Occasions') || 'OCCASIONS',
+      OccasionCategories: t('Categories') || 'CATEGORIES',
+      OccasionFilters: t('Filters') || 'FILTERS',
+      OccasionGender: t('Gender Selection') || 'GENDER SELECTION',
+      OccasionContent: t('Content') || 'CONTENT',
+      Kartavya: t('Kartavya') || 'KARTAVYA',
+      Bhajan: t('Bhajan') || 'BHAJAN',
+      Games: t('Games') || 'GAMES',
       'Laws and Decisions': t('Laws and Decisions') || 'LAWS & DECISIONS',
-      'CitySearch': t('CitySearch') || 'CITY SEARCH',
-      'OrganizationOfficer': t('OrganizationOfficer') || 'ORGANIZATION OFFICER',
-      'Education': t('Education') || 'EDUCATION',
-      'Employment': t('Employment') || 'EMPLOYMENT',
-      'Sports': t('Sports') || 'SPORTS',
+      CitySearch: t('CitySearch') || 'CITY SEARCH',
+      OrganizationOfficer: t('OrganizationOfficer') || 'ORGANIZATION OFFICER',
+      Education: t('Education') || 'EDUCATION',
+      Employment: t('Employment') || 'EMPLOYMENT',
+      Sports: t('Sports') || 'SPORTS',
       'Social Upliftment': t('Social Upliftment') || 'SOCIAL UPLIFTMENT',
-      'Dukan': t('Dukan') || 'DUKAN',
-      'Meetings': t('Meetings') || 'MEETINGS',
-      'Appeal': t('Appeal') || 'APPEAL',
-      'Vote': t('Vote') || 'VOTE',
-      'Settings': t('Settings') || 'SETTINGS',
-      'FamilyTree': t('Family Tree') || 'FAMILY TREE',
-      'AddFamilyMember': t('Add Family Member') || 'ADD FAMILY MEMBER',
+      Dukan: t('Dukan') || 'DUKAN',
+      Meetings: t('Meetings') || 'MEETINGS',
+      Appeal: t('Appeal') || 'APPEAL',
+      Vote: t('Vote') || 'VOTE',
+      Settings: t('Settings') || 'SETTINGS',
+      FamilyTree: t('Family Tree') || 'FAMILY TREE',
+      AddFamilyMember: t('Add Family Member') || 'ADD FAMILY MEMBER',
     };
 
-    return screenTitles[currentRouteName] || getCommunityName();
+    return (
+      (currentRouteName && screenTitles[currentRouteName]) || getCommunityName()
+    );
   };
 
   return (
@@ -424,7 +491,8 @@ const CustomHeaderTitle = () => {
   );
 };
 
-const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
+// Common screen options that work for both NativeStack and Drawer navigators
+const commonScreenOptions = {
   headerLeft: () => <DrawerButton />,
   headerTitle: () => <CustomHeaderTitle />,
   headerRight: () => <ProfileAvatar />,
@@ -433,24 +501,30 @@ const drawerScreenOptions = (): Partial<NativeStackNavigationOptions> => ({
   },
   headerTitleStyle: {
     color: AppColors.black,
-    fontWeight: 'bold',
+    fontWeight: '700' as '700',
   },
   headerShadowVisible: false,
-  headerTitleAlign: 'center',
+  headerTitleAlign: 'center' as const,
   headerLeftContainerStyle: {
     paddingLeft: 10,
   },
   headerRightContainerStyle: {
     paddingRight: 10,
   },
-});
+};
+
+const stackScreenOptions = (): NativeStackNavigationOptions =>
+  commonScreenOptions as NativeStackNavigationOptions;
+
+const drawerScreenOptions = (): DrawerNavigationOptions =>
+  commonScreenOptions as DrawerNavigationOptions;
 
 // Profile Screen Component
 const ProfileScreen = (): React.JSX.Element => {
   const navigation = useNavigation();
-  const { user, logout, updateUser } = useAuth();
-  console.log("Profile Screen - User data:", user);
-  const { t } = useLanguage();
+  const {user, logout, updateUser} = useAuth();
+  console.log('Profile Screen - User data:', user);
+  const {t} = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
 
@@ -470,16 +544,22 @@ const ProfileScreen = (): React.JSX.Element => {
     try {
       await updateUser(editedUser);
       setIsEditing(false);
-      Alert.alert(t('Success') || 'Success', t('Profile updated successfully!') || 'Profile updated successfully!');
+      Alert.alert(
+        t('Success') || 'Success',
+        t('Profile updated successfully!') || 'Profile updated successfully!',
+      );
     } catch (error) {
-      Alert.alert(t('Error') || 'Error', error.message || 'Failed to update profile');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update profile';
+      Alert.alert(t('Error') || 'Error', errorMessage);
     }
   };
 
   const handleSignOut = () => {
     Alert.alert(
       t('Sign Out') || 'Sign Out',
-      t('Are you sure you want to sign out?') || 'Are you sure you want to sign out?',
+      t('Are you sure you want to sign out?') ||
+        'Are you sure you want to sign out?',
       [
         {
           text: t('Cancel') || 'Cancel',
@@ -490,7 +570,7 @@ const ProfileScreen = (): React.JSX.Element => {
           style: 'destructive',
           onPress: logout,
         },
-      ]
+      ],
     );
   };
 
@@ -519,7 +599,9 @@ const ProfileScreen = (): React.JSX.Element => {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{t('No user data available') || 'No user data available'}</Text>
+        <Text style={styles.errorText}>
+          {t('No user data available') || 'No user data available'}
+        </Text>
       </View>
     );
   }
@@ -527,61 +609,78 @@ const ProfileScreen = (): React.JSX.Element => {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        <Pressable 
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.headerButton}
-        >
+          style={styles.headerButton}>
           <Text style={styles.headerButtonText}>←</Text>
         </Pressable>
-        
+
         <Text style={styles.profileTitle}>{t('Profile') || 'Profile'}</Text>
-        
-        <Pressable 
+
+        <Pressable
           onPress={() => setIsEditing(!isEditing)}
-          style={styles.headerButton}
-        >
+          style={styles.headerButton}>
           <Text style={styles.headerButtonText}>
-            {isEditing ? (t('Cancel') || 'Cancel') : (t('Edit') || 'Edit')}
+            {isEditing ? t('Cancel') || 'Cancel' : t('Edit') || 'Edit'}
           </Text>
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}>
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             {isEditing ? (
               <ImagePickerComponent
-                onImageSelected={(imageUrl) => setEditedUser({...editedUser, profileImage: imageUrl})}
+                onImageSelected={imageUrl =>
+                  setEditedUser({...editedUser, profileImage: imageUrl})
+                }
                 currentImage={editedUser.profileImage || user.profileImage}
                 size={80}
               />
             ) : user.profileImage ? (
-              <Image source={{ uri: user.profileImage }} style={styles.profileAvatarLarge} />
+              <Image
+                source={{uri: user.profileImage}}
+                style={styles.profileAvatarLarge}
+              />
             ) : (
               <View style={styles.profileAvatarLarge}>
                 <Text style={styles.avatarText}>
-                  {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()}
+                  {`${user.firstName.charAt(0)}${user.lastName.charAt(
+                    0,
+                  )}`.toUpperCase()}
                 </Text>
               </View>
             )}
           </View>
-          
+
           <Text style={styles.fullName}>
             {`${user.firstName} ${user.lastName}`}
           </Text>
           <Text style={styles.emailText}>{user.email}</Text>
-          
-          <View style={[styles.statusChip, { backgroundColor: getStatusColor(user.communityStatus) }]}>
-            <Text style={styles.statusText}>{user.communityStatus.toUpperCase()}</Text>
+
+          <View
+            style={[
+              styles.statusChip,
+              {backgroundColor: getStatusColor(user.communityStatus)},
+            ]}>
+            <Text style={styles.statusText}>
+              {user.communityStatus.toUpperCase()}
+            </Text>
           </View>
         </View>
 
         <View style={styles.formSection}>
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{t('Personal Information') || 'Personal Information'}</Text>
-            
+            <Text style={styles.sectionTitle}>
+              {t('Personal Information') || 'Personal Information'}
+            </Text>
+
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('First Name') || 'First Name'}</Text>
+              <Text style={styles.label}>
+                {t('First Name') || 'First Name'}
+              </Text>
               <View style={styles.readOnlyField}>
                 <Text style={styles.fieldValue}>{user.firstName}</Text>
               </View>
@@ -603,8 +702,10 @@ const ProfileScreen = (): React.JSX.Element => {
           </View>
 
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{t('Community Details') || 'Community Details'}</Text>
-            
+            <Text style={styles.sectionTitle}>
+              {t('Community Details') || 'Community Details'}
+            </Text>
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('Role') || 'Role'}</Text>
               <View style={styles.readOnlyField}>
@@ -613,29 +714,45 @@ const ProfileScreen = (): React.JSX.Element => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('Member Since') || 'Member Since'}</Text>
+              <Text style={styles.label}>
+                {t('Member Since') || 'Member Since'}
+              </Text>
               <View style={styles.readOnlyField}>
-                <Text style={styles.fieldValue}>{formatDate(user.createdAt)}</Text>
+                <Text style={styles.fieldValue}>
+                  {formatDate(user.createdAt)}
+                </Text>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('User ID') || 'User ID'}</Text>
               <View style={styles.readOnlyField}>
-                <Text style={[styles.fieldValue, styles.codeText]}>{user.code}</Text>
+                <Text style={[styles.fieldValue, styles.codeText]}>
+                  {user.code}
+                </Text>
               </View>
             </View>
           </View>
 
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{t('Interests') || 'Interests'}</Text>
-            
+            <Text style={styles.sectionTitle}>
+              {t('Interests') || 'Interests'}
+            </Text>
+
             {isEditing ? (
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={editedUser.interests?.join(', ') || ''}
-                onChangeText={(text) => setEditedUser({...editedUser, interests: text.split(',').map(item => item.trim())})}
-                placeholder={t('Enter interests separated by commas') || 'Enter interests separated by commas'}
+                onChangeText={text =>
+                  setEditedUser({
+                    ...editedUser,
+                    interests: text.split(',').map(item => item.trim()),
+                  })
+                }
+                placeholder={
+                  t('Enter interests separated by commas') ||
+                  'Enter interests separated by commas'
+                }
                 multiline
               />
             ) : (
@@ -647,7 +764,9 @@ const ProfileScreen = (): React.JSX.Element => {
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.noInterests}>{t('No interests added') || 'No interests added'}</Text>
+                  <Text style={styles.noInterests}>
+                    {t('No interests added') || 'No interests added'}
+                  </Text>
                 )}
               </View>
             )}
@@ -656,12 +775,16 @@ const ProfileScreen = (): React.JSX.Element => {
           <View style={styles.buttonSection}>
             {isEditing && (
               <Pressable style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>{t('Save Changes') || 'Save Changes'}</Text>
+                <Text style={styles.saveButtonText}>
+                  {t('Save Changes') || 'Save Changes'}
+                </Text>
               </Pressable>
             )}
-            
+
             <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-              <Text style={styles.signOutButtonText}>{t('Sign Out') || 'Sign Out'}</Text>
+              <Text style={styles.signOutButtonText}>
+                {t('Sign Out') || 'Sign Out'}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -680,10 +803,10 @@ const RenderTabBarIcon = ({
   focused: boolean;
   color: string;
   size: number;
-  route: any;
+  route: {name: keyof HomeTabParamList};
 }): React.JSX.Element => {
   const iconSize = size || 24;
-  
+
   switch (route.name) {
     case 'Home':
       return <HomeIcon width={iconSize} height={iconSize} color={color} />;
@@ -702,15 +825,14 @@ const RenderTabBarIcon = ({
 
 // Auth Stack Navigator
 const AuthStack = (): React.JSX.Element => {
-  const { Navigator, Screen } = createNativeStackNavigator<AuthStackParamList>();
-  
+  const {Navigator, Screen} = createNativeStackNavigator<AuthStackParamList>();
+
   return (
-    <Navigator 
+    <Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName="Welcome"
-    >
+      initialRouteName="Welcome">
       <Screen name="Welcome" component={WelcomeScreen} />
       <Screen name="Login" component={LoginScreen} />
       <Screen name="CommunityChoice" component={CommunityChoiceScreen} />
@@ -723,8 +845,8 @@ const AuthStack = (): React.JSX.Element => {
 // Home Tab Navigator
 const HomeTab = (): React.JSX.Element => {
   const {Navigator, Screen} = createBottomTabNavigator<HomeTabParamList>();
-  const { t } = useLanguage();
-  
+  const {t} = useLanguage();
+
   return (
     <Navigator
       screenOptions={({route}) => ({
@@ -739,39 +861,39 @@ const HomeTab = (): React.JSX.Element => {
         tabBarLabelStyle: {
           fontSize: 12,
         },
-        tabBarIcon: ({focused, color, size}) => 
+        tabBarIcon: ({focused, color, size}) =>
           RenderTabBarIcon({focused, color, size, route}),
       })}>
-      <Screen 
-        name="Home" 
+      <Screen
+        name="Home"
         component={HomeScreen}
         options={{
           tabBarLabel: t('Home') || 'Home',
         }}
       />
-      <Screen 
-        name="Post" 
+      <Screen
+        name="Post"
         component={PostScreen}
         options={{
           tabBarLabel: t('Post') || 'Post',
         }}
       />
-      <Screen 
-        name="News" 
+      <Screen
+        name="News"
         component={NewsScreen}
         options={{
           tabBarLabel: t('News') || 'News',
         }}
       />
-      <Screen 
-        name="MyPeople" 
+      <Screen
+        name="MyPeople"
         component={MyPeopleScreen}
         options={{
           tabBarLabel: t('My People') || 'My People',
         }}
       />
-      <Screen 
-        name="Donation" 
+      <Screen
+        name="Donation"
         component={DonationScreen}
         options={{
           tabBarLabel: t('Donation') || 'Donation',
@@ -784,7 +906,7 @@ const HomeTab = (): React.JSX.Element => {
 const HomeStack = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={drawerScreenOptions}>
+    <Navigator screenOptions={stackScreenOptions()}>
       <Screen name="HomeTab" component={HomeTab} />
     </Navigator>
   );
@@ -792,11 +914,11 @@ const HomeStack = (): React.JSX.Element => {
 
 const DrawerNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createDrawerNavigator<RootDrawerParamList>();
-  const { t } = useLanguage();
-  
+  const {t} = useLanguage();
+
   return (
     <Navigator
-      drawerContent={(props) => <DrawerContent {...props} />}
+      drawerContent={props => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
         ...drawerScreenOptions(),
@@ -807,10 +929,10 @@ const DrawerNavigator = (): React.JSX.Element => {
         drawerActiveTintColor: AppColors.primary,
         drawerInactiveTintColor: AppColors.white,
       }}>
-      <Screen 
-        name="HomeTab" 
-        component={HomeStack} 
-        options={{ 
+      <Screen
+        name="HomeTab"
+        component={HomeStack}
+        options={{
           headerShown: false,
           drawerLabel: t('Home') || 'Home',
         }}
@@ -826,123 +948,123 @@ const DrawerNavigator = (): React.JSX.Element => {
         name="OccasionCategories"
         component={CategoriesScreen}
         options={{
-          drawerItemStyle: { display: 'none' },
+          drawerItemStyle: {display: 'none'},
         }}
       />
       <Screen
         name="OccasionFilters"
         component={FiltersScreen}
         options={{
-          drawerItemStyle: { display: 'none' },
+          drawerItemStyle: {display: 'none'},
         }}
       />
       <Screen
         name="OccasionGender"
         component={GenderSelectionScreen}
         options={{
-          drawerItemStyle: { display: 'none' },
+          drawerItemStyle: {display: 'none'},
         }}
       />
       <Screen
         name="OccasionContent"
         component={ContentScreen}
         options={{
-          drawerItemStyle: { display: 'none' },
+          drawerItemStyle: {display: 'none'},
         }}
       />
-      <Screen 
-        name="Kartavya" 
+      <Screen
+        name="Kartavya"
         component={KartavyaScreen}
         options={{
           drawerLabel: t('Kartavya') || 'Kartavya',
         }}
       />
-      <Screen 
-        name="Bhajan" 
+      <Screen
+        name="Bhajan"
         component={BhajanScreen}
         options={{
           drawerLabel: t('Bhajan') || 'Bhajan',
         }}
       />
-      <Screen 
-        name="Games" 
+      <Screen
+        name="Games"
         component={GamesScreen}
         options={{
           drawerLabel: t('Games') || 'Games',
         }}
       />
-      <Screen 
-        name="Laws and Decisions" 
+      <Screen
+        name="Laws and Decisions"
         component={LawsScreen}
         options={{
           drawerLabel: t('Laws and Decisions') || 'Laws and Decisions',
         }}
       />
-      <Screen 
-        name="CitySearch" 
+      <Screen
+        name="CitySearch"
         component={CitySearchScreen}
         options={{
           drawerLabel: t('CitySearch') || 'City Search',
         }}
       />
-      <Screen 
-        name="OrganizationOfficer" 
+      <Screen
+        name="OrganizationOfficer"
         component={OrganizationOfficerScreen}
         options={{
           drawerLabel: t('OrganizationOfficer') || 'Organization Officer',
         }}
       />
-      <Screen 
-        name="Education" 
+      <Screen
+        name="Education"
         component={EducationScreen}
         options={{
           drawerLabel: t('Education') || 'Education',
         }}
       />
-      <Screen 
-        name="Employment" 
+      <Screen
+        name="Employment"
         component={EmploymentScreen}
         options={{
           drawerLabel: t('Employment') || 'Employment',
         }}
       />
-      <Screen 
-        name="Sports" 
+      <Screen
+        name="Sports"
         component={SportsScreen}
         options={{
           drawerLabel: t('Sports') || 'Sports',
         }}
       />
-      <Screen 
-        name="Social Upliftment" 
+      <Screen
+        name="Social Upliftment"
         component={SocialUpliftmentScreen}
         options={{
           drawerLabel: t('Social Upliftment') || 'Social Upliftment',
         }}
       />
-      <Screen 
-        name="Dukan" 
+      <Screen
+        name="Dukan"
         component={DukanScreen}
         options={{
           drawerLabel: t('Dukan') || 'Dukan',
         }}
       />
-      <Screen 
-        name="Meetings" 
+      <Screen
+        name="Meetings"
         component={MeetingsScreen}
         options={{
           drawerLabel: t('Meetings') || 'Meetings',
         }}
       />
-      <Screen 
-        name="Appeal" 
+      <Screen
+        name="Appeal"
         component={AppealScreen}
         options={{
           drawerLabel: t('Appeal') || 'Appeal',
         }}
       />
-      <Screen 
-        name="Vote" 
+      <Screen
+        name="Vote"
         component={VoteScreen}
         options={{
           drawerLabel: t('Vote') || 'Vote',
@@ -967,7 +1089,7 @@ const DrawerNavigator = (): React.JSX.Element => {
         component={AddFamilyMemberScreen}
         options={{
           drawerLabel: t('Add Family Member') || 'Add Family Member',
-          drawerItemStyle: { display: 'none' },
+          drawerItemStyle: {display: 'none'},
         }}
       />
     </Navigator>
@@ -976,13 +1098,13 @@ const DrawerNavigator = (): React.JSX.Element => {
 
 // Root Stack Navigator (includes profile screen)
 const RootStack = (): React.JSX.Element => {
-  const { Navigator, Screen } = createNativeStackNavigator<RootStackParamList>();
-  
+  const {Navigator, Screen} = createNativeStackNavigator<RootStackParamList>();
+
   return (
-    <Navigator screenOptions={{ headerShown: false }}>
+    <Navigator screenOptions={{headerShown: false}}>
       <Screen name="DrawerNavigator" component={DrawerNavigator} />
-      <Screen 
-        name="Profile" 
+      <Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
           presentation: 'modal',
@@ -994,8 +1116,8 @@ const RootStack = (): React.JSX.Element => {
 };
 
 const LoadingScreen = () => {
-  const { t } = useLanguage();
-  
+  const {t} = useLanguage();
+
   return (
     <View style={styles.loadingContainer}>
       <Text style={styles.loadingText}>{t('Loading...') || 'Loading...'}</Text>
@@ -1005,13 +1127,13 @@ const LoadingScreen = () => {
 
 // Main App Navigator
 const AppNavigator = (): React.JSX.Element => {
-  const { isLoggedIn, isLoading } = useAuth();
+  const {isLoggedIn, isLoading} = useAuth();
   const currentTheme = useColorScheme() === 'dark' ? DarkTheme : DefaultTheme;
 
   if (isLoading) {
     return <LoadingScreen />;
   }
-  
+
   return (
     <NavigationContainer theme={currentTheme}>
       {isLoggedIn ? <RootStack /> : <AuthStack />}
@@ -1302,11 +1424,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-navbarImage: {
-  width: 40,
-  height: 40,
-  borderRadius: 20, // Half of width/height for perfect circle
-  resizeMode: 'cover',
-}
-
+  navbarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    resizeMode: 'cover',
+  },
 });

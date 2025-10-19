@@ -164,7 +164,13 @@ const SportsScreen = () => {
   const fetchSportsEvents = async () => {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/api/sportsEvents/`, {
+      const communityId = await getCommunityId();
+      
+      // Build query with community filter
+      const filter = JSON.stringify({ community: communityId });
+      const url = `${BASE_URL}/api/sportsEvents?filter=${encodeURIComponent(filter)}`;
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers,
       });
