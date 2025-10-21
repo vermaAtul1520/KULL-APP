@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,12 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { useLanguage } from '@app/hooks/LanguageContext';
-import { getAuthHeaders } from '@app/constants/apiUtils';
-import { BASE_URL } from '@app/constants/constant';
+import Svg, {Path, Circle} from 'react-native-svg';
+import {useLanguage} from '@app/hooks/LanguageContext';
+import {getAuthHeaders} from '@app/constants/apiUtils';
+import {BASE_URL} from '@app/constants/constant';
+import {BackIcon} from './BhajanScreen';
+import {useNavigation} from '@react-navigation/native';
 
 // Color scheme
 const AppColors = {
@@ -30,7 +32,7 @@ const AppColors = {
 };
 
 // SVG Icon Components
-const MagnifyIcon = ({ size = 24, color = AppColors.gray }) => (
+const MagnifyIcon = ({size = 24, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
@@ -42,7 +44,7 @@ const MagnifyIcon = ({ size = 24, color = AppColors.gray }) => (
   </Svg>
 );
 
-const CloseCircleIcon = ({ size = 20, color = AppColors.gray }) => (
+const CloseCircleIcon = ({size = 20, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="10" fill={color} />
     <Path
@@ -54,7 +56,7 @@ const CloseCircleIcon = ({ size = 20, color = AppColors.gray }) => (
   </Svg>
 );
 
-const GenderMaleIcon = ({ size = 16, color = '#3b82f6' }) => (
+const GenderMaleIcon = ({size = 16, color = '#3b82f6'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="10" cy="14" r="6" stroke={color} strokeWidth="2" fill="none" />
     <Path
@@ -67,7 +69,7 @@ const GenderMaleIcon = ({ size = 16, color = '#3b82f6' }) => (
   </Svg>
 );
 
-const GenderFemaleIcon = ({ size = 16, color = '#ec4899' }) => (
+const GenderFemaleIcon = ({size = 16, color = '#ec4899'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="9" r="6" stroke={color} strokeWidth="2" fill="none" />
     <Path
@@ -80,7 +82,7 @@ const GenderFemaleIcon = ({ size = 16, color = '#ec4899' }) => (
   </Svg>
 );
 
-const BriefcaseIcon = ({ size = 14, color = AppColors.gray }) => (
+const BriefcaseIcon = ({size = 14, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M5 7H19C20.1046 7 21 7.89543 21 9V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V9C3 7.89543 3.89543 7 5 7Z"
@@ -92,7 +94,7 @@ const BriefcaseIcon = ({ size = 14, color = AppColors.gray }) => (
   </Svg>
 );
 
-const MapMarkerIcon = ({ size = 14, color = AppColors.gray }) => (
+const MapMarkerIcon = ({size = 14, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"
@@ -101,14 +103,22 @@ const MapMarkerIcon = ({ size = 14, color = AppColors.gray }) => (
   </Svg>
 );
 
-const MapMarkerRadiusIcon = ({ size = 14, color = AppColors.gray }) => (
+const MapMarkerRadiusIcon = ({size = 14, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="3" fill={color} />
-    <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth="2" fill="none" strokeDasharray="2 2" />
+    <Circle
+      cx="12"
+      cy="12"
+      r="8"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+      strokeDasharray="2 2"
+    />
   </Svg>
 );
 
-const AlertCircleIcon = ({ size = 64, color = AppColors.danger }) => (
+const AlertCircleIcon = ({size = 64, color = AppColors.danger}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
     <Path d="M12 8V12" stroke={color} strokeWidth="2" strokeLinecap="round" />
@@ -116,7 +126,7 @@ const AlertCircleIcon = ({ size = 64, color = AppColors.danger }) => (
   </Svg>
 );
 
-const MapSearchIcon = ({ size = 64, color = AppColors.primary }) => (
+const MapSearchIcon = ({size = 64, color = AppColors.primary}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M15 3L21 6V16L15 13M15 3L9 6M15 3V13M9 6L3 3V13L9 16M9 6V16M9 16L15 13"
@@ -126,11 +136,16 @@ const MapSearchIcon = ({ size = 64, color = AppColors.primary }) => (
       strokeLinejoin="round"
     />
     <Circle cx="17" cy="18" r="3" stroke={color} strokeWidth="2" />
-    <Path d="M19.5 20.5L22 23" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Path
+      d="M19.5 20.5L22 23"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
-const AccountSearchIcon = ({ size = 64, color = AppColors.gray }) => (
+const AccountSearchIcon = ({size = 64, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2" />
     <Path
@@ -140,7 +155,12 @@ const AccountSearchIcon = ({ size = 64, color = AppColors.gray }) => (
       strokeLinecap="round"
     />
     <Circle cx="17.5" cy="17.5" r="3" stroke={color} strokeWidth="2" />
-    <Path d="M19.5 19.5L22 22" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Path
+      d="M19.5 19.5L22 22"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
@@ -169,7 +189,8 @@ interface SearchResponse {
 }
 
 export default function CitySearchScreen() {
-  const { t } = useLanguage();
+  const {t} = useLanguage();
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -177,7 +198,9 @@ export default function CitySearchScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Debounce timer
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
+    null,
+  );
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -234,7 +257,7 @@ export default function CitySearchScreen() {
         {
           method: 'GET',
           headers,
-        }
+        },
       );
 
       const data: SearchResponse = await response.json();
@@ -278,7 +301,7 @@ export default function CitySearchScreen() {
   };
 
   // Render user card
-  const renderUserCard = ({ item }: { item: User }) => (
+  const renderUserCard = ({item}: {item: User}) => (
     <TouchableOpacity
       style={styles.userCard}
       activeOpacity={0.7}
@@ -286,16 +309,17 @@ export default function CitySearchScreen() {
         // You can add navigation to user profile here if needed
         Alert.alert(
           `${item.firstName} ${item.lastName}`,
-          `Email: ${item.email}\nPhone: ${item.phone}\nOccupation: ${item.occupation || 'N/A'}`,
-          [{ text: 'OK' }]
+          `Email: ${item.email}\nPhone: ${item.phone}\nOccupation: ${
+            item.occupation || 'N/A'
+          }`,
+          [{text: 'OK'}],
         );
-      }}
-    >
+      }}>
       <View style={styles.cardContent}>
         {/* Profile Image or Initials */}
         <View style={styles.avatarContainer}>
           {item.profileImage ? (
-            <Image source={{ uri: item.profileImage }} style={styles.avatar} />
+            <Image source={{uri: item.profileImage}} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Text style={styles.avatarText}>
@@ -380,7 +404,9 @@ export default function CitySearchScreen() {
           <AlertCircleIcon size={64} color={AppColors.danger} />
           <Text style={styles.emptyTitle}>{t('Error') || 'Error'}</Text>
           <Text style={styles.emptyText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => performSearch(searchQuery)}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => performSearch(searchQuery)}>
             <Text style={styles.retryButtonText}>{t('Retry') || 'Retry'}</Text>
           </TouchableOpacity>
         </View>
@@ -395,11 +421,15 @@ export default function CitySearchScreen() {
             {t('Search Members by Location') || 'Search Members by Location'}
           </Text>
           <Text style={styles.emptyText}>
-            {t('Enter a city, area, or pincode to find members in your community') ||
+            {t(
+              'Enter a city, area, or pincode to find members in your community',
+            ) ||
               'Enter a city, area, or pincode to find members in your community'}
           </Text>
           <View style={styles.examplesContainer}>
-            <Text style={styles.examplesTitle}>{t('Examples') || 'Examples'}:</Text>
+            <Text style={styles.examplesTitle}>
+              {t('Examples') || 'Examples'}:
+            </Text>
             <Text style={styles.exampleText}>• Delhi</Text>
             <Text style={styles.exampleText}>• 110001</Text>
             <Text style={styles.exampleText}>• Park Avenue</Text>
@@ -415,7 +445,9 @@ export default function CitySearchScreen() {
           {t('No Members Found') || 'No Members Found'}
         </Text>
         <Text style={styles.emptyText}>
-          {t('No members found in your area. Try searching with broader terms.') ||
+          {t(
+            'No members found in your area. Try searching with broader terms.',
+          ) ||
             'No members found in your area. Try searching with broader terms.'}
         </Text>
       </View>
@@ -426,13 +458,21 @@ export default function CitySearchScreen() {
     <View style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.gray} />
+        </TouchableOpacity>
         <View style={styles.searchInputContainer}>
           <View style={styles.searchIcon}>
             <MagnifyIcon size={24} color={AppColors.gray} />
           </View>
           <TextInput
             style={styles.searchInput}
-            placeholder={t('Search by city, area, or pincode') || 'Search by city, area, or pincode'}
+            placeholder={
+              t('Search by city, area, or pincode') ||
+              'Search by city, area, or pincode'
+            }
             placeholderTextColor={AppColors.gray}
             value={searchQuery}
             onChangeText={handleSearch}
@@ -471,7 +511,7 @@ export default function CitySearchScreen() {
       <FlatList
         data={searchResults}
         renderItem={renderUserCard}
-        keyExtractor={(item) => item._id}
+        keyExtractor={item => item._id}
         contentContainerStyle={[
           styles.listContainer,
           searchResults.length === 0 && styles.listContainerEmpty,
@@ -502,7 +542,10 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.white,
   },
   searchContainer: {
-    padding: 16,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 5,
     backgroundColor: AppColors.white,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
@@ -514,9 +557,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
+    width: '85%',
+    padding: 15,
+    margin: 5,
   },
   searchIcon: {
     marginRight: 8,
+  },
+  backButton: {
+    marginRight: 8,
+    padding: 4,
   },
   searchInput: {
     flex: 1,

@@ -1,7 +1,7 @@
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
-import { BASE_URL } from '@app/constants/constant';
-import { useNavigation } from '@react-navigation/native';
-import React, { useState, useEffect } from 'react';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+import {BASE_URL} from '@app/constants/constant';
+import {useNavigation} from '@react-navigation/native';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -17,61 +17,141 @@ import {
   PermissionsAndroid,
   Image,
 } from 'react-native';
-import { launchImageLibrary, launchCamera, MediaType } from 'react-native-image-picker';
-import Svg, { Path, Circle, Rect, Polygon } from 'react-native-svg';
+import {
+  launchImageLibrary,
+  launchCamera,
+  MediaType,
+} from 'react-native-image-picker';
+import Svg, {Path, Circle, Rect, Polygon} from 'react-native-svg';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 // Custom SVG Icons
-const BackIcon = ({ size = 24, color = "#fff" }) => (
+const BackIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const TextIcon = ({ size = 24, color = "#666" }) => (
+const TextIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke={color} strokeWidth="2" fill="none"/>
-    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M14 2v6h6M16 13H8M16 17H8M10 9H8"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const ImageIcon = ({ size = 24, color = "#666" }) => (
+const ImageIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke={color} strokeWidth="2" fill="none"/>
-    <Circle cx="8.5" cy="8.5" r="1.5" stroke={color} strokeWidth="2" fill="none"/>
-    <Path d="M21 15l-5-5L5 21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Rect
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Circle
+      cx="8.5"
+      cy="8.5"
+      r="1.5"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M21 15l-5-5L5 21"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const VideoIcon = ({ size = 24, color = "#666" }) => (
+const VideoIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Polygon points="23 7 16 12 23 17 23 7" stroke={color} strokeWidth="2" fill="none"/>
-    <Rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke={color} strokeWidth="2" fill="none"/>
+    <Polygon
+      points="23 7 16 12 23 17 23 7"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Rect
+      x="1"
+      y="5"
+      width="15"
+      height="14"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
   </Svg>
 );
 
-const PdfIcon = ({ size = 24, color = "#666" }) => (
+const PdfIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill={color}/>
+    <Path
+      d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+      fill={color}
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 20, color = "#666" }) => (
+const CloseIcon = ({size = 20, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M18 6L6 18M6 6l12 12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const CheckIcon = ({ size = 24, color = "#fff" }) => (
+const CheckIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 6L9 17L4 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M20 6L9 17L4 12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const UploadIcon = ({ size = 24, color = "#666" }) => (
+const UploadIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
@@ -115,14 +195,14 @@ const AppealScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [textNote, setTextNote] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
- 
+
   const categories = [
     'General Suggestion',
     'Technical Issue',
     'Service Complaint',
     'Feature Request',
     'Policy Concern',
-    'Other'
+    'Other',
   ];
 
   // Request permissions for camera and storage
@@ -135,8 +215,10 @@ const AppealScreen = () => {
         ]);
 
         if (
-          grants['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED &&
-          grants['android.permission.READ_EXTERNAL_STORAGE'] === PermissionsAndroid.RESULTS.GRANTED
+          grants['android.permission.CAMERA'] ===
+            PermissionsAndroid.RESULTS.GRANTED &&
+          grants['android.permission.READ_EXTERNAL_STORAGE'] ===
+            PermissionsAndroid.RESULTS.GRANTED
         ) {
           console.log('Permissions granted');
         } else {
@@ -155,15 +237,15 @@ const AppealScreen = () => {
   // Image picker for images and videos
   const handleImagePicker = (type: 'image' | 'video') => {
     const mediaType: MediaType = type === 'image' ? 'photo' : 'video';
-    
+
     Alert.alert(
       `Select ${type.charAt(0).toUpperCase() + type.slice(1)}`,
       `Choose how you want to add your ${type}`,
       [
-        { text: 'Camera', onPress: () => openCamera(mediaType) },
-        { text: 'Gallery', onPress: () => openGallery(mediaType) },
-        { text: 'Cancel', style: 'cancel' }
-      ]
+        {text: 'Camera', onPress: () => openCamera(mediaType)},
+        {text: 'Gallery', onPress: () => openGallery(mediaType)},
+        {text: 'Cancel', style: 'cancel'},
+      ],
     );
   };
 
@@ -176,7 +258,7 @@ const AppealScreen = () => {
       includeBase64: true,
     };
 
-    launchCamera(options, (response) => {
+    launchCamera(options, response => {
       if (response.assets && response.assets[0]) {
         processMediaFile(response.assets[0], mediaType);
       }
@@ -192,7 +274,7 @@ const AppealScreen = () => {
       includeBase64: true,
     };
 
-    launchImageLibrary(options, (response) => {
+    launchImageLibrary(options, response => {
       if (response.assets && response.assets[0]) {
         processMediaFile(response.assets[0], mediaType);
       }
@@ -204,11 +286,14 @@ const AppealScreen = () => {
 
     const file: UploadFile = {
       id: Date.now().toString(),
-      name: asset.fileName || `${mediaType}_${Date.now()}.${asset.type?.split('/')[1] || 'jpg'}`,
+      name:
+        asset.fileName ||
+        `${mediaType}_${Date.now()}.${asset.type?.split('/')[1] || 'jpg'}`,
       type: mediaType === 'photo' ? 'image' : 'video',
       size: asset.fileSize || 0,
       uri: asset.uri,
-      mimeType: asset.type || (mediaType === 'photo' ? 'image/jpeg' : 'video/mp4'),
+      mimeType:
+        asset.type || (mediaType === 'photo' ? 'image/jpeg' : 'video/mp4'),
       base64: asset.base64,
     };
 
@@ -267,8 +352,10 @@ const AppealScreen = () => {
 
   const getFileSize = (sizeInBytes: number): string => {
     if (sizeInBytes < 1024) return `${sizeInBytes} B`;
-    if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-    if (sizeInBytes < 1024 * 1024 * 1024) return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (sizeInBytes < 1024 * 1024)
+      return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    if (sizeInBytes < 1024 * 1024 * 1024)
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
@@ -282,10 +369,10 @@ const AppealScreen = () => {
     const categoryMap = {
       'General Suggestion': 'general',
       'Technical Issue': 'technical',
-      'Service Complaint': 'general',    // Maps to general
-      'Feature Request': 'technical',    // Maps to technical  
-      'Policy Concern': 'other',         // Maps to other
-      'Other': 'other'
+      'Service Complaint': 'general', // Maps to general
+      'Feature Request': 'technical', // Maps to technical
+      'Policy Concern': 'other', // Maps to other
+      Other: 'other',
     };
     return categoryMap[displayCategory] || 'general';
   };
@@ -297,7 +384,7 @@ const AppealScreen = () => {
       subject: subject.trim(),
       description: description.trim(),
       category: getCategoryApiValue(category),
-      community: COMMUNITY_ID
+      community: COMMUNITY_ID,
     };
 
     // Add uploaded file if present
@@ -329,12 +416,12 @@ const AppealScreen = () => {
         body: JSON.stringify(payload),
       });
 
-      console.log('API Response Status:', response.status);
+      console.log('API Response', response);
 
       if (!response.ok) {
         // Handle different HTTP error status codes
         let errorMessage = 'Failed to submit appeal';
-        
+
         switch (response.status) {
           case 400:
             errorMessage = 'Invalid request data. Please check your inputs.';
@@ -361,7 +448,8 @@ const AppealScreen = () => {
             errorMessage = 'Server error. Please try again later.';
             break;
           case 503:
-            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            errorMessage =
+              'Service temporarily unavailable. Please try again later.';
             break;
           default:
             errorMessage = `Request failed with status ${response.status}`;
@@ -389,17 +477,19 @@ const AppealScreen = () => {
       // Return standardized response format
       return {
         success: true,
-        appealId: responseData.appealId || responseData.id || `APL-${Date.now()}`,
+        appealId:
+          responseData.appealId || responseData.id || `APL-${Date.now()}`,
         message: responseData.message || 'Appeal submitted successfully',
-        data: responseData
+        data: responseData,
       };
-
     } catch (error) {
       console.error('API Submission Error:', error);
 
       // Handle network errors
       if (error instanceof TypeError && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your internet connection and try again.');
+        throw new Error(
+          'Network error. Please check your internet connection and try again.',
+        );
       }
 
       // Handle timeout errors
@@ -429,7 +519,7 @@ const AppealScreen = () => {
     try {
       const payload = await createApiPayload();
       const response = await submitAppealToAPI(payload);
-      
+
       if (response.success) {
         Alert.alert(
           'Appeal Submitted Successfully!',
@@ -446,21 +536,21 @@ const AppealScreen = () => {
                 setTextNote('');
                 // Optionally navigate back
                 // navigation.goBack();
-              }
-            }
-          ]
+              },
+            },
+          ],
         );
       } else {
         throw new Error(response.message || 'Failed to submit appeal');
       }
     } catch (error) {
       console.error('Error submitting appeal:', error);
-      
+
       let errorMessage = 'Failed to submit appeal. Please try again.';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Submission Failed', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -483,9 +573,11 @@ const AppealScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
-      
+
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -499,28 +591,33 @@ const AppealScreen = () => {
         <View style={styles.introCard}>
           <Text style={styles.introTitle}>Submit Your Appeal</Text>
           <Text style={styles.introDescription}>
-            We value your feedback and suggestions. Please provide detailed information about your concern or suggestion. 
-            You can attach one supporting file (max 10MB) to help us better understand your request.
+            We value your feedback and suggestions. Please provide detailed
+            information about your concern or suggestion. You can attach one
+            supporting file (max 10MB) to help us better understand your
+            request.
           </Text>
         </View>
 
         {/* Category Selection */}
         <View style={styles.formSection}>
           <Text style={styles.sectionLabel}>Category *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
-            {categories.map((cat) => (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryContainer}>
+            {categories.map(cat => (
               <TouchableOpacity
                 key={cat}
                 style={[
                   styles.categoryChip,
-                  category === cat && styles.selectedCategoryChip
+                  category === cat && styles.selectedCategoryChip,
                 ]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text style={[
-                  styles.categoryChipText,
-                  category === cat && styles.selectedCategoryChipText
-                ]}>
+                onPress={() => setCategory(cat)}>
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    category === cat && styles.selectedCategoryChipText,
+                  ]}>
                   {cat}
                 </Text>
               </TouchableOpacity>
@@ -563,31 +660,29 @@ const AppealScreen = () => {
         <View style={styles.formSection}>
           <Text style={styles.sectionLabel}>Attachment (Optional)</Text>
           <Text style={styles.sectionDescription}>
-            Add a supporting file - create a text note, take/select an image, or record/select a video
+            Add a supporting file - create a text note, take/select an image, or
+            record/select a video
           </Text>
-          
+
           {!uploadedFile && !showTextInput ? (
             <View style={styles.uploadButtonsContainer}>
               <TouchableOpacity
                 style={styles.uploadButton}
-                onPress={() => handleFileUpload('text')}
-              >
+                onPress={() => handleFileUpload('text')}>
                 <TextIcon size={20} color={AppColors.blue} />
                 <Text style={styles.uploadButtonText}>Text Note</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.uploadButton}
-                onPress={() => handleFileUpload('image')}
-              >
+                onPress={() => handleFileUpload('image')}>
                 <ImageIcon size={20} color={AppColors.green} />
                 <Text style={styles.uploadButtonText}>Image</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.uploadButton}
-                onPress={() => handleFileUpload('video')}
-              >
+                onPress={() => handleFileUpload('video')}>
                 <VideoIcon size={20} color={AppColors.purple} />
                 <Text style={styles.uploadButtonText}>Video</Text>
               </TouchableOpacity>
@@ -607,20 +702,18 @@ const AppealScreen = () => {
                 textAlignVertical="top"
               />
               <Text style={styles.charCount}>{textNote.length}/500</Text>
-              
+
               <View style={styles.textNoteButtons}>
                 <TouchableOpacity
                   style={[styles.textNoteButton, styles.cancelButton]}
-                  onPress={cancelTextNote}
-                >
+                  onPress={cancelTextNote}>
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.textNoteButton, styles.saveButton]}
                   onPress={saveTextNote}
-                  disabled={!textNote.trim()}
-                >
+                  disabled={!textNote.trim()}>
                   <Text style={styles.saveButtonText}>Save Note</Text>
                 </TouchableOpacity>
               </View>
@@ -632,28 +725,33 @@ const AppealScreen = () => {
                 <View style={styles.fileInfo}>
                   {getFileIcon(uploadedFile.type)}
                   <View style={styles.fileDetails}>
-                    <Text style={styles.fileName} numberOfLines={1}>{uploadedFile.name}</Text>
-                    <Text style={styles.fileSize}>{getFileSize(uploadedFile.size)}</Text>
+                    <Text style={styles.fileName} numberOfLines={1}>
+                      {uploadedFile.name}
+                    </Text>
+                    <Text style={styles.fileSize}>
+                      {getFileSize(uploadedFile.size)}
+                    </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   style={styles.removeButton}
-                  onPress={removeFile}
-                >
+                  onPress={removeFile}>
                   <CloseIcon size={16} color={AppColors.red} />
                 </TouchableOpacity>
               </View>
-              
+
               {uploadedFile.type === 'image' && uploadedFile.uri && (
-                <Image source={{ uri: uploadedFile.uri }} style={styles.previewImage} />
+                <Image
+                  source={{uri: uploadedFile.uri}}
+                  style={styles.previewImage}
+                />
               )}
-              
+
               <TouchableOpacity
                 style={styles.replaceButton}
                 onPress={() => {
                   removeFile();
-                }}
-              >
+                }}>
                 <Text style={styles.replaceButtonText}>Replace File</Text>
               </TouchableOpacity>
             </View>
@@ -665,11 +763,19 @@ const AppealScreen = () => {
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (!subject.trim() || !description.trim() || !category || isSubmitting) && styles.submitButtonDisabled
+              (!subject.trim() ||
+                !description.trim() ||
+                !category ||
+                isSubmitting) &&
+                styles.submitButtonDisabled,
             ]}
             onPress={handleSubmitAppeal}
-            disabled={!subject.trim() || !description.trim() || !category || isSubmitting}
-          >
+            disabled={
+              !subject.trim() ||
+              !description.trim() ||
+              !category ||
+              isSubmitting
+            }>
             {isSubmitting ? (
               <Text style={styles.submitButtonText}>Submitting...</Text>
             ) : (
@@ -679,10 +785,11 @@ const AppealScreen = () => {
               </>
             )}
           </TouchableOpacity>
-          
+
           <Text style={styles.submitNote}>
-            By submitting this appeal, you agree to our terms of service and privacy policy. 
-            We will review your submission within 2-3 business days.
+            By submitting this appeal, you agree to our terms of service and
+            privacy policy. We will review your submission within 2-3 business
+            days.
           </Text>
         </View>
       </ScrollView>
@@ -695,7 +802,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.lightGray,
   },
-  
+
   // Header styles
   header: {
     backgroundColor: AppColors.primary,
@@ -737,7 +844,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -761,7 +868,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -973,7 +1080,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,

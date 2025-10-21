@@ -285,7 +285,6 @@ const PostScreen = () => {
           headers,
         },
       );
-      console.log('response', `${BASE_URL}/api/posts/community/${communityId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
