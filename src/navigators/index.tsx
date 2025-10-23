@@ -25,6 +25,7 @@ import {
   NavigationContainer,
   useNavigation,
 } from '@react-navigation/native';
+import {ConfigurationProvider} from '@app/hooks/ConfigContext';
 import HomeScreen from '@app/screens/Home/HomeScreen';
 import PostScreen from '@app/screens/PostScreen';
 import NewsScreen from '@app/screens/NewsScreen';
@@ -322,6 +323,9 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
     setUser(userData);
     setToken(userToken);
     setIsLoggedIn(true);
+    console.log(
+      '🔍 AUTH DEBUG - User logged in successfully, configuration will be fetched',
+    );
   };
 
   const updateUser = async (updatedData: Partial<User>) => {
@@ -1145,9 +1149,11 @@ const AppNavigator = (): React.JSX.Element => {
 export default (): React.JSX.Element => {
   return (
     <AuthProvider>
-      <OccasionProvider>
-        <AppNavigator />
-      </OccasionProvider>
+      <ConfigurationProvider>
+        <OccasionProvider>
+          <AppNavigator />
+        </OccasionProvider>
+      </ConfigurationProvider>
     </AuthProvider>
   );
 };

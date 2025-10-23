@@ -59,6 +59,11 @@ interface LoginResponse {
     code: string;
     createdAt: string;
     __v: number;
+    profileImage?: string;
+    community?: {
+      _id: string;
+      name: string;
+    };
   };
 }
 
@@ -123,7 +128,9 @@ const LoginScreen: React.FC = () => {
       const response = await loginAPI(email, password);
 
       // Store user data and token (you might want to use AsyncStorage or secure storage)
-      console.log('Login successful:', response);
+      console.log('🔍 LOGIN DEBUG - Login successful:', response);
+      console.log('🔍 LOGIN DEBUG - User data:', response.user);
+      console.log('🔍 LOGIN DEBUG - Community info:', response.user.community);
 
       // You can store the token and user data here
       await AsyncStorage.setItem('userToken', response.token);
