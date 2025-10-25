@@ -400,7 +400,7 @@ const FamilyTreeIcon = ({size = 24, color = '#7dd3c0'}) => (
 
 const DrawerContent = (props: DrawerContentComponentProps) => {
   const {user, logout} = useAuth();
-  const {t}: any = useLanguage();
+  const {t, currentLanguage}: any = useLanguage();
   const {drorData} = useConfiguration(); // Add this line to get dror data
   const {addToHistory} = useDrawerNavigation();
 
@@ -408,40 +408,88 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   const getMenuItems = () => {
     if (!drorData) return [];
 
-    const menuMapping = [
-      {key: 'occasions', name: 'Occasions', icon: 'calendar'},
-      {key: 'kartavya', name: 'Kartavya', icon: 'briefcase'},
-      {key: 'bhajan', name: 'Bhajan', icon: 'music'},
-      {key: 'games', name: 'Games', icon: 'games'},
-      {key: 'citySearch', name: 'CitySearch', icon: 'city'},
-      {
-        key: 'organizationOfficer',
-        name: 'OrganizationOfficer',
-        icon: 'account-tie',
-      },
-      {key: 'education', name: 'Education', icon: 'school'},
-      {key: 'employment', name: 'Employment', icon: 'account-search'},
-      {key: 'sports', name: 'Sports', icon: 'sports'},
-      {key: 'dukan', name: 'Dukan', icon: 'store'},
-      {key: 'meetings', name: 'Meetings', icon: 'meetings'},
-      {key: 'appeal', name: 'Appeal', icon: 'appeal'},
-      {key: 'vote', name: 'Vote', icon: 'vote'},
-      {
+    // Default fallback mappings for backward compatibility
+    const defaultIconMapping: {[key: string]: string} = {
+      occasions: 'calendar',
+      kartavya: 'briefcase',
+      bhajan: 'music',
+      games: 'games',
+      citySearch: 'city',
+      organizationOfficer: 'account-tie',
+      education: 'school',
+      employment: 'account-search',
+      sports: 'sports',
+      dukan: 'store',
+      meetings: 'meetings',
+      appeal: 'appeal',
+      vote: 'vote',
+      familyTree: 'family-tree',
+    };
+
+    const defaultScreenMapping: {[key: string]: string} = {
+      occasions: 'Occasions',
+      kartavya: 'Kartavya',
+      bhajan: 'Bhajan',
+      games: 'Games',
+      citySearch: 'CitySearch',
+      organizationOfficer: 'OrganizationOfficer',
+      education: 'Education',
+      employment: 'Employment',
+      sports: 'Sports',
+      dukan: 'Dukan',
+      meetings: 'Meetings',
+      appeal: 'Appeal',
+      vote: 'Vote',
+      familyTree: 'FamilyTree',
+    };
+
+    // Create menu items dynamically from drorData
+    const menuItems: Array<{
+      key: string;
+      name: string;
+      displayName: string;
+      icon: string;
+    }> = [];
+
+    Object.keys(drorData).forEach(key => {
+      const drorOption = (drorData as any)[key];
+
+      // Check if this option should be visible
+      if (drorOption && drorOption.visible === true) {
+        // Use the label from drorData, fallback to English label, then to key
+        const displayLabel =
+          currentLanguage === 'hi' && drorOption.labelHindi
+            ? drorOption.labelHindi
+            : drorOption.label || key;
+
+        // Use icon from drorData if available, otherwise use default mapping, then fallback
+        const iconName = drorOption.icon || defaultIconMapping[key] || 'circle';
+
+        const screenName =
+          drorOption.screenName ||
+          defaultScreenMapping[key] ||
+          key.charAt(0).toUpperCase() + key.slice(1);
+
+        menuItems.push({
+          key: key,
+          name: screenName,
+          displayName: displayLabel,
+          icon: iconName,
+        });
+      }
+    });
+
+    const familyTreeExists = menuItems.some(item => item.key === 'familyTree');
+    if (!familyTreeExists) {
+      menuItems.push({
         key: 'familyTree',
         name: 'FamilyTree',
+        displayName: currentLanguage === 'hi' ? 'वंश वृक्ष' : 'Family Tree',
         icon: 'family-tree',
-        alwaysShow: true,
-      },
-    ];
+      });
+    }
 
-    // Filter menu items based on drorData visibility
-    return menuMapping.filter(item => {
-      // Always show items with alwaysShow flag (like FamilyTree)
-      if (item.alwaysShow) return true;
-
-      const drorOption = drorData[item.key];
-      return drorOption && drorOption.visible === true;
-    });
+    return menuItems;
   };
 
   const menuItems = getMenuItems();
@@ -483,7 +531,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   };
 
   const renderIcon = (iconName: string) => {
-    const iconProps = {size: 24, color: '#7dd3c0'};
+    const iconProps = {size: 20, color: '#7dd3c0'}; // Reduced icon size
 
     switch (iconName) {
       case 'calendar':
@@ -557,15 +605,35 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Menu Items - Now dynamically rendered based on drorData */}
       <View style={styles.menuSection}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            onPress={() => handleMenuPress(item?.name)}>
-            {renderIcon(item.icon)}
-            <Text style={styles.menuText}>{t(item.name)}</Text>
-          </TouchableOpacity>
-        ))}
+        {menuItems.map((item, index) => {
+          // Debug logging for the first item (likely Occasions)
+          if (index === 0) {
+            console.log(
+              'First menu item:',
+              item.displayName,
+              'Length:',
+              item.displayName.length,
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={() => handleMenuPress(item?.name)}>
+              {renderIcon(item.icon)}
+              <Text
+                style={styles.menuText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+                allowFontScaling={false}>
+                {item.displayName}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Logout Section */}
@@ -648,13 +716,20 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10, // Further reduced padding
     paddingVertical: 15,
+    minHeight: 50,
+    width: '100%',
   },
   menuText: {
     color: '#fff',
-    fontSize: 16,
-    marginLeft: 15,
+    fontSize: 15, // Restored slightly larger font
+    marginLeft: 10, // Balanced margin
+    flex: 1,
+    flexWrap: 'wrap',
+    textAlign: 'left',
+    includeFontPadding: false, // Remove extra font padding on Android
+    textAlignVertical: 'center', // Center text vertically
   },
   donationSection: {
     paddingTop: 20,

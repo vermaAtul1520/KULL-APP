@@ -929,7 +929,7 @@ const DrawerNavigator = (): React.JSX.Element => {
         ...drawerScreenOptions(),
         drawerStyle: {
           backgroundColor: AppColors.dark,
-          width: 300,
+          width: 320, // Increased width to accommodate longer text
         },
         drawerActiveTintColor: AppColors.primary,
         drawerInactiveTintColor: AppColors.white,

@@ -1,5 +1,5 @@
 // Screen 4: Content Display (API-driven)
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,30 +15,38 @@ import {
   Linking,
   Modal,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { WebView } from 'react-native-webview';
-import { AppColors } from './constants';
-import { BackIcon, PdfIcon, VideoIcon, ImageIcon } from './components/OccasionIcons';
-import { OccasionApiService, Occasion } from '@app/services/occasionApi';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {WebView} from 'react-native-webview';
+import {AppColors} from './constants';
+import {
+  BackIcon,
+  PdfIcon,
+  VideoIcon,
+  ImageIcon,
+} from './components/OccasionIcons';
+import {OccasionApiService, Occasion} from '@app/services/occasionApi';
 import OccasionContent from '@app/services/occasionApi';
-import { useOccasion } from '@app/contexts/OccasionContext';
+import {useOccasion} from '@app/contexts/OccasionContext';
 
 export const ContentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
   // Get filters from context
-  const { filters, occasions, setOccasions } = useOccasion();
+  const {filters, occasions, setOccasions} = useOccasion();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<OccasionContent | null>(null);
+  const [selectedContent, setSelectedContent] =
+    useState<OccasionContent | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(null);
+  const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(
+    null,
+  );
 
   useEffect(() => {
     // Fetch occasions when component mounts - use filters from context
-   console.log('Fetching occasions with filters:', filters);
+    console.log('Fetching occasions with filters:', filters);
     fetchOccasions();
   }, []);
 
@@ -48,11 +56,11 @@ export const ContentScreen = () => {
 
       // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
-        filters.occasionType!,  // Required - will always be set
-        filters.categoryId,     // Can be null
-        filters.gotra || undefined,       // Convert null to undefined for optional param
-        filters.subGotra || undefined,    // Convert null to undefined for optional param
-        filters.gender || undefined       // Convert null to undefined for optional param
+        filters.occasionType!, // Required - will always be set
+        filters.categoryId, // Can be null
+        filters.gotra || undefined, // Convert null to undefined for optional param
+        filters.subGotra || undefined, // Convert null to undefined for optional param
+        filters.gender || undefined, // Convert null to undefined for optional param
       );
 
       setOccasions(response.data);
@@ -112,7 +120,11 @@ export const ContentScreen = () => {
       image: AppColors.success,
     };
     return (
-      <View style={[styles.typeBadge, { backgroundColor: colors[type] || AppColors.gray }]}>
+      <View
+        style={[
+          styles.typeBadge,
+          {backgroundColor: colors[type] || AppColors.gray},
+        ]}>
         <Text style={styles.typeBadgeText}>{type.toUpperCase()}</Text>
       </View>
     );
@@ -123,20 +135,27 @@ export const ContentScreen = () => {
     occasion.contents.map(content => ({
       ...content,
       occasionId: occasion._id,
-    }))
+    })),
   );
 
   // Show loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
+            <Text style={styles.headerTitle}>
+              {filters.categoryName || filters.occasionType}
+            </Text>
             <Text style={styles.headerSubtitle}>Loading content...</Text>
           </View>
         </View>
@@ -153,14 +172,28 @@ export const ContentScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
+          <Text style={styles.headerTitle}>
+            {filters.categoryName || filters.occasionType}
+          </Text>
           <Text style={styles.headerSubtitle}>
-            {filters.gotra && `${filters.gotra}${filters.subGotra ? ` - ${filters.subGotra}` : ''}`}
-            {filters.gender && ` • ${filters.gender === 'male' ? 'Male' : filters.gender === 'female' ? 'Female' : 'All'}`}
+            {filters.gotra &&
+              `${filters.gotra}${
+                filters.subGotra ? ` - ${filters.subGotra}` : ''
+              }`}
+            {filters.gender &&
+              ` • ${
+                filters.gender === 'male'
+                  ? 'Male'
+                  : filters.gender === 'female'
+                  ? 'Female'
+                  : 'All'
+              }`}
           </Text>
         </View>
       </View>
@@ -194,19 +227,25 @@ export const ContentScreen = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[AppColors.primary]} />
-        }
-      >
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.primary]}
+          />
+        }>
         <View style={styles.contentList}>
           {allContents.map((content, index) => (
             <TouchableOpacity
               key={`${content._id}-${index}`}
               style={styles.contentCard}
               onPress={() => handleOpenContent(content)}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <View style={styles.contentHeader}>
-                <View style={[styles.iconContainer, { backgroundColor: AppColors.primary }]}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    {backgroundColor: AppColors.primary},
+                  ]}>
                   {renderContentIcon(content.type)}
                 </View>
               </View>
@@ -214,7 +253,7 @@ export const ContentScreen = () => {
               {content.type === 'image' && content.thumbnailUrl && (
                 <View style={styles.imagePreview}>
                   <Image
-                    source={{ uri: content.thumbnailUrl }}
+                    source={{uri: content.thumbnailUrl}}
                     style={styles.previewImage}
                     resizeMode="cover"
                   />
@@ -234,12 +273,12 @@ export const ContentScreen = () => {
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No Content Found</Text>
               <Text style={styles.emptyText}>
-                No content available for the selected filters. Try adjusting your filters.
+                No content available for the selected filters. Try adjusting
+                your filters.
               </Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => navigation.goBack()}
-              >
+                onPress={() => navigation.goBack()}>
                 <Text style={styles.retryButtonText}>Change Filters</Text>
               </TouchableOpacity>
             </View>
@@ -251,8 +290,7 @@ export const ContentScreen = () => {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        onRequestClose={closeModal}
-      >
+        onRequestClose={closeModal}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
@@ -265,7 +303,11 @@ export const ContentScreen = () => {
 
           {modalType === 'pdf' && selectedContent && (
             <WebView
-              source={{ uri: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(selectedContent.url)}` }}
+              source={{
+                uri: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
+                  selectedContent.url,
+                )}`,
+              }}
               style={styles.webView}
             />
           )}
@@ -273,7 +315,7 @@ export const ContentScreen = () => {
           {modalType === 'image' && selectedContent && (
             <View style={styles.imageModalContent}>
               <Image
-                source={{ uri: selectedContent.url }}
+                source={{uri: selectedContent.url}}
                 style={styles.fullImage}
                 resizeMode="contain"
               />
@@ -361,7 +403,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,

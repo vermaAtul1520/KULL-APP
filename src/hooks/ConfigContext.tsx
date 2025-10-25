@@ -48,6 +48,8 @@ export interface DrorOption {
   visible: boolean;
   label: string;
   labelHindi: string;
+  icon?: string;
+  screenName?: string;
 }
 
 export interface DrorData {
@@ -124,7 +126,11 @@ const ConfigurationContext = createContext<ConfigurationContextType>({
 });
 
 // Provider component
-export const ConfigurationProvider = ({children}) => {
+export const ConfigurationProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const {logout, isLoggedIn, token} = useAuth();
 
   // State - start with empty data
@@ -391,7 +397,7 @@ export const ConfigurationProvider = ({children}) => {
         // Process banners - use actual API data
         let banners = [];
         if (data.data.banner && Array.isArray(data.data.banner)) {
-          banners = data.data.banner.map((imageUrl, index) => ({
+          banners = data.data.banner.map((imageUrl: string, index: number) => ({
             id: index + 1,
             image: imageUrl,
             textColor: index % 2 === 0 ? '#000' : '#FFF',

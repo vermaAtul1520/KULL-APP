@@ -344,16 +344,18 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/posts/`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          ...postData,
-          community: COMMUNITY_ID,
-        }),
-      });
 
-      console.log('responseArvind', response);
+      const response = await fetch(
+        `${BASE_URL}/api/posts/community/${COMMUNITY_ID}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...postData,
+            community: COMMUNITY_ID,
+          }),
+        },
+      );
 
       if (!response.ok) {
         throw new Error('Failed to create post');
@@ -1121,7 +1123,7 @@ const PostScreen = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
+                {/* <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
 
                 <TextInput
                   style={styles.imageUrlInput}
@@ -1130,7 +1132,7 @@ const PostScreen = () => {
                   onChangeText={text =>
                     setNewPost({...newPost, imageUrl: text})
                   }
-                />
+                /> */}
               </View>
             </View>
 
