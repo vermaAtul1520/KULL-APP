@@ -1,5 +1,5 @@
 // Screen 3: Gotra/Sub-Gotra Filters
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,48 +9,58 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
-import { AppColors } from './constants';
-import { BackIcon } from './components/OccasionIcons';
-import { useConfiguration, GotraData } from '@app/hooks/ConfigContext';
-import { useOccasion } from '@app/contexts/OccasionContext';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {Picker} from '@react-native-picker/picker';
+import {AppColors} from './constants';
+import {BackIcon} from './components/OccasionIcons';
+import {useConfiguration, GotraData} from '@app/hooks/ConfigContext';
+import {useOccasion} from '@app/contexts/OccasionContext';
 
 export const FiltersScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { occasionType, categoryId, categoryName } = route.params as {
+  const {occasionType, categoryId, categoryName} = route.params as {
     occasionType: string;
     categoryId: string;
     categoryName: string;
   };
 
   // Get gotra data from ConfigContext
-  const { gotraData } = useConfiguration();
-  const { setGotraFilters } = useOccasion();
+  const {gotraData} = useConfiguration();
+  const {setGotraFilters, filters} = useOccasion();
 
-  const [selectedGotra, setSelectedGotra] = useState('');
-  const [selectedSubGotra, setSelectedSubGotra] = useState('');
+  const [selectedGotra, setSelectedGotra] = useState(filters.gotra || '');
+  const [selectedSubGotra, setSelectedSubGotra] = useState(
+    filters.subGotra || '',
+  );
   const [subGotras, setSubGotras] = useState<string[]>([]);
+
+  // Initialize sub-gotras on component mount if gotra is already selected
+  useEffect(() => {
+    if (filters.gotra && gotraData.length > 0) {
+      const gotraObj = gotraData.find(g => g.name === filters.gotra);
+      setSubGotras(gotraObj?.subgotra || []);
+    }
+  }, [gotraData, filters.gotra]);
 
   useEffect(() => {
     // Update sub-gotras when gotra changes
     if (selectedGotra) {
       const gotraObj = gotraData.find(g => g.name === selectedGotra);
       setSubGotras(gotraObj?.subgotra || []);
-      setSelectedSubGotra(''); // Reset sub-gotra selection
+      // Only reset sub-gotra if it's a new selection (not from existing filters)
+      if (selectedGotra !== filters.gotra) {
+        setSelectedSubGotra('');
+      }
     } else {
       setSubGotras([]);
       setSelectedSubGotra('');
     }
-  }, [selectedGotra, gotraData]);
+  }, [selectedGotra, gotraData, filters.gotra]);
 
   const handleContinue = () => {
     // Save gotra filters to context (convert empty strings to null)
-    setGotraFilters(
-      selectedGotra || null,
-      selectedSubGotra || null
-    );
+    setGotraFilters(selectedGotra || null, selectedSubGotra || null);
 
     // Navigate to Gender selection screen
     navigation.navigate('OccasionGender', {
@@ -67,7 +77,9 @@ export const FiltersScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -76,7 +88,9 @@ export const FiltersScreen = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>Select Gotra & Sub-Gotra</Text>
           <Text style={styles.sectionDescription}>
@@ -89,12 +103,15 @@ export const FiltersScreen = () => {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={selectedGotra}
-                onValueChange={(value) => setSelectedGotra(value)}
-                style={styles.picker}
-              >
+                onValueChange={value => setSelectedGotra(value)}
+                style={styles.picker}>
                 <Picker.Item label="Select Gotra" value="" />
-                {gotraData.map((gotra) => (
-                  <Picker.Item key={gotra.name} label={gotra.name} value={gotra.name} />
+                {gotraData.map(gotra => (
+                  <Picker.Item
+                    key={gotra.name}
+                    label={gotra.name}
+                    value={gotra.name}
+                  />
                 ))}
               </Picker>
             </View>
@@ -107,12 +124,15 @@ export const FiltersScreen = () => {
               <View style={styles.pickerWrapper}>
                 <Picker
                   selectedValue={selectedSubGotra}
-                  onValueChange={(value) => setSelectedSubGotra(value)}
-                  style={styles.picker}
-                >
+                  onValueChange={value => setSelectedSubGotra(value)}
+                  style={styles.picker}>
                   <Picker.Item label="Select Sub-Gotra" value="" />
-                  {subGotras.map((subGotra) => (
-                    <Picker.Item key={subGotra} label={subGotra} value={subGotra} />
+                  {subGotras.map(subGotra => (
+                    <Picker.Item
+                      key={subGotra}
+                      label={subGotra}
+                      value={subGotra}
+                    />
                   ))}
                 </Picker>
               </View>
@@ -124,9 +144,10 @@ export const FiltersScreen = () => {
             <TouchableOpacity
               style={[styles.button, styles.applyButton]}
               onPress={handleContinue}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.applyButtonText}>Continue to Gender Selection</Text>
+              activeOpacity={0.8}>
+              <Text style={styles.applyButtonText}>
+                Continue to Gender Selection
+              </Text>
             </TouchableOpacity>
           </View>
 

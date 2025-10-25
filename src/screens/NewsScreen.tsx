@@ -11,6 +11,9 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Modal,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {moderateScale} from '@app/constants/scaleUtils';
@@ -88,6 +91,8 @@ const NewsScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Search functionality
   useEffect(() => {
@@ -193,8 +198,21 @@ const NewsScreen = () => {
     }
   };
 
+  const openNewsModal = (item: NewsItem) => {
+    setSelectedNews(item);
+    setShowModal(true);
+  };
+
+  const closeNewsModal = () => {
+    setShowModal(false);
+    setSelectedNews(null);
+  };
+
   const renderNewsItem = ({item}: {item: NewsItem}) => (
-    <TouchableOpacity style={styles.newsCard} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.newsCard}
+      activeOpacity={0.7}
+      onPress={() => openNewsModal(item)}>
       {/* News Image */}
       <View style={styles.imageContainer}>
         <Image
@@ -216,9 +234,14 @@ const NewsScreen = () => {
           {item.title}
         </Text>
 
-        <Text style={styles.newsContent} numberOfLines={3}>
-          {item.content}
-        </Text>
+        <View>
+          <Text style={styles.newsContent} numberOfLines={3}>
+            {item.content}
+          </Text>
+          {item.content.length > 150 && (
+            <Text style={styles.readMoreText}>...read more</Text>
+          )}
+        </View>
 
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
@@ -376,6 +399,90 @@ const NewsScreen = () => {
         ListEmptyComponent={renderEmptyComponent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
+
+      {/* News Detail Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={closeNewsModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ScrollView
+              style={styles.modalContent}
+              showsVerticalScrollIndicator={false}>
+              {selectedNews && (
+                <>
+                  {/* Modal Header */}
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>News Details</Text>
+                    <TouchableOpacity
+                      onPress={closeNewsModal}
+                      style={styles.closeButton}>
+                      <CloseIcon size={24} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* News Image */}
+                  <Image
+                    source={{
+                      uri:
+                        selectedNews.imageUrl ||
+                        'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
+                    }}
+                    style={styles.modalImage}
+                  />
+
+                  {/* Category Badge */}
+                  <View style={styles.modalCategoryBadge}>
+                    <Text style={styles.modalCategoryText}>
+                      {selectedNews.category}
+                    </Text>
+                  </View>
+
+                  {/* Title */}
+                  <Text style={styles.modalTitle}>{selectedNews.title}</Text>
+
+                  {/* Content */}
+                  <Text style={styles.modalContentText}>
+                    {selectedNews.content}
+                  </Text>
+
+                  {/* Tags */}
+                  {selectedNews.tags && selectedNews.tags.length > 0 && (
+                    <View style={styles.modalTagsContainer}>
+                      {selectedNews.tags.map((tag, index) => (
+                        <View key={index} style={styles.modalTag}>
+                          <Text style={styles.modalTagText}>#{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Author Info */}
+                  <View style={styles.modalAuthorContainer}>
+                    <View style={styles.modalAuthorAvatar}>
+                      <Text style={styles.modalAvatarText}>
+                        {`${selectedNews.author.firstName.charAt(
+                          0,
+                        )}${selectedNews.author.lastName.charAt(0)}`}
+                      </Text>
+                    </View>
+                    <View style={styles.modalAuthorInfo}>
+                      <Text style={styles.modalAuthorName}>
+                        {`${selectedNews.author.firstName} ${selectedNews.author.lastName}`}
+                      </Text>
+                      <Text style={styles.modalPublishDate}>
+                        {getTimeAgo(selectedNews.createdAt)}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -608,6 +715,130 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: AppColors.gray,
     textAlign: 'center',
+  },
+  readMoreText: {
+    fontSize: moderateScale(12),
+    color: AppColors.primary,
+    fontStyle: 'italic',
+    marginTop: moderateScale(4),
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: Dimensions.get('window').height * 0.9,
+  },
+  modalContent: {
+    padding: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  closeButton: {
+    padding: moderateScale(5),
+  },
+  modalImage: {
+    width: '100%',
+    height: moderateScale(200),
+    resizeMode: 'cover',
+  },
+  modalCategoryBadge: {
+    position: 'absolute',
+    top: moderateScale(220),
+    left: moderateScale(15),
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(6),
+    borderRadius: moderateScale(15),
+  },
+  modalCategoryText: {
+    color: AppColors.white,
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+  },
+  modalTitle: {
+    fontSize: moderateScale(22),
+    fontWeight: 'bold',
+    color: AppColors.black,
+    marginTop: moderateScale(10),
+    marginHorizontal: moderateScale(15),
+    lineHeight: moderateScale(28),
+  },
+  modalContentText: {
+    fontSize: moderateScale(16),
+    color: AppColors.dark,
+    lineHeight: moderateScale(24),
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(15),
+  },
+  modalTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(15),
+  },
+  modalTag: {
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(5),
+    borderRadius: moderateScale(12),
+    marginRight: moderateScale(8),
+    marginBottom: moderateScale(8),
+  },
+  modalTagText: {
+    fontSize: moderateScale(12),
+    color: AppColors.primary,
+    fontWeight: '500',
+  },
+  modalAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(20),
+    marginBottom: moderateScale(20),
+    paddingTop: moderateScale(15),
+    borderTopWidth: 1,
+    borderTopColor: AppColors.lightGray,
+  },
+  modalAuthorAvatar: {
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: moderateScale(20),
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: moderateScale(12),
+  },
+  modalAvatarText: {
+    color: AppColors.white,
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+  },
+  modalAuthorInfo: {
+    flex: 1,
+  },
+  modalAuthorName: {
+    fontSize: moderateScale(16),
+    fontWeight: '600',
+    color: AppColors.black,
+  },
+  modalPublishDate: {
+    fontSize: moderateScale(12),
+    color: AppColors.gray,
+    marginTop: moderateScale(2),
   },
 });
 

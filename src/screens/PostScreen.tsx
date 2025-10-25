@@ -112,6 +112,10 @@ const PostScreen = () => {
     id: string;
     author: string;
   } | null>(null);
+  const [selectedPostDetail, setSelectedPostDetail] = useState<Post | null>(
+    null,
+  );
+  const [showPostDetailModal, setShowPostDetailModal] = useState(false);
 
   console.log('commentsss', filteredPosts);
 
@@ -581,6 +585,83 @@ const PostScreen = () => {
     );
   };
 
+  const openPostDetail = (post: Post) => {
+    setSelectedPostDetail(post);
+    setShowPostDetailModal(true);
+  };
+
+  const closePostDetail = () => {
+    setShowPostDetailModal(false);
+    setSelectedPostDetail(null);
+  };
+
+  const renderPostDetailModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showPostDetailModal}
+      onRequestClose={closePostDetail}>
+      <View style={styles.detailModalOverlay}>
+        <View style={styles.detailModalContainer}>
+          <ScrollView
+            style={styles.detailModalContent}
+            showsVerticalScrollIndicator={false}>
+            {selectedPostDetail && (
+              <>
+                {/* Modal Header */}
+                <View style={styles.detailModalHeader}>
+                  <Text style={styles.detailModalTitle}>Post Details</Text>
+                  <TouchableOpacity
+                    onPress={closePostDetail}
+                    style={styles.detailCloseButton}>
+                    <CloseIcon size={24} color="#2a2a2a" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Post Image */}
+                {selectedPostDetail.imageUrl && (
+                  <Image
+                    source={{uri: selectedPostDetail.imageUrl}}
+                    style={styles.detailModalImage}
+                  />
+                )}
+
+                {/* Title */}
+                <Text style={styles.detailModalTitle}>
+                  {selectedPostDetail.title}
+                </Text>
+
+                {/* Content */}
+                <Text style={styles.detailModalContentText}>
+                  {selectedPostDetail.content}
+                </Text>
+
+                {/* Author Info */}
+                <View style={styles.detailModalAuthorContainer}>
+                  <View style={styles.detailModalAuthorAvatar}>
+                    <Text style={styles.detailModalAvatarText}>
+                      {`${selectedPostDetail.author.firstName.charAt(
+                        0,
+                      )}${selectedPostDetail.author.lastName.charAt(0)}`}
+                    </Text>
+                  </View>
+                  <View style={styles.detailModalAuthorInfo}>
+                    <Text style={styles.detailModalAuthorName}>
+                      {`${selectedPostDetail.author.firstName} ${selectedPostDetail.author.lastName}`}
+                    </Text>
+                    <Text style={styles.detailModalPublishDate}>
+                      {formatTimeAgo(selectedPostDetail.createdAt)}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const openComments = async (post: Post) => {
     console.log('Opening comments for post:', post._id);
     setSelectedPost({...post, commentsData: []});
@@ -837,8 +918,19 @@ const PostScreen = () => {
         </View>
       </View>
 
-      <Text style={styles.postTitle}>{item.title}</Text>
-      <Text style={styles.postContent}>{item.content}</Text>
+      <TouchableOpacity
+        onPress={() => openPostDetail(item)}
+        activeOpacity={0.8}>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <View>
+          <Text style={styles.postContent} numberOfLines={3}>
+            {item.content}
+          </Text>
+          {item.content.length > 150 && (
+            <Text style={styles.readMoreText}>...read more</Text>
+          )}
+        </View>
+      </TouchableOpacity>
 
       {item.imageUrl && (
         <Image source={{uri: item.imageUrl}} style={styles.postImage} />
@@ -1231,6 +1323,7 @@ const PostScreen = () => {
 
       {renderCreatePostModal()}
       {renderCommentsModal()}
+      {renderPostDetailModal()}
     </SafeAreaView>
   );
 };
@@ -1785,6 +1878,92 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     padding: 8,
+  },
+  readMoreText: {
+    fontSize: 12,
+    color: '#2a2a2a',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  // Post Detail Modal Styles
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  detailModalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: height * 0.9,
+  },
+  detailModalContent: {
+    padding: 10,
+  },
+  detailModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  detailCloseButton: {
+    padding: 8,
+  },
+  detailModalImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  detailModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  detailModalContentText: {
+    fontSize: 16,
+    color: '#2a2a2a',
+    lineHeight: 24,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  detailModalAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  detailModalAuthorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2a2a2a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  detailModalAvatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  detailModalAuthorInfo: {
+    flex: 1,
+  },
+  detailModalAuthorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+  },
+  detailModalPublishDate: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
 });
 

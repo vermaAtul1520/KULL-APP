@@ -1,272 +1,344 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert} from 'react-native';
-import {DrawerContentScrollView, DrawerContentComponentProps} from '@react-navigation/drawer';
-import Svg, { Path, Circle, Rect, Polygon } from 'react-native-svg';
-import { useAuth } from '@app/navigators';
-import { useLanguage } from '@app/hooks/LanguageContext';
-import { useConfiguration } from '@app/hooks/ConfigContext'; // Add this import
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Alert,
+} from 'react-native';
+import {
+  DrawerContentScrollView,
+  DrawerContentComponentProps,
+} from '@react-navigation/drawer';
+import Svg, {Path, Circle, Rect, Polygon} from 'react-native-svg';
+import {useAuth} from '@app/navigators';
+import {useLanguage} from '@app/hooks/LanguageContext';
+import {useConfiguration} from '@app/hooks/ConfigContext'; // Add this import
+import {useDrawerNavigation} from '@app/contexts/DrawerNavigationContext';
 
 // SVG Icon Components (keep all existing icons unchanged)
-const CalendarIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const CalendarIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Path d="M16 2v4M8 2v4M3 10h18" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="8" cy="14" r="1" fill={color}/>
-    <Circle cx="12" cy="14" r="1" fill={color}/>
-    <Circle cx="16" cy="14" r="1" fill={color}/>
+    <Rect
+      x="3"
+      y="4"
+      width="18"
+      height="18"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M16 2v4M8 2v4M3 10h18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="8" cy="14" r="1" fill={color} />
+    <Circle cx="12" cy="14" r="1" fill={color} />
+    <Circle cx="16" cy="14" r="1" fill={color} />
   </Svg>
 );
 
-const BriefcaseIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const BriefcaseIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="7" width="20" height="14" rx="2" ry="2" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Rect
+      x="2"
+      y="7"
+      width="20"
+      height="14"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const MusicIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const MusicIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 18V5l12-2v13" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none"/>
-    <Circle cx="6" cy="18" r="3" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Circle cx="18" cy="16" r="3" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
+    <Path
+      d="M9 18V5l12-2v13"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Circle cx="6" cy="18" r="3" stroke={color} strokeWidth="2" fill="none" />
+    <Circle cx="18" cy="16" r="3" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
-const GamesIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const GamesIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6 12a6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6 6 6 0 0 0-6 6z" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Circle cx="9" cy="9" r="1" fill={color}/>
-    <Circle cx="15" cy="9" r="1" fill={color}/>
-    <Circle cx="9" cy="15" r="1" fill={color}/>
-    <Circle cx="15" cy="15" r="1" fill={color}/>
-    <Path d="M12 6v2M12 16v2M6 12h2M16 12h2" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
+    <Path
+      d="M6 12a6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6 6 6 0 0 0-6 6z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Circle cx="9" cy="9" r="1" fill={color} />
+    <Circle cx="15" cy="9" r="1" fill={color} />
+    <Circle cx="9" cy="15" r="1" fill={color} />
+    <Circle cx="15" cy="15" r="1" fill={color} />
+    <Path
+      d="M12 6v2M12 16v2M6 12h2M16 12h2"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
-const CityIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const CityIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="6" width="6" height="16" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Rect x="10" y="2" width="6" height="20" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Rect x="18" y="8" width="4" height="14" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Rect x="4" y="10" width="2" height="2" fill={color}/>
-    <Rect x="4" y="14" width="2" height="2" fill={color}/>
-    <Rect x="12" y="6" width="2" height="2" fill={color}/>
-    <Rect x="12" y="10" width="2" height="2" fill={color}/>
-    <Rect x="12" y="14" width="2" height="2" fill={color}/>
-    <Rect x="19" y="12" width="2" height="2" fill={color}/>
+    <Rect
+      x="2"
+      y="6"
+      width="6"
+      height="16"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Rect
+      x="10"
+      y="2"
+      width="6"
+      height="20"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Rect
+      x="18"
+      y="8"
+      width="4"
+      height="14"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Rect x="4" y="10" width="2" height="2" fill={color} />
+    <Rect x="4" y="14" width="2" height="2" fill={color} />
+    <Rect x="12" y="6" width="2" height="2" fill={color} />
+    <Rect x="12" y="10" width="2" height="2" fill={color} />
+    <Rect x="12" y="14" width="2" height="2" fill={color} />
+    <Rect x="19" y="12" width="2" height="2" fill={color} />
   </Svg>
 );
 
-const AccountTieIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const AccountTieIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="6" r="4" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="M12 14c-6 0-8 3-8 6h16c0-3-2-6-8-6z" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Path d="M12 14v6M10 16l2-2 2 2" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Circle cx="12" cy="6" r="4" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 14c-6 0-8 3-8 6h16c0-3-2-6-8-6z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M12 14v6M10 16l2-2 2 2"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const SchoolIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const SchoolIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M22 9L12 5 2 9l10 4 10-4z" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none"/>
-    <Path d="M6 10v7c0 1.5 2.5 3 6 3s6-1.5 6-3v-7" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none"/>
+    <Path
+      d="M22 9L12 5 2 9l10 4 10-4z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Path
+      d="M6 10v7c0 1.5 2.5 3 6 3s6-1.5 6-3v-7"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
   </Svg>
 );
 
-const AccountSearchIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const AccountSearchIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="10" cy="8" r="4" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="M2 21c0-5 4-9 8-9s8 4 8 9" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Circle cx="18" cy="18" r="3" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="m21 21-1.5-1.5" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
+    <Circle cx="10" cy="8" r="4" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M2 21c0-5 4-9 8-9s8 4 8 9"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Circle cx="18" cy="18" r="3" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="m21 21-1.5-1.5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
-const SportsIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const SportsIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="M12 2a10 10 0 0 0 0 20M12 2a10 10 0 0 1 0 20" 
-          stroke={color} 
-          strokeWidth="2"/>
-    <Path d="M2 12h20" 
-          stroke={color} 
-          strokeWidth="2"/>
-    <Circle cx="12" cy="12" r="2" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 2a10 10 0 0 0 0 20M12 2a10 10 0 0 1 0 20"
+      stroke={color}
+      strokeWidth="2"
+    />
+    <Path d="M2 12h20" stroke={color} strokeWidth="2" />
+    <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
-const StoreIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const StoreIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7v1a3 3 0 0 0 6 0V7M3 7l2-5h14l2 5M3 7h18" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none"/>
-    <Path d="M13 7v1a3 3 0 0 0 6 0V7" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Rect x="9" y="12" width="6" height="5" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
+    <Path
+      d="M3 7v1a3 3 0 0 0 6 0V7M3 7l2-5h14l2 5M3 7h18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Path
+      d="M13 7v1a3 3 0 0 0 6 0V7"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Rect
+      x="9"
+      y="12"
+      width="6"
+      height="5"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
   </Svg>
 );
 
-const MeetingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const MeetingsIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="3" width="20" height="14" rx="2" ry="2" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Path d="M8 21l4-4 4 4" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="7" cy="9" r="2" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Circle cx="17" cy="9" r="2" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="M12 6v6M9 9h6" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
+    <Rect
+      x="2"
+      y="3"
+      width="20"
+      height="14"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M8 21l4-4 4 4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="7" cy="9" r="2" stroke={color} strokeWidth="2" fill="none" />
+    <Circle cx="17" cy="9" r="2" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 6v6M9 9h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </Svg>
 );
 
-const AppealIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const AppealIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none"/>
-    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
-    <Circle cx="12" cy="13" r="1" fill={color}/>
+    <Path
+      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <Path
+      d="M14 2v6h6M16 13H8M16 17H8M10 9H8"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="13" r="1" fill={color} />
   </Svg>
 );
 
-const VoteIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const VoteIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="6" width="20" height="12" rx="2" ry="2" 
-          stroke={color} 
-          strokeWidth="2" 
-          fill="none"/>
-    <Path d="M12 2v4M8 6V2M16 6V2" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
-    <Path d="M7 10h10M7 14h6" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round"/>
-    <Circle cx="18" cy="12" r="2" 
-            stroke={color} 
-            strokeWidth="2" 
-            fill="none"/>
-    <Path d="m17 13 1 1 3-3" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"/>
+    <Rect
+      x="2"
+      y="6"
+      width="20"
+      height="12"
+      rx="2"
+      ry="2"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M12 2v4M8 6V2M16 6V2"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <Path
+      d="M7 10h10M7 14h6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <Circle cx="18" cy="12" r="2" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="m17 13 1 1 3-3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const SettingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const SettingsIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
@@ -291,74 +363,75 @@ const SettingsIcon = ({ size = 24, color = "#7dd3c0" }) => (
   </Svg>
 );
 
-const LogoutIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const LogoutIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"/>
-    <Path d="M16 17l5-5-5-5M21 12H9"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"/>
+    <Path
+      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M16 17l5-5-5-5M21 12H9"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const FamilyTreeIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const FamilyTreeIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="6" r="3"
-            stroke={color}
-            strokeWidth="2"
-            fill="none"/>
-    <Path d="M12 9v3M12 12h-6v3M12 12h6v3"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"/>
-    <Circle cx="6" cy="18" r="2"
-            stroke={color}
-            strokeWidth="2"
-            fill="none"/>
-    <Circle cx="12" cy="18" r="2"
-            stroke={color}
-            strokeWidth="2"
-            fill="none"/>
-    <Circle cx="18" cy="18" r="2"
-            stroke={color}
-            strokeWidth="2"
-            fill="none"/>
+    <Circle cx="12" cy="6" r="3" stroke={color} strokeWidth="2" fill="none" />
+    <Path
+      d="M12 9v3M12 12h-6v3M12 12h6v3"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="6" cy="18" r="2" stroke={color} strokeWidth="2" fill="none" />
+    <Circle cx="12" cy="18" r="2" stroke={color} strokeWidth="2" fill="none" />
+    <Circle cx="18" cy="18" r="2" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
 const DrawerContent = (props: DrawerContentComponentProps) => {
-  const { user, logout } = useAuth();
-  const { t } : any = useLanguage();
-  const { drorData } = useConfiguration(); // Add this line to get dror data
-  
+  const {user, logout} = useAuth();
+  const {t}: any = useLanguage();
+  const {drorData} = useConfiguration(); // Add this line to get dror data
+  const {addToHistory} = useDrawerNavigation();
+
   // Remove static menu items and create dynamic menu based on drorData
   const getMenuItems = () => {
-
-  
-
     if (!drorData) return [];
-    
+
     const menuMapping = [
-      { key: 'occasions', name: 'Occasions', icon: 'calendar' },
-      { key: 'kartavya', name: 'Kartavya', icon: 'briefcase' },
-      { key: 'bhajan', name: 'Bhajan', icon: 'music' },
-      { key: 'games', name: 'Games', icon: 'games' },
-      { key: 'citySearch', name: 'CitySearch', icon: 'city' },
-      { key: 'organizationOfficer', name: 'OrganizationOfficer', icon: 'account-tie' },
-      { key: 'education', name: 'Education', icon: 'school' },
-      { key: 'employment', name: 'Employment', icon: 'account-search' },
-      { key: 'sports', name: 'Sports', icon: 'sports' },
-      { key: 'dukan', name: 'Dukan', icon: 'store' },
-      { key: 'meetings', name: 'Meetings', icon: 'meetings' },
-      { key: 'appeal', name: 'Appeal', icon: 'appeal' },
-      { key: 'vote', name: 'Vote', icon: 'vote' },
-      { key: 'familyTree', name: 'FamilyTree', icon: 'family-tree', alwaysShow: true },
+      {key: 'occasions', name: 'Occasions', icon: 'calendar'},
+      {key: 'kartavya', name: 'Kartavya', icon: 'briefcase'},
+      {key: 'bhajan', name: 'Bhajan', icon: 'music'},
+      {key: 'games', name: 'Games', icon: 'games'},
+      {key: 'citySearch', name: 'CitySearch', icon: 'city'},
+      {
+        key: 'organizationOfficer',
+        name: 'OrganizationOfficer',
+        icon: 'account-tie',
+      },
+      {key: 'education', name: 'Education', icon: 'school'},
+      {key: 'employment', name: 'Employment', icon: 'account-search'},
+      {key: 'sports', name: 'Sports', icon: 'sports'},
+      {key: 'dukan', name: 'Dukan', icon: 'store'},
+      {key: 'meetings', name: 'Meetings', icon: 'meetings'},
+      {key: 'appeal', name: 'Appeal', icon: 'appeal'},
+      {key: 'vote', name: 'Vote', icon: 'vote'},
+      {
+        key: 'familyTree',
+        name: 'FamilyTree',
+        icon: 'family-tree',
+        alwaysShow: true,
+      },
     ];
 
     // Filter menu items based on drorData visibility
@@ -375,41 +448,42 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
   const handleMenuPress = (screenName: string) => {
     console.log('screenName', screenName);
-    
+
+    // Add to navigation history for drawer-aware back navigation
+    addToHistory(screenName);
+
     props?.navigation?.navigate(screenName);
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      t('Logout'),
-      t('Are you sure you want to logout?'),
-      [
-        {
-          text: t('Cancel'),
-          style: 'cancel',
+    Alert.alert(t('Logout'), t('Are you sure you want to logout?'), [
+      {
+        text: t('Cancel'),
+        style: 'cancel',
+      },
+      {
+        text: t('Logout'),
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          // Close the drawer after logout
+          props.navigation.closeDrawer();
         },
-        {
-          text: t('Logout'),
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            // Close the drawer after logout
-            props.navigation.closeDrawer();
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const getInitials = () => {
     if (user) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(
+        0,
+      )}`.toUpperCase();
     }
     return 'U';
   };
 
   const renderIcon = (iconName: string) => {
-    const iconProps = { size: 24, color: "#7dd3c0" };
+    const iconProps = {size: 24, color: '#7dd3c0'};
 
     switch (iconName) {
       case 'calendar':
@@ -450,7 +524,6 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       {...props}
       style={styles.drawerContent}
       contentContainerStyle={styles.drawerContentContainer}>
-             
       {/* User Profile Section */}
       <View style={styles.userProfile}>
         <View style={styles.avatar}>
@@ -467,7 +540,9 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
             )
           ) : (
             <Image
-              source={{uri: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg'}}
+              source={{
+                uri: 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
+              }}
               style={styles.profileImage}
             />
           )}
@@ -495,9 +570,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Logout Section */}
       <View style={styles.logoutSection}>
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogoutIcon size={24} color="#ef4444" />
           <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
@@ -505,7 +578,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Settings Section */}
       <View style={styles.donationSection}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.donationButton}
           onPress={() => props.navigation.navigate('Settings')}>
           <SettingsIcon size={24} color="#7dd3c0" />
