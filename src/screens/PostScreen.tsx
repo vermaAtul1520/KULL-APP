@@ -20,8 +20,16 @@ import {
   Dimensions,
   SafeAreaView,
   ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
+import {
+  launchImageLibrary,
+  launchCamera,
+  ImagePickerResponse,
+  MediaType,
+} from 'react-native-image-picker';
 
 const {width, height} = Dimensions.get('window');
 
@@ -105,6 +113,8 @@ const PostScreen = () => {
   });
   const [newComment, setNewComment] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
@@ -251,6 +261,23 @@ const PostScreen = () => {
       />
       <Circle cx="8.5" cy="8.5" r="1.5" fill={color} />
       <Path d="M21 15l-5-5L5 21" fill="none" stroke={color} strokeWidth="2" />
+    </Svg>
+  );
+
+  const LinkIcon = ({size = 20, color = '#666'}) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
     </Svg>
   );
 
@@ -725,6 +752,7 @@ const PostScreen = () => {
       await loadPosts();
 
       setNewPost({title: '', content: '', imageUrl: '', selectedImage: null});
+      setImageUrl('');
       setShowPostModal(false);
       Alert.alert(
         t('Success') || 'Success',
@@ -741,25 +769,90 @@ const PostScreen = () => {
     }
   };
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: t('Camera Permission') || 'Camera Permission',
+            message:
+              t('This app needs access to camera to take photos.') ||
+              'This app needs access to camera to take photos.',
+            buttonNeutral: t('Ask Me Later') || 'Ask Me Later',
+            buttonNegative: t('Cancel') || 'Cancel',
+            buttonPositive: t('OK') || 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleImageSelection = (type: 'camera' | 'gallery') => {
     setShowImagePicker(false);
 
+    const options = {
+      mediaType: 'photo' as MediaType,
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+      quality: 0.8 as any, // Type assertion for quality
+    };
+
+    const handleImageResponse = (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorMessage) {
+        if (response.errorMessage) {
+          Alert.alert(t('Error') || 'Error', response.errorMessage);
+        }
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        const imageUri = response.assets[0].uri;
+        if (imageUri) {
+          setNewPost({...newPost, selectedImage: imageUri});
+        }
+      }
+    };
+
     if (type === 'camera') {
-      Alert.alert(
-        t('Camera') || 'Camera',
-        t('Camera feature would open here. For demo, using a sample image.') ||
-          'Camera feature would open here. For demo, using a sample image.',
-      );
-      const sampleImage = 'https://picsum.photos/800/600?random=1';
-      setNewPost({...newPost, selectedImage: sampleImage});
+      requestCameraPermission().then(hasPermission => {
+        if (hasPermission) {
+          launchCamera(options, handleImageResponse);
+        } else {
+          Alert.alert(
+            t('Permission Required') || 'Permission Required',
+            t('Camera permission is required to take photos.') ||
+              'Camera permission is required to take photos.',
+          );
+        }
+      });
     } else if (type === 'gallery') {
+      launchImageLibrary(options, handleImageResponse);
+    }
+  };
+
+  const handleUrlInput = () => {
+    setShowImagePicker(false);
+    setShowUrlInput(true);
+  };
+
+  const handleUrlSubmit = () => {
+    if (imageUrl.trim()) {
+      setNewPost({...newPost, selectedImage: imageUrl.trim()});
+      setImageUrl('');
+      setShowUrlInput(false);
+    } else {
       Alert.alert(
-        t('Gallery') || 'Gallery',
-        t('Gallery would open here. For demo, using a sample image.') ||
-          'Gallery would open here. For demo, using a sample image.',
+        t('Invalid URL') || 'Invalid URL',
+        t('Please enter a valid image URL.') ||
+          'Please enter a valid image URL.',
       );
-      const sampleImage = 'https://picsum.photos/800/600?random=2';
-      setNewPost({...newPost, selectedImage: sampleImage});
     }
   };
 
@@ -1120,12 +1213,70 @@ const PostScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.imagePickerOption}
+              onPress={handleUrlInput}>
+              <LinkIcon size={24} color="#2a2a2a" />
+              <Text style={styles.imagePickerOptionText}>
+                {t('Paste Image URL') || 'Paste Image URL'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.imagePickerCancel}
               onPress={() => setShowImagePicker(false)}>
               <Text style={styles.imagePickerCancelText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* URL Input Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showUrlInput}
+        onRequestClose={() => setShowUrlInput(false)}>
+        <View style={styles.imagePickerOverlay}>
+          <View style={styles.imagePickerModal}>
+            <Text style={styles.imagePickerTitle}>
+              {t('Enter Image URL') || 'Enter Image URL'}
+            </Text>
+
+            <TextInput
+              style={styles.urlInput}
+              placeholder={
+                t('Paste image URL here...') || 'Paste image URL here...'
+              }
+              value={imageUrl}
+              onChangeText={setImageUrl}
+              multiline={false}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+
+            <View style={styles.urlModalButtons}>
+              <TouchableOpacity
+                style={[styles.imagePickerOption, styles.urlSubmitButton]}
+                onPress={handleUrlSubmit}>
+                <Text style={styles.imagePickerOptionText}>
+                  {t('Add Image') || 'Add Image'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.imagePickerCancel}
+                onPress={() => {
+                  setShowUrlInput(false);
+                  setImageUrl('');
+                }}>
+                <Text style={styles.imagePickerCancelText}>
+                  {t('Cancel') || 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1735,6 +1886,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontWeight: '500',
+  },
+  urlInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#2a2a2a',
+    backgroundColor: '#f8f9fa',
+    width: '100%',
+    marginBottom: 20,
+    minHeight: 44,
+  },
+  urlModalButtons: {
+    width: '100%',
+    gap: 10,
+  },
+  urlSubmitButton: {
+    backgroundColor: '#7dd3c0',
+    marginBottom: 0,
   },
   // Comments styles
   commentsContent: {
