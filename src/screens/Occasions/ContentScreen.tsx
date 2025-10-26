@@ -24,8 +24,7 @@ import {
   VideoIcon,
   ImageIcon,
 } from './components/OccasionIcons';
-import {OccasionApiService, Occasion} from '@app/services/occasionApi';
-import OccasionContent from '@app/services/occasionApi';
+import {OccasionApiService, Occasion, Content} from '@app/services/occasionApi';
 import {useOccasion} from '@app/contexts/OccasionContext';
 
 export const ContentScreen = () => {
@@ -37,8 +36,7 @@ export const ContentScreen = () => {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedContent, setSelectedContent] =
-    useState<OccasionContent | null>(null);
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(
     null,
@@ -67,7 +65,10 @@ export const ContentScreen = () => {
       console.log('Fetched occasions:', response.data);
     } catch (error) {
       console.error('Error fetching occasions:', error);
-      Alert.alert('Error', error.message || 'Failed to load content');
+      Alert.alert(
+        'Error',
+        (error as Error)?.message || 'Failed to load content',
+      );
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export const ContentScreen = () => {
     setRefreshing(false);
   };
 
-  const handleOpenContent = (content: OccasionContent) => {
+  const handleOpenContent = (content: Content) => {
     setSelectedContent(content);
 
     if (content.type === 'video') {
@@ -123,7 +124,10 @@ export const ContentScreen = () => {
       <View
         style={[
           styles.typeBadge,
-          {backgroundColor: colors[type] || AppColors.gray},
+          {
+            backgroundColor:
+              colors[type as keyof typeof colors] || AppColors.gray,
+          },
         ]}>
         <Text style={styles.typeBadgeText}>{type.toUpperCase()}</Text>
       </View>
@@ -132,7 +136,7 @@ export const ContentScreen = () => {
 
   // Flatten all contents from all occasions
   const allContents = occasions.flatMap(occasion =>
-    occasion.contents.map(content => ({
+    occasion.contents.map((content: Content) => ({
       ...content,
       occasionId: occasion._id,
     })),

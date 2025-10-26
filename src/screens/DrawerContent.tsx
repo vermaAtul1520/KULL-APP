@@ -500,7 +500,14 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
     // Add to navigation history for drawer-aware back navigation
     addToHistory(screenName);
 
-    props?.navigation?.navigate(screenName);
+    // Navigate to HomeTab first, then to the Home stack, then to the specific screen
+    // Since all drawer screens are now part of each tab's stack
+    props?.navigation?.navigate('HomeTab', {
+      screen: 'Home',
+      params: {
+        screen: screenName,
+      },
+    });
   };
 
   const handleLogout = () => {

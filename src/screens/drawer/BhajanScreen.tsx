@@ -513,7 +513,7 @@ const BhajanScreen = () => {
       <FlatList
         data={filteredVideos}
         renderItem={renderVideoCard}
-        keyExtractor={item => item._id}
+        keyExtractor={(item: any) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         ItemSeparatorComponent={() => <View style={styles.separator} />}

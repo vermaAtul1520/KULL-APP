@@ -10,12 +10,41 @@ import {
   Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
+type HomeStackParamList = {
+  HomeScreen: undefined;
+  Occasions: undefined;
+  OccasionCategories: {occasionType: string};
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+  };
+  OccasionGenderSelection: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+  };
+  OccasionContent: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    gotra?: string;
+    subGotra?: string;
+    gender?: string;
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 import {AppColors} from './constants';
 import {BackIcon} from './components/OccasionIcons';
 import {useOccasion} from '@app/contexts/OccasionContext';
 import OccasionApiService from '@app/services/occasionApi'; // <-- Import OccasionApiService
 export const GenderSelectionScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const {occasionType, categoryId, categoryName, gotra, subGotra} =
     route.params as {
@@ -66,7 +95,10 @@ export const GenderSelectionScreen = () => {
       console.log('Fetched occasions:', response.data);
     } catch (error) {
       console.error('Error fetching occasions:', error);
-      Alert.alert('Error', error.message || 'Failed to load content');
+      Alert.alert(
+        'Error',
+        (error as Error)?.message || 'Failed to load content',
+      );
     } finally {
     }
   };

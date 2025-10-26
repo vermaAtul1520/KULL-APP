@@ -294,6 +294,7 @@ interface KartyaItem {
   title: string;
   description: string;
   category: string;
+  author?: string;
   filetype: 'pdf' | 'image';
   attachment: string;
   thumbnailUrl?: string;
@@ -795,7 +796,7 @@ export default function KartavyaScreen() {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {filteredItems.filter(i => i.type === 'pdf').length}
+              {filteredItems.filter(i => i.filetype === 'pdf').length}
             </Text>
             <Text style={styles.statLabel}>PDFs</Text>
           </View>

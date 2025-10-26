@@ -378,7 +378,7 @@ const NewsScreen = () => {
       <FlatList
         data={filteredNews}
         renderItem={renderNewsItem}
-        keyExtractor={item => item._id}
+        keyExtractor={(item: any) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={
