@@ -384,12 +384,11 @@ const AppealScreen = () => {
   // Create API payload - UPDATED TO SIMPLIFIED STRUCTURE
   const createApiPayload = async () => {
     const COMMUNITY_ID = await getCommunityId();
-    const payload = {
+    const payload: any = {
       subject: subject.trim(),
       description: description.trim(),
       category: getCategoryApiValue(category),
       community: COMMUNITY_ID,
-      attachment: {},
     };
 
     // Add uploaded file if present
@@ -403,6 +402,9 @@ const AppealScreen = () => {
         base64Data: uploadedFile.base64,
         uri: uploadedFile.uri,
       };
+    } else {
+      // Set attachment to empty string when no file is uploaded
+      payload.attachment = '';
     }
 
     return payload;

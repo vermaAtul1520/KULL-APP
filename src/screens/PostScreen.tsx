@@ -71,21 +71,49 @@ interface CommentsResponse {
   comments: ApiComment[];
 }
 
+interface Like {
+  _id: string;
+  post: string;
+  user: Author;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface Comment {
+  _id: string;
+  post: string;
+  author: Author;
+  content: string;
+  parentComment: string | null;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface DebugInfo {
+  likesInArray: number;
+  actualLikeCount: number;
+  commentsInArray: number;
+  actualCommentCount: number;
+}
+
 interface Post {
   _id: string;
   title: string;
   content: string;
-  imageUrl: string | null;
+  imageUrl: string;
   author: Author;
   community: Community;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   __v: number;
-  // Additional local properties
-  likes?: number;
-  comments?: number;
-  isLiked?: boolean;
+  comments: Comment[];
+  likes: Like[];
+  debug: DebugInfo;
+  // Additional property for local comment data management
   commentsData?: ApiComment[];
 }
 
@@ -311,6 +339,7 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const communityId = await getCommunityId();
+      console.log('Fetching posts for community:', communityId);
       const response = await fetch(
         `${BASE_URL}/api/posts/community/${communityId}`,
         {
@@ -318,6 +347,7 @@ const PostScreen = () => {
           headers,
         },
       );
+      console.log('post response', headers, response);
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
@@ -327,10 +357,6 @@ const PostScreen = () => {
 
       return data.data.map(post => ({
         ...post,
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-        commentsData: [],
       }));
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -385,7 +411,7 @@ const PostScreen = () => {
 
       const data = await response.json();
 
-      console.log('dataaaaaaaaa', data);
+      console.log('dataaaaaaaaa', postId, data);
 
       return data;
     } catch (error) {
@@ -516,7 +542,10 @@ const PostScreen = () => {
   };
 
   const getAuthorAvatar = (author: Author | CommentAuthor): string => {
-    const fullName = `${author.firstName} ${author.lastName}`;
+    let fullName = '';
+    if (author?.firstName && author?.lastName) {
+      fullName = `${author?.firstName} ${author?.lastName}`;
+    }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       fullName,
     )}&background=2a2a2a&color=fff&size=100`;
@@ -555,31 +584,10 @@ const PostScreen = () => {
 
   const handleLike = async (post: Post) => {
     try {
-      setPosts(prevPosts =>
-        prevPosts.map(p =>
-          p._id === post._id
-            ? {
-                ...p,
-                isLiked: !p.isLiked,
-                likes: (p.likes || 0) + (p.isLiked ? -1 : 1),
-              }
-            : p,
-        ),
-      );
-
       await likePost(post._id);
+      // Refresh posts to get updated likes data
+      await fetchPosts();
     } catch (error) {
-      setPosts(prevPosts =>
-        prevPosts.map(p =>
-          p._id === post._id
-            ? {
-                ...p,
-                isLiked: !p.isLiked,
-                likes: (p.likes || 0) + (p.isLiked ? 1 : -1),
-              }
-            : p,
-        ),
-      );
       Alert.alert(
         t('Error') || 'Error',
         t('Failed to like post. Please try again.') ||
@@ -695,34 +703,38 @@ const PostScreen = () => {
 
   const openComments = async (post: Post) => {
     console.log('Opening comments for post:', post._id);
-    setSelectedPost({...post, commentsData: []});
+    setSelectedPost({...post});
     setShowCommentsModal(true);
 
+    // If the post already has comments, show them immediately
+    if (post.comments && post.comments.length > 0) {
+      setLoadingComments(false);
+      return;
+    }
+
+    // Otherwise, fetch detailed comments with replies
     try {
       setLoadingComments(true);
-      console.log('Fetching comments for post ID:', post._id);
+      console.log('Fetching detailed comments for post ID:', post._id);
       const comments = await fetchComments(post._id);
-      console.log('Fetched comments:', comments);
+      console.log('Fetched detailed comments:', comments);
 
       setSelectedPost(prev => ({
         ...prev!,
         commentsData: comments,
-        comments: comments.length,
       }));
 
       setPosts(prevPosts =>
         prevPosts.map(p =>
-          p._id === post._id
-            ? {...p, comments: comments.length, commentsData: comments}
-            : p,
+          p._id === post._id ? {...p, commentsData: comments} : p,
         ),
       );
     } catch (error) {
       console.error('Error in openComments:', error);
       Alert.alert(
         t('Error') || 'Error',
-        t('Failed to load comments. Please try again.') ||
-          'Failed to load comments. Please try again.',
+        t('Failed to load detailed comments. Please try again.') ||
+          'Failed to load detailed comments. Please try again.',
       );
       // Don't close the modal, just show the error state
     } finally {
@@ -905,7 +917,6 @@ const PostScreen = () => {
 
       setSelectedPost(prev => ({
         ...prev!,
-        comments: updatedComments.length,
         commentsData: updatedComments,
       }));
 
@@ -914,7 +925,6 @@ const PostScreen = () => {
           post._id === selectedPost._id
             ? {
                 ...post,
-                comments: updatedComments.length,
                 commentsData: updatedComments,
               }
             : post,
@@ -952,7 +962,6 @@ const PostScreen = () => {
 
               setSelectedPost(prev => ({
                 ...prev!,
-                comments: updatedComments.length,
                 commentsData: updatedComments,
               }));
 
@@ -961,7 +970,6 @@ const PostScreen = () => {
                   post._id === selectedPost._id
                     ? {
                         ...post,
-                        comments: updatedComments.length,
                         commentsData: updatedComments,
                       }
                     : post,
@@ -1033,70 +1041,80 @@ const PostScreen = () => {
     </View>
   );
 
-  const renderPost = ({item}: {item: Post}) => (
-    <View style={styles.postCard}>
-      <View style={styles.postHeader}>
-        <Image
-          source={{uri: getAuthorAvatar(item.author)}}
-          style={styles.authorAvatar}
-        />
-        <View style={styles.authorInfo}>
-          <Text style={styles.authorName}>
-            {`${item.author.firstName} ${item.author.lastName}`}
-          </Text>
-          <Text style={styles.timestamp}>{formatTimeAgo(item.createdAt)}</Text>
-          <Text style={styles.communityName}>{item.community.name}</Text>
-        </View>
-      </View>
+  const renderPost = ({item}: {item: Post}) => {
+    // Check if current user has liked this post
+    const isLiked =
+      item.likes?.some(like => like.user._id === user?._id) || false;
+    const likesCount = item.likes?.length || 0;
+    const commentsCount = item.comments?.length || 0;
 
-      <TouchableOpacity
-        onPress={() => openPostDetail(item)}
-        activeOpacity={0.8}>
-        <Text style={styles.postTitle}>{item.title}</Text>
-        <View>
-          <Text style={styles.postContent} numberOfLines={3}>
-            {item.content}
-          </Text>
-          {item.content.length > 150 && (
-            <Text style={styles.readMoreText}>...read more</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-
-      {item.imageUrl && (
-        <Image source={{uri: item.imageUrl}} style={styles.postImage} />
-      )}
-
-      <View style={styles.postActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleLike(item)}>
-          <LikeIcon
-            size={20}
-            color={item.isLiked ? '#3b82f6' : '#666'}
-            filled={item.isLiked}
+    return (
+      <View style={styles.postCard}>
+        <View style={styles.postHeader}>
+          <Image
+            source={{uri: getAuthorAvatar(item.author)}}
+            style={styles.authorAvatar}
           />
-          <Text style={[styles.actionText, item.isLiked && styles.likedText]}>
-            {item.likes || 0}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.authorInfo}>
+            <Text style={styles.authorName}>
+              {`${item.author.firstName} ${item.author.lastName}`}
+            </Text>
+            <Text style={styles.timestamp}>
+              {formatTimeAgo(item.createdAt)}
+            </Text>
+            <Text style={styles.communityName}>{item.community.name}</Text>
+          </View>
+        </View>
 
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => openComments(item)}>
-          <CommentIcon size={20} color="#666" />
-          <Text style={styles.actionText}>{item.comments || 0}</Text>
+          onPress={() => openPostDetail(item)}
+          activeOpacity={0.8}>
+          <Text style={styles.postTitle}>{item.title}</Text>
+          <View>
+            <Text style={styles.postContent} numberOfLines={3}>
+              {item.content}
+            </Text>
+            {item.content.length > 150 && (
+              <Text style={styles.readMoreText}>...read more</Text>
+            )}
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleDownload(item.imageUrl, item.title)}>
-          <DownloadIcon size={20} color="#666" />
-          <Text style={styles.actionText}>{t('Download') || 'Download'}</Text>
-        </TouchableOpacity>
+        {item.imageUrl && (
+          <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+        )}
+
+        <View style={styles.postActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleLike(item)}>
+            <LikeIcon
+              size={20}
+              color={isLiked ? '#3b82f6' : '#666'}
+              filled={isLiked}
+            />
+            <Text style={[styles.actionText, isLiked && styles.likedText]}>
+              {likesCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => openComments(item)}>
+            <CommentIcon size={20} color="#666" />
+            <Text style={styles.actionText}>{commentsCount}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleDownload(item.imageUrl, item.title)}>
+            <DownloadIcon size={20} color="#666" />
+            <Text style={styles.actionText}>{t('Download') || 'Download'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderCreatePostModal = () => (
     <Modal
@@ -1349,7 +1367,8 @@ const PostScreen = () => {
         <View style={styles.commentsModal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {t('Comments') || 'Comments'} ({selectedPost?.comments || 0})
+              {t('Comments') || 'Comments'} (
+              {selectedPost?.comments?.length || 0})
             </Text>
             <TouchableOpacity
               onPress={() => {
@@ -1368,15 +1387,30 @@ const PostScreen = () => {
                   {t('Loading comments...') || 'Loading comments...'}
                 </Text>
               </View>
-            ) : selectedPost?.commentsData?.length === 0 ? (
+            ) : selectedPost?.commentsData?.length === 0 &&
+              selectedPost?.comments?.length === 0 ? (
               <View style={styles.noCommentsContainer}>
                 <Text style={styles.noCommentsText}>
                   {t('No comments yet. Be the first to comment!') ||
                     'No comments yet. Be the first to comment!'}
                 </Text>
               </View>
+            ) : // Use commentsData if available (detailed comments with replies), otherwise use comments from post
+            selectedPost?.commentsData &&
+              selectedPost.commentsData.length > 0 ? (
+              selectedPost.commentsData.map(comment => renderComment(comment))
             ) : (
-              selectedPost?.commentsData?.map(comment => renderComment(comment))
+              selectedPost?.comments?.map(comment =>
+                renderComment({
+                  ...comment,
+                  author: {
+                    _id: comment.author._id,
+                    firstName: comment.author.firstName,
+                    lastName: comment.author.lastName,
+                  } as CommentAuthor,
+                  replies: [],
+                } as ApiComment),
+              )
             )}
           </ScrollView>
 

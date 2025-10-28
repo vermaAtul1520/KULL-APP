@@ -68,7 +68,7 @@ export const FiltersScreen = () => {
     setGotraFilters(selectedGotra || null, selectedSubGotra || null);
 
     // Navigate to Gender selection screen
-    (navigation as any).navigate('OccasionGender', {
+    (navigation as any).navigate('OccasionGenderSelection', {
       occasionType,
       categoryId,
       categoryName,

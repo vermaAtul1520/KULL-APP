@@ -1,12 +1,11 @@
 import ComingSoon from '@app/components/ComingSoon';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
 
 const GamesScreen = (): React.JSX.Element => {
   return (
     <View style={styles.container}>
-       <ComingSoon/>
-      {/* Add your games content here */}
+      <ComingSoon />
     </View>
   );
 };
