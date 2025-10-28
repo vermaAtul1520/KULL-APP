@@ -5,6 +5,7 @@ import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
 // Types
 export interface ConfigurationAPIResponse {
   success: boolean;
+  message?: string;
   data: {
     _id: string;
     community: string;
@@ -219,7 +220,7 @@ export class ConfigurationApiService {
     try {
       await this.fetchCommunityConfiguration();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.log('API connection test failed:', error.message);
       return false;
     }
@@ -234,7 +235,7 @@ export class ConfigurationApiService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.fetchCommunityConfiguration();
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
         
         // Don't retry on authentication errors

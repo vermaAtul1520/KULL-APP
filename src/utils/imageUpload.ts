@@ -36,8 +36,13 @@ export const uploadImageToCloudinary = async (
         'Content-Type': 'multipart/form-data',
       },
     });
-
+    console.log('Cloudinary request:', `${CLOUDINARY_UPLOAD_URL}`, formData);
     const result = await response.json();
+
+    console.log(
+      'Cloudinary response:',
+      result
+    )
 
     if (response.ok && result.secure_url) {
       return {

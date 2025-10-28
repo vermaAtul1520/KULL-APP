@@ -9,10 +9,46 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { OCCASION_TYPES, AppColors } from './constants';
-import { FamilyIcon, BabyIcon, BoysMarriageIcon, GirlsMarriageIcon, DeathIcon, BackIcon } from './components/OccasionIcons';
-import { useOccasion } from '@app/contexts/OccasionContext';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
+type HomeStackParamList = {
+  HomeScreen: undefined;
+  Occasions: undefined;
+  OccasionCategories: {occasionType: string};
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+  };
+  OccasionGenderSelection: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+  };
+  OccasionContent: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    gotra?: string;
+    subGotra?: string;
+    gender?: string;
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
+import {OCCASION_TYPES, AppColors} from './constants';
+import {
+  FamilyIcon,
+  BabyIcon,
+  BoysMarriageIcon,
+  GirlsMarriageIcon,
+  DeathIcon,
+  BackIcon,
+} from './components/OccasionIcons';
+import {useOccasion} from '@app/contexts/OccasionContext';
 
 const OCCASION_DATA = [
   {
@@ -48,12 +84,12 @@ const OCCASION_DATA = [
 ];
 
 export const OccasionTypesScreen = () => {
-  const navigation = useNavigation();
-  const { setOccasionType } = useOccasion();
+  const navigation = useNavigation<NavigationProp>();
+  const {setOccasionType} = useOccasion();
 
   const handleSelectType = (occasionType: string) => {
     setOccasionType(occasionType);
-    navigation.navigate('OccasionCategories', { occasionType });
+    navigation.navigate('OccasionCategories', {occasionType});
   };
 
   return (
@@ -61,27 +97,33 @@ export const OccasionTypesScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Occasions</Text>
-          <Text style={styles.headerSubtitle}>Choose a category to explore</Text>
+          <Text style={styles.headerSubtitle}>
+            Choose a category to explore
+          </Text>
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
         <View style={styles.cardsContainer}>
           {OCCASION_DATA.map((item, index) => {
             const IconComponent = item.icon;
             return (
               <TouchableOpacity
                 key={index}
-                style={[styles.card, { borderLeftColor: item.color }]}
+                style={[styles.card, {borderLeftColor: item.color}]}
                 onPress={() => handleSelectType(item.type)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+                activeOpacity={0.8}>
+                <View
+                  style={[styles.iconContainer, {backgroundColor: item.color}]}>
                   <IconComponent size={40} color={AppColors.white} />
                 </View>
 
@@ -152,7 +194,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,

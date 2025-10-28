@@ -188,7 +188,7 @@ static async fetchOccasions(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.fetchCategories();
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
 
         // Don't retry on auth errors
@@ -225,7 +225,7 @@ static async fetchOccasions(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.fetchOccasions(occasionType, categoryId, gotra, subGotra, gender);
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
 
         // Don't retry on auth errors

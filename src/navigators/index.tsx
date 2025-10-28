@@ -6,6 +6,7 @@ import {
   View,
   TextInput,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -24,6 +25,7 @@ import {
   DefaultTheme,
   NavigationContainer,
   useNavigation,
+  NavigatorScreenParams,
 } from '@react-navigation/native';
 import {ConfigurationProvider} from '@app/hooks/ConfigContext';
 import HomeScreen from '@app/screens/Home/HomeScreen';
@@ -61,7 +63,7 @@ import {
 import {OccasionProvider} from '@app/contexts/OccasionContext';
 import {DrawerNavigationProvider} from '@app/contexts/DrawerNavigationContext';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
-import BhajanScreen from '@app/screens/drawer/BhajanScreen';
+import BhajanScreen, {BackIcon} from '@app/screens/drawer/BhajanScreen';
 import LawsScreen from '@app/screens/drawer/LawsScreen';
 import CitySearchScreen from '@app/screens/drawer/CitySearchScreen';
 import OrganizationOfficerScreen from '@app/screens/drawer/OrganizationOfficerScreen';
@@ -129,7 +131,19 @@ type AuthStackParamList = {
 };
 
 type RootDrawerParamList = {
-  HomeTab: undefined;
+  HomeTab: NavigatorScreenParams<HomeTabParamList> | undefined;
+};
+
+type HomeTabParamList = {
+  Home: NavigatorScreenParams<HomeStackParamList> | undefined;
+  Post: NavigatorScreenParams<PostStackParamList> | undefined;
+  News: NavigatorScreenParams<NewsStackParamList> | undefined;
+  MyPeople: NavigatorScreenParams<MyPeopleStackParamList> | undefined;
+  Donation: NavigatorScreenParams<DonationStackParamList> | undefined;
+};
+
+type HomeStackParamList = {
+  HomeScreen: undefined;
   Occasions: undefined;
   OccasionCategories: {occasionType: string};
   OccasionFilters: {
@@ -137,20 +151,20 @@ type RootDrawerParamList = {
     categoryId: string | null;
     categoryName: string | null;
   };
-  OccasionGender: {
+  OccasionGenderSelection: {
     occasionType: string;
     categoryId: string | null;
     categoryName: string | null;
-    gotra?: string;
-    subGotra?: string;
+    filterId: string | null;
+    filterName: string | null;
   };
   OccasionContent: {
     occasionType: string;
     categoryId: string | null;
     categoryName: string | null;
-    gotra?: string;
-    subGotra?: string;
-    gender?: string;
+    filterId: string | null;
+    filterName: string | null;
+    gender: string;
   };
   Kartavya: undefined;
   Bhajan: undefined;
@@ -171,12 +185,20 @@ type RootDrawerParamList = {
   AddFamilyMember: undefined;
 };
 
-type HomeTabParamList = {
-  Home: undefined;
-  Post: undefined;
-  News: undefined;
-  MyPeople: undefined;
-  Donation: undefined;
+type PostStackParamList = HomeStackParamList & {
+  PostScreen: undefined;
+};
+
+type NewsStackParamList = HomeStackParamList & {
+  NewsScreen: undefined;
+};
+
+type MyPeopleStackParamList = HomeStackParamList & {
+  MyPeopleScreen: undefined;
+};
+
+type DonationStackParamList = HomeStackParamList & {
+  DonationScreen: undefined;
 };
 
 type RootStackParamList = {
@@ -614,11 +636,11 @@ const ProfileScreen = (): React.JSX.Element => {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        <Pressable
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>←</Text>
-        </Pressable>
+          style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.black} />
+        </TouchableOpacity>
 
         <Text style={styles.profileTitle}>{t('Profile') || 'Profile'}</Text>
 
@@ -638,7 +660,7 @@ const ProfileScreen = (): React.JSX.Element => {
           <View style={styles.avatarContainer}>
             {isEditing ? (
               <ImagePickerComponent
-                onImageSelected={imageUrl =>
+                onImageSelected={(imageUrl: any) =>
                   setEditedUser({...editedUser, profileImage: imageUrl})
                 }
                 currentImage={editedUser.profileImage || user.profileImage}
@@ -748,10 +770,10 @@ const ProfileScreen = (): React.JSX.Element => {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={editedUser.interests?.join(', ') || ''}
-                onChangeText={text =>
+                onChangeText={(text: any) =>
                   setEditedUser({
                     ...editedUser,
-                    interests: text.split(',').map(item => item.trim()),
+                    interests: text.split(',').map((item: any) => item.trim()),
                   })
                 }
                 placeholder={
@@ -847,14 +869,14 @@ const AuthStack = (): React.JSX.Element => {
   );
 };
 
-// Home Tab Navigator
+// Home Tab Navigator with Stack Navigators
 const HomeTab = (): React.JSX.Element => {
   const {Navigator, Screen} = createBottomTabNavigator<HomeTabParamList>();
   const {t} = useLanguage();
 
   return (
     <Navigator
-      screenOptions={({route}) => ({
+      screenOptions={({route}: {route: any}) => ({
         tabBarActiveTintColor: AppColors.primary,
         tabBarInactiveTintColor: AppColors.gray,
         headerShown: false,
@@ -866,40 +888,40 @@ const HomeTab = (): React.JSX.Element => {
         tabBarLabelStyle: {
           fontSize: 12,
         },
-        tabBarIcon: ({focused, color, size}) =>
+        tabBarIcon: ({focused, color, size}: any) =>
           RenderTabBarIcon({focused, color, size, route}),
       })}>
       <Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarLabel: t('Home') || 'Home',
         }}
       />
       <Screen
         name="Post"
-        component={PostScreen}
+        component={PostStackNavigator}
         options={{
           tabBarLabel: t('Post') || 'Post',
         }}
       />
       <Screen
         name="News"
-        component={NewsScreen}
+        component={NewsStackNavigator}
         options={{
           tabBarLabel: t('News') || 'News',
         }}
       />
       <Screen
         name="MyPeople"
-        component={MyPeopleScreen}
+        component={MyPeopleStackNavigator}
         options={{
           tabBarLabel: t('My People') || 'My People',
         }}
       />
       <Screen
         name="Donation"
-        component={DonationScreen}
+        component={DonationStackNavigator}
         options={{
           tabBarLabel: t('Donation') || 'Donation',
         }}
@@ -908,11 +930,164 @@ const HomeTab = (): React.JSX.Element => {
   );
 };
 
-const HomeStack = (): React.JSX.Element => {
+// Individual stack navigators for each tab
+const HomeStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
     <Navigator screenOptions={stackScreenOptions()}>
       <Screen name="HomeIndex" component={HomeTab} />
+    </Navigator>
+  );
+};
+
+const PostStackNavigator = (): React.JSX.Element => {
+  const {Navigator, Screen} = createNativeStackNavigator();
+  return (
+    <Navigator screenOptions={stackScreenOptions()}>
+      <Screen name="PostScreen" component={PostScreen} />
+      {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
+      <Screen name="Occasions" component={OccasionTypesScreen} />
+      <Screen name="OccasionCategories" component={CategoriesScreen} />
+      <Screen name="OccasionFilters" component={FiltersScreen} />
+      <Screen
+        name="OccasionGenderSelection"
+        component={GenderSelectionScreen}
+      />
+      <Screen name="OccasionContent" component={ContentScreen} />
+      <Screen name="Kartavya" component={KartavyaScreen} />
+      <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Games" component={GamesScreen} />
+      <Screen name="Laws and Decisions" component={LawsScreen} />
+      <Screen name="CitySearch" component={CitySearchScreen} />
+      <Screen
+        name="OrganizationOfficer"
+        component={OrganizationOfficerScreen}
+      />
+      <Screen name="Education" component={EducationScreen} />
+      <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Sports" component={SportsScreen} />
+      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
+      <Screen name="Dukan" component={DukanScreen} />
+      <Screen name="Meetings" component={MeetingsScreen} />
+      <Screen name="Appeal" component={AppealScreen} />
+      <Screen name="Vote" component={VoteScreen} />
+      <Screen name="Settings" component={SettingsScreen} />
+      <Screen name="FamilyTree" component={FamilyTreeScreen} />
+      <Screen name="AddFamilyMember" component={AddFamilyMemberScreen} />
+    </Navigator>
+  );
+};
+
+const NewsStackNavigator = (): React.JSX.Element => {
+  const {Navigator, Screen} = createNativeStackNavigator();
+  return (
+    <Navigator screenOptions={stackScreenOptions()}>
+      <Screen name="NewsScreen" component={NewsScreen} />
+      {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
+      <Screen name="Occasions" component={OccasionTypesScreen} />
+      <Screen name="OccasionCategories" component={CategoriesScreen} />
+      <Screen name="OccasionFilters" component={FiltersScreen} />
+      <Screen
+        name="OccasionGenderSelection"
+        component={GenderSelectionScreen}
+      />
+      <Screen name="OccasionContent" component={ContentScreen} />
+      <Screen name="Kartavya" component={KartavyaScreen} />
+      <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Games" component={GamesScreen} />
+      <Screen name="Laws and Decisions" component={LawsScreen} />
+      <Screen name="CitySearch" component={CitySearchScreen} />
+      <Screen
+        name="OrganizationOfficer"
+        component={OrganizationOfficerScreen}
+      />
+      <Screen name="Education" component={EducationScreen} />
+      <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Sports" component={SportsScreen} />
+      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
+      <Screen name="Dukan" component={DukanScreen} />
+      <Screen name="Meetings" component={MeetingsScreen} />
+      <Screen name="Appeal" component={AppealScreen} />
+      <Screen name="Vote" component={VoteScreen} />
+      <Screen name="Settings" component={SettingsScreen} />
+      <Screen name="FamilyTree" component={FamilyTreeScreen} />
+      <Screen name="AddFamilyMember" component={AddFamilyMemberScreen} />
+    </Navigator>
+  );
+};
+
+const MyPeopleStackNavigator = (): React.JSX.Element => {
+  const {Navigator, Screen} = createNativeStackNavigator();
+  return (
+    <Navigator screenOptions={stackScreenOptions()}>
+      <Screen name="MyPeopleScreen" component={MyPeopleScreen} />
+      {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
+      <Screen name="Occasions" component={OccasionTypesScreen} />
+      <Screen name="OccasionCategories" component={CategoriesScreen} />
+      <Screen name="OccasionFilters" component={FiltersScreen} />
+      <Screen
+        name="OccasionGenderSelection"
+        component={GenderSelectionScreen}
+      />
+      <Screen name="OccasionContent" component={ContentScreen} />
+      <Screen name="Kartavya" component={KartavyaScreen} />
+      <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Games" component={GamesScreen} />
+      <Screen name="Laws and Decisions" component={LawsScreen} />
+      <Screen name="CitySearch" component={CitySearchScreen} />
+      <Screen
+        name="OrganizationOfficer"
+        component={OrganizationOfficerScreen}
+      />
+      <Screen name="Education" component={EducationScreen} />
+      <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Sports" component={SportsScreen} />
+      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
+      <Screen name="Dukan" component={DukanScreen} />
+      <Screen name="Meetings" component={MeetingsScreen} />
+      <Screen name="Appeal" component={AppealScreen} />
+      <Screen name="Vote" component={VoteScreen} />
+      <Screen name="Settings" component={SettingsScreen} />
+      <Screen name="FamilyTree" component={FamilyTreeScreen} />
+      <Screen name="AddFamilyMember" component={AddFamilyMemberScreen} />
+    </Navigator>
+  );
+};
+
+const DonationStackNavigator = (): React.JSX.Element => {
+  const {Navigator, Screen} = createNativeStackNavigator();
+  return (
+    <Navigator screenOptions={stackScreenOptions()}>
+      <Screen name="DonationScreen" component={DonationScreen} />
+      {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
+      <Screen name="Occasions" component={OccasionTypesScreen} />
+      <Screen name="OccasionCategories" component={CategoriesScreen} />
+      <Screen name="OccasionFilters" component={FiltersScreen} />
+      <Screen
+        name="OccasionGenderSelection"
+        component={GenderSelectionScreen}
+      />
+      <Screen name="OccasionContent" component={ContentScreen} />
+      <Screen name="Kartavya" component={KartavyaScreen} />
+      <Screen name="Bhajan" component={BhajanScreen} />
+      <Screen name="Games" component={GamesScreen} />
+      <Screen name="Laws and Decisions" component={LawsScreen} />
+      <Screen name="CitySearch" component={CitySearchScreen} />
+      <Screen
+        name="OrganizationOfficer"
+        component={OrganizationOfficerScreen}
+      />
+      <Screen name="Education" component={EducationScreen} />
+      <Screen name="Employment" component={EmploymentScreen} />
+      <Screen name="Sports" component={SportsScreen} />
+      <Screen name="Social Upliftment" component={SocialUpliftmentScreen} />
+      <Screen name="Dukan" component={DukanScreen} />
+      <Screen name="Meetings" component={MeetingsScreen} />
+      <Screen name="Appeal" component={AppealScreen} />
+      <Screen name="Vote" component={VoteScreen} />
+      <Screen name="Settings" component={SettingsScreen} />
+      <Screen name="FamilyTree" component={FamilyTreeScreen} />
+      <Screen name="AddFamilyMember" component={AddFamilyMemberScreen} />
     </Navigator>
   );
 };
@@ -923,7 +1098,7 @@ const DrawerNavigator = (): React.JSX.Element => {
 
   return (
     <Navigator
-      drawerContent={props => <DrawerContent {...props} />}
+      drawerContent={(props: any) => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
         ...drawerScreenOptions(),
@@ -936,165 +1111,10 @@ const DrawerNavigator = (): React.JSX.Element => {
       }}>
       <Screen
         name="HomeTab"
-        component={HomeStack}
+        component={HomeTab}
         options={{
           headerShown: false,
           drawerLabel: t('Home') || 'Home',
-        }}
-      />
-      <Screen
-        name="Occasions"
-        component={OccasionTypesScreen}
-        options={{
-          drawerLabel: t('Occasions') || 'Occasions',
-        }}
-      />
-      <Screen
-        name="OccasionCategories"
-        component={CategoriesScreen}
-        options={{
-          drawerItemStyle: {display: 'none'},
-        }}
-      />
-      <Screen
-        name="OccasionFilters"
-        component={FiltersScreen}
-        options={{
-          drawerItemStyle: {display: 'none'},
-        }}
-      />
-      <Screen
-        name="OccasionGender"
-        component={GenderSelectionScreen}
-        options={{
-          drawerItemStyle: {display: 'none'},
-        }}
-      />
-      <Screen
-        name="OccasionContent"
-        component={ContentScreen}
-        options={{
-          drawerItemStyle: {display: 'none'},
-        }}
-      />
-      <Screen
-        name="Kartavya"
-        component={KartavyaScreen}
-        options={{
-          drawerLabel: t('Kartavya') || 'Kartavya',
-        }}
-      />
-      <Screen
-        name="Bhajan"
-        component={BhajanScreen}
-        options={{
-          drawerLabel: t('Bhajan') || 'Bhajan',
-        }}
-      />
-      <Screen
-        name="Games"
-        component={GamesScreen}
-        options={{
-          drawerLabel: t('Games') || 'Games',
-        }}
-      />
-      <Screen
-        name="Laws and Decisions"
-        component={LawsScreen}
-        options={{
-          drawerLabel: t('Laws and Decisions') || 'Laws and Decisions',
-        }}
-      />
-      <Screen
-        name="CitySearch"
-        component={CitySearchScreen}
-        options={{
-          drawerLabel: t('CitySearch') || 'City Search',
-        }}
-      />
-      <Screen
-        name="OrganizationOfficer"
-        component={OrganizationOfficerScreen}
-        options={{
-          drawerLabel: t('OrganizationOfficer') || 'Organization Officer',
-        }}
-      />
-      <Screen
-        name="Education"
-        component={EducationScreen}
-        options={{
-          drawerLabel: t('Education') || 'Education',
-        }}
-      />
-      <Screen
-        name="Employment"
-        component={EmploymentScreen}
-        options={{
-          drawerLabel: t('Employment') || 'Employment',
-        }}
-      />
-      <Screen
-        name="Sports"
-        component={SportsScreen}
-        options={{
-          drawerLabel: t('Sports') || 'Sports',
-        }}
-      />
-      <Screen
-        name="Social Upliftment"
-        component={SocialUpliftmentScreen}
-        options={{
-          drawerLabel: t('Social Upliftment') || 'Social Upliftment',
-        }}
-      />
-      <Screen
-        name="Dukan"
-        component={DukanScreen}
-        options={{
-          drawerLabel: t('Dukan') || 'Dukan',
-        }}
-      />
-      <Screen
-        name="Meetings"
-        component={MeetingsScreen}
-        options={{
-          drawerLabel: t('Meetings') || 'Meetings',
-        }}
-      />
-      <Screen
-        name="Appeal"
-        component={AppealScreen}
-        options={{
-          drawerLabel: t('Appeal') || 'Appeal',
-        }}
-      />
-      <Screen
-        name="Vote"
-        component={VoteScreen}
-        options={{
-          drawerLabel: t('Vote') || 'Vote',
-        }}
-      />
-      <Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          drawerLabel: t('Settings') || 'Settings',
-        }}
-      />
-      <Screen
-        name="FamilyTree"
-        component={FamilyTreeScreen}
-        options={{
-          drawerLabel: t('Family Tree') || 'Family Tree',
-        }}
-      />
-      <Screen
-        name="AddFamilyMember"
-        component={AddFamilyMemberScreen}
-        options={{
-          drawerLabel: t('Add Family Member') || 'Add Family Member',
-          drawerItemStyle: {display: 'none'},
         }}
       />
     </Navigator>
@@ -1162,6 +1182,10 @@ export default (): React.JSX.Element => {
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    marginRight: 15,
+    padding: 5,
+  },
   headerTitleContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1234,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     minWidth: 60,
-    height: 44,
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },

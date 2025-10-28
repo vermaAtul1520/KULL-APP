@@ -30,6 +30,7 @@ import {
   ImagePickerResponse,
   MediaType,
 } from 'react-native-image-picker';
+import {uploadImageToCloudinary} from '@app/utils/imageUpload';
 
 const {width, height} = Dimensions.get('window');
 
@@ -126,6 +127,7 @@ const PostScreen = () => {
     null,
   );
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   console.log('commentsss', filteredPosts);
 
@@ -806,7 +808,7 @@ const PostScreen = () => {
       quality: 0.8 as any, // Type assertion for quality
     };
 
-    const handleImageResponse = (response: ImagePickerResponse) => {
+    const handleImageResponse = async (response: ImagePickerResponse) => {
       if (response.didCancel || response.errorMessage) {
         if (response.errorMessage) {
           Alert.alert(t('Error') || 'Error', response.errorMessage);
@@ -815,9 +817,43 @@ const PostScreen = () => {
       }
 
       if (response.assets && response.assets[0]) {
-        const imageUri = response.assets[0].uri;
+        const asset = response.assets[0];
+        const imageUri = asset.uri;
+
         if (imageUri) {
-          setNewPost({...newPost, selectedImage: imageUri});
+          setUploadingImage(true);
+
+          try {
+            const result = await uploadImageToCloudinary(
+              imageUri,
+              asset.fileName || `post_${Date.now()}.jpg`,
+            );
+
+            if (result.success && result.url) {
+              setNewPost({...newPost, selectedImage: result.url});
+              Alert.alert(
+                t('Success') || 'Success',
+                t('Image uploaded successfully!') ||
+                  'Image uploaded successfully!',
+              );
+            } else {
+              Alert.alert(
+                t('Upload Failed') || 'Upload Failed',
+                result.error ||
+                  t('Failed to upload image') ||
+                  'Failed to upload image',
+              );
+            }
+          } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert(
+              t('Error') || 'Error',
+              t('Failed to upload image. Please try again.') ||
+                'Failed to upload image. Please try again.',
+            );
+          } finally {
+            setUploadingImage(false);
+          }
         }
       }
     };
@@ -1088,7 +1124,9 @@ const PostScreen = () => {
                 style={styles.titleInput}
                 placeholder={t('Enter post title...') || 'Enter post title...'}
                 value={newPost.title}
-                onChangeText={text => setNewPost({...newPost, title: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, title: text})
+                }
                 multiline
               />
             </View>
@@ -1103,7 +1141,9 @@ const PostScreen = () => {
                   t("What's on your mind?") || "What's on your mind?"
                 }
                 value={newPost.content}
-                onChangeText={text => setNewPost({...newPost, content: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, content: text})
+                }
                 multiline
                 textAlignVertical="top"
               />
@@ -1115,24 +1155,35 @@ const PostScreen = () => {
               </Text>
               <View style={styles.imageOptions}>
                 <TouchableOpacity
-                  style={styles.imageOption}
-                  onPress={() => setShowImagePicker(true)}>
-                  <CameraIcon size={24} color="#666" />
+                  style={[
+                    styles.imageOption,
+                    uploadingImage && styles.imageOptionDisabled,
+                  ]}
+                  onPress={() => !uploadingImage && setShowImagePicker(true)}
+                  disabled={uploadingImage}>
+                  {uploadingImage ? (
+                    <ActivityIndicator size="small" color="#666" />
+                  ) : (
+                    <CameraIcon size={24} color="#666" />
+                  )}
                   <Text style={styles.imageOptionText}>
-                    {t('Camera/Gallery') || 'Camera/Gallery'}
+                    {uploadingImage
+                      ? t('Uploading...') || 'Uploading...'
+                      : t('Camera/Gallery') || 'Camera/Gallery'}
                   </Text>
                 </TouchableOpacity>
 
-                {/* <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
+                <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
 
                 <TextInput
                   style={styles.imageUrlInput}
                   placeholder={t('Paste image URL...') || 'Paste image URL...'}
                   value={newPost.imageUrl}
-                  onChangeText={text =>
+                  onChangeText={(text: any) =>
                     setNewPost({...newPost, imageUrl: text})
                   }
-                /> */}
+                  editable={!uploadingImage}
+                />
               </View>
             </View>
 
@@ -1162,7 +1213,7 @@ const PostScreen = () => {
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={() => setShowPostModal(false)}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               <Text style={styles.cancelButtonText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
@@ -1171,10 +1222,10 @@ const PostScreen = () => {
               style={[
                 styles.modalButton,
                 styles.postButton,
-                {opacity: isCreatingPost ? 0.6 : 1},
+                {opacity: isCreatingPost || uploadingImage ? 0.6 : 1},
               ]}
               onPress={handleCreatePost}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               {isCreatingPost ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -1439,7 +1490,7 @@ const PostScreen = () => {
       <FlatList
         data={filteredPosts}
         renderItem={renderPost}
-        keyExtractor={item => item._id}
+        keyExtractor={(item: any) => item._id}
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -1774,6 +1825,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#2a2a2a',
     fontWeight: '500',
+  },
+  imageOptionDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#f0f0f0',
   },
   orText: {
     fontSize: 14,

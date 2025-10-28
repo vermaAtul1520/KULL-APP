@@ -21,6 +21,8 @@ import {
   launchImageLibrary,
   launchCamera,
   MediaType,
+  CameraOptions,
+  ImageLibraryOptions,
 } from 'react-native-image-picker';
 import Svg, {Path, Circle, Rect, Polygon} from 'react-native-svg';
 
@@ -258,7 +260,7 @@ const AppealScreen = () => {
       includeBase64: true,
     };
 
-    launchCamera(options, response => {
+    launchCamera(options as CameraOptions, response => {
       if (response.assets && response.assets[0]) {
         processMediaFile(response.assets[0], mediaType);
       }
@@ -274,7 +276,7 @@ const AppealScreen = () => {
       includeBase64: true,
     };
 
-    launchImageLibrary(options, response => {
+    launchImageLibrary(options as ImageLibraryOptions, response => {
       if (response.assets && response.assets[0]) {
         processMediaFile(response.assets[0], mediaType);
       }
@@ -374,7 +376,9 @@ const AppealScreen = () => {
       'Policy Concern': 'other', // Maps to other
       Other: 'other',
     };
-    return categoryMap[displayCategory] || 'general';
+    return (
+      categoryMap[displayCategory as keyof typeof categoryMap] || 'general'
+    );
   };
 
   // Create API payload - UPDATED TO SIMPLIFIED STRUCTURE
@@ -385,6 +389,7 @@ const AppealScreen = () => {
       description: description.trim(),
       category: getCategoryApiValue(category),
       community: COMMUNITY_ID,
+      attachment: {},
     };
 
     // Add uploaded file if present
@@ -493,7 +498,7 @@ const AppealScreen = () => {
       }
 
       // Handle timeout errors
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timed out. Please try again.');
       }
 

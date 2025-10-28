@@ -17,7 +17,7 @@ import {UserDataType} from './types';
 import {ConstantValues} from '@app/constants';
 import {GlobalStyles} from '@app/constants';
 import {userLogin} from '@app/redux/actions';
-import { View } from 'react-native';
+import {View} from 'react-native';
 
 const TabADetails = (): React.JSX.Element => {
   const userData = useSelector(
@@ -64,7 +64,7 @@ const TabADetails = (): React.JSX.Element => {
         />
         <RHFCheckbox name="hasDriversLicense" label="Has Drivers License" />
       </FormProvider>
-      <Button onPress={form.handleSubmit(onSavePress)} label="Save" />
+      <Button onPress={form.handleSubmit(onSavePress)} title="Save" />
     </View>
   );
 };

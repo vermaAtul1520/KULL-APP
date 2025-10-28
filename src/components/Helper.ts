@@ -2,7 +2,7 @@ import 'intl';
 import 'intl/locale-data/jsonp/mn-MN';
 
 import {DateTime} from 'luxon';
-import {constantValues} from '@app/constants';
+import {ConstantValues} from '@app/constants';
 
 export function CurrencyFormatter(
   currencyCode: string = 'MNT',
@@ -18,7 +18,7 @@ export function CurrencyFormatter(
 
 export function DateTimeFormatter(
   text: string = '',
-  format: string = constantValues?.dateTimeFormat,
+  format: string = ConstantValues?.dateTimeFormat,
 ): string | null {
   return text ? DateTime.fromISO(text).toFormat(format) : null;
 }
