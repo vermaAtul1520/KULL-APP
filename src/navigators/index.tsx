@@ -912,7 +912,7 @@ const HomeStack = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
     <Navigator screenOptions={stackScreenOptions()}>
-      <Screen name="HomeTab" component={HomeTab} />
+      <Screen name="HomeIndex" component={HomeTab} />
     </Navigator>
   );
 };
