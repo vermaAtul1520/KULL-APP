@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useState, useEffect } from 'react';
+import {useNavigation} from '@react-navigation/native';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -14,54 +14,103 @@ import {
   Image,
   Linking,
   Alert,
+  Modal,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { BASE_URL } from '@app/constants/constant';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import Svg, {Path, Circle} from 'react-native-svg';
+import {BASE_URL} from '@app/constants/constant';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+
+const {height} = Dimensions.get('window');
 
 // Custom SVG Icons
-const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const SearchIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    <Path
+      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      fill={color}
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 24, color = "#666" }) => (
+const CloseIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    <Path
+      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      fill={color}
+    />
   </Svg>
 );
 
-const BackIcon = ({ size = 24, color = "#fff" }) => (
+const BackIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const PhoneIcon = ({ size = 16, color = "#666" }) => (
+const PhoneIcon = ({size = 16, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="2" fill="none"/>
+    <Path
+      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
   </Svg>
 );
 
-const EmailIcon = ({ size = 16, color = "#666" }) => (
+const EmailIcon = ({size = 16, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke={color} strokeWidth="2" fill="none"/>
-    <Path d="M22 6L12 13L2 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
+    <Path
+      d="M22 6L12 13L2 6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const CalendarIcon = ({ size = 16, color = "#666" }) => (
+const CalendarIcon = ({size = 16, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M8 2v4M16 2v4M3 10h18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" stroke={color} strokeWidth="2" fill="none"/>
+    <Path
+      d="M8 2v4M16 2v4M3 10h18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"
+      stroke={color}
+      strokeWidth="2"
+      fill="none"
+    />
   </Svg>
 );
 
-const CrownIcon = ({ size = 24, color = "#fff" }) => (
+const CrownIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 16L3 6l5.5 4L12 3l3.5 7L21 6l-2 10H5z" stroke={color} strokeWidth="2" fill={color}/>
-    <Path d="M5 21h14" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    <Path
+      d="M5 16L3 6l5.5 4L12 3l3.5 7L21 6l-2 10H5z"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+    />
+    <Path d="M5 21h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
@@ -126,15 +175,23 @@ interface OfficersAPIResponse {
 }
 
 const getPositionColor = (positionInCommunity: string) => {
-  switch(positionInCommunity) {
-    case 'president': return AppColors.sport;
-    case 'secretary': return AppColors.blue;
-    case 'treasurer': return AppColors.green;
-    case 'welfare_head': return AppColors.purple;
-    case 'security_head': return AppColors.orange;
-    case 'maintenance_head': return AppColors.teal;
-    case 'cultural_head': return '#e91e63';
-    default: return AppColors.gray;
+  switch (positionInCommunity) {
+    case 'president':
+      return AppColors.sport;
+    case 'secretary':
+      return AppColors.blue;
+    case 'treasurer':
+      return AppColors.green;
+    case 'welfare_head':
+      return AppColors.purple;
+    case 'security_head':
+      return AppColors.orange;
+    case 'maintenance_head':
+      return AppColors.teal;
+    case 'cultural_head':
+      return '#e91e63';
+    default:
+      return AppColors.gray;
   }
 };
 
@@ -143,15 +200,20 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
 const getYearsOfService = (joinedDate: string) => {
   const joined = new Date(joinedDate);
   const now = new Date();
-  const years = Math.floor((now.getTime() - joined.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  const months = Math.floor(((now.getTime() - joined.getTime()) % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
+  const years = Math.floor(
+    (now.getTime() - joined.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+  );
+  const months = Math.floor(
+    ((now.getTime() - joined.getTime()) % (365.25 * 24 * 60 * 60 * 1000)) /
+      (30.44 * 24 * 60 * 60 * 1000),
+  );
 
   if (years > 0) {
     return `${years}+ year${years > 1 ? 's' : ''}`;
@@ -161,18 +223,18 @@ const getYearsOfService = (joinedDate: string) => {
 };
 
 const getPositionTitle = (positionInCommunity: string, occupation?: string) => {
-  const titles: { [key: string]: string } = {
-    'president': 'President',
-    'secretary': 'Secretary',
-    'treasurer': 'Treasurer',
-    'welfare_head': 'Welfare Head',
-    'security_head': 'Security Head',
-    'maintenance_head': 'Maintenance Head',
-    'cultural_head': 'Cultural Head',
-    'vice_president': 'Vice President',
-    'member': 'Member',
-    'admin': 'Admin',
-    'moderator': 'Moderator',
+  const titles: {[key: string]: string} = {
+    president: 'President',
+    secretary: 'Secretary',
+    treasurer: 'Treasurer',
+    welfare_head: 'Welfare Head',
+    security_head: 'Security Head',
+    maintenance_head: 'Maintenance Head',
+    cultural_head: 'Cultural Head',
+    vice_president: 'Vice President',
+    member: 'Member',
+    admin: 'Admin',
+    moderator: 'Moderator',
   };
 
   // Return occupation if roleInCommunity is just 'member', otherwise return the mapped title
@@ -180,7 +242,12 @@ const getPositionTitle = (positionInCommunity: string, occupation?: string) => {
     return occupation;
   }
 
-  return titles[positionInCommunity] || positionInCommunity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return (
+    titles[positionInCommunity] ||
+    positionInCommunity
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase())
+  );
 };
 
 const getInitials = (firstName: string, lastName: string) => {
@@ -198,6 +265,11 @@ const OfficersScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Modal states
+  const [officerDetailModalVisible, setOfficerDetailModalVisible] =
+    useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
+
   // Fetch officers from API
   const fetchOfficers = async () => {
     try {
@@ -208,10 +280,13 @@ const OfficersScreen = () => {
 
       console.log('Fetching organization officers for:', COMMUNITY_ID);
 
-      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/users/orgofficers`, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/communities/${COMMUNITY_ID}/users/orgofficers`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
 
       console.log('Officers API response status:', response.status);
 
@@ -229,7 +304,6 @@ const OfficersScreen = () => {
         setOfficers([]);
         setFilteredOfficers([]);
       }
-
     } catch (error) {
       console.error('Error fetching organization officers:', error);
       setError('Failed to load organization officers');
@@ -256,7 +330,10 @@ const OfficersScreen = () => {
     if (searchQuery.trim()) {
       filtered = filtered.filter(officer => {
         const query = searchQuery.toLowerCase();
-        const position = getPositionTitle(officer.positionInCommunity, officer.occupation);
+        const position = getPositionTitle(
+          officer.positionInCommunity,
+          officer.occupation,
+        );
         return (
           officer.firstName.toLowerCase().includes(query) ||
           officer.lastName.toLowerCase().includes(query) ||
@@ -286,19 +363,36 @@ const OfficersScreen = () => {
     Linking.openURL(`mailto:${email}`);
   };
 
+  // Modal functions
+  const openOfficerDetail = (officer: Officer) => {
+    setSelectedOfficer(officer);
+    setOfficerDetailModalVisible(true);
+  };
+
+  const closeOfficerDetail = () => {
+    setOfficerDetailModalVisible(false);
+    setSelectedOfficer(null);
+  };
+
   // Officer Card Component
-  const OfficerCard = ({ item }: { item: Officer }) => {
+  const OfficerCard = ({item}: {item: Officer}) => {
     const phoneNumber = item.phone || item.alternativePhone;
-    const position = getPositionTitle(item.positionInCommunity, item.occupation);
+    const position = getPositionTitle(
+      item.positionInCommunity,
+      item.occupation,
+    );
 
     return (
-      <View style={styles.officerCard}>
+      <TouchableOpacity
+        style={styles.officerCard}
+        onPress={() => openOfficerDetail(item)}
+        activeOpacity={0.8}>
         <View style={styles.cardHeader}>
           <View style={styles.profileSection}>
             <View style={styles.profileImageContainer}>
               {item.profileImage ? (
                 <Image
-                  source={{ uri: item.profileImage }}
+                  source={{uri: item.profileImage}}
                   style={styles.profileImage}
                 />
               ) : (
@@ -308,14 +402,28 @@ const OfficersScreen = () => {
                   </Text>
                 </View>
               )}
-              <View style={[styles.statusIndicator, { backgroundColor: item.communityStatus === 'approved' ? AppColors.success : AppColors.orange }]} />
+              <View
+                style={[
+                  styles.statusIndicator,
+                  {
+                    backgroundColor:
+                      item.communityStatus === 'approved'
+                        ? AppColors.success
+                        : AppColors.orange,
+                  },
+                ]}
+              />
             </View>
 
             <View style={styles.profileInfo}>
               <Text style={styles.officerName}>
                 {item.firstName} {item.lastName}
               </Text>
-              <View style={[styles.positionBadge, { backgroundColor: getPositionColor(item.positionInCommunity) }]}>
+              <View
+                style={[
+                  styles.positionBadge,
+                  {backgroundColor: getPositionColor(item.positionInCommunity)},
+                ]}>
                 <CrownIcon size={14} color={AppColors.white} />
                 <Text style={styles.positionText}>{position}</Text>
               </View>
@@ -326,7 +434,9 @@ const OfficersScreen = () => {
           </View>
 
           <View style={styles.serviceInfo}>
-            <Text style={styles.serviceYears}>{getYearsOfService(item.createdAt)}</Text>
+            <Text style={styles.serviceYears}>
+              {getYearsOfService(item.createdAt)}
+            </Text>
             <Text style={styles.serviceLabel}>member</Text>
           </View>
         </View>
@@ -338,10 +448,15 @@ const OfficersScreen = () => {
               <Text style={styles.responsibilityItem}>• ID: {item.cGotNo}</Text>
             )}
             {item.gotra && (
-              <Text style={styles.responsibilityItem}>• Gotra: {item.gotra}{item.subgotra ? ` (${item.subgotra})` : ''}</Text>
+              <Text style={styles.responsibilityItem}>
+                • Gotra: {item.gotra}
+                {item.subgotra ? ` (${item.subgotra})` : ''}
+              </Text>
             )}
             {item.address && (
-              <Text style={styles.responsibilityItem}>• Location: {item.address}</Text>
+              <Text style={styles.responsibilityItem}>
+                • Location: {item.address}
+              </Text>
             )}
           </View>
         </View>
@@ -351,12 +466,13 @@ const OfficersScreen = () => {
           <View style={styles.contactRow}>
             <View style={styles.contactItem}>
               <EmailIcon size={14} color={AppColors.gray} />
-              <Text style={styles.contactText} numberOfLines={1}>{item.email}</Text>
+              <Text style={styles.contactText} numberOfLines={1}>
+                {item.email}
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.contactButton}
-              onPress={() => handleEmail(item.email)}
-            >
+              onPress={() => handleEmail(item.email)}>
               <Text style={styles.contactButtonText}>Email</Text>
             </TouchableOpacity>
           </View>
@@ -369,8 +485,7 @@ const OfficersScreen = () => {
               </View>
               <TouchableOpacity
                 style={styles.contactButton}
-                onPress={() => handleCall(phoneNumber)}
-              >
+                onPress={() => handleCall(phoneNumber)}>
                 <Text style={styles.contactButtonText}>Call</Text>
               </TouchableOpacity>
             </View>
@@ -381,18 +496,331 @@ const OfficersScreen = () => {
         <View style={styles.cardFooter}>
           <View style={styles.footerItem}>
             <CalendarIcon size={12} color={AppColors.gray} />
-            <Text style={styles.footerText}>Joined: {formatDate(item.createdAt)}</Text>
+            <Text style={styles.footerText}>
+              Joined: {formatDate(item.createdAt)}
+            </Text>
           </View>
-          <View style={[styles.statusChip, {
-            backgroundColor: item.communityStatus === 'approved' ? AppColors.success :
-                           item.communityStatus === 'pending' ? AppColors.orange : AppColors.gray
-          }]}>
-            <Text style={styles.statusChipText}>{item.communityStatus.toUpperCase()}</Text>
+          <View
+            style={[
+              styles.statusChip,
+              {
+                backgroundColor:
+                  item.communityStatus === 'approved'
+                    ? AppColors.success
+                    : item.communityStatus === 'pending'
+                    ? AppColors.orange
+                    : AppColors.gray,
+              },
+            ]}>
+            <Text style={styles.statusChipText}>
+              {item.communityStatus.toUpperCase()}
+            </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
+
+  // Officer Detail Modal Component
+  const OfficerDetailModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={officerDetailModalVisible}
+      onRequestClose={closeOfficerDetail}>
+      <View style={styles.detailModalOverlay}>
+        <View style={styles.detailModalContainer}>
+          <ScrollView
+            style={styles.detailModalContent}
+            showsVerticalScrollIndicator={false}>
+            {selectedOfficer && (
+              <>
+                {/* Modal Header */}
+                <View style={styles.detailModalHeader}>
+                  <Text style={styles.detailModalTitle}>Officer Details</Text>
+                  <TouchableOpacity
+                    onPress={closeOfficerDetail}
+                    style={styles.detailCloseButton}>
+                    <CloseIcon size={24} color="#2a2a2a" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Profile Section */}
+                <View style={styles.detailProfileSection}>
+                  <View style={styles.detailProfileImageContainer}>
+                    {selectedOfficer.profileImage ? (
+                      <Image
+                        source={{uri: selectedOfficer.profileImage}}
+                        style={styles.detailProfileImage}
+                      />
+                    ) : (
+                      <View style={styles.detailProfileInitials}>
+                        <Text style={styles.detailInitialsText}>
+                          {getInitials(
+                            selectedOfficer.firstName,
+                            selectedOfficer.lastName,
+                          )}
+                        </Text>
+                      </View>
+                    )}
+                    <View
+                      style={[
+                        styles.detailStatusIndicator,
+                        {
+                          backgroundColor:
+                            selectedOfficer.communityStatus === 'approved'
+                              ? AppColors.success
+                              : AppColors.orange,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <View style={styles.detailProfileInfo}>
+                    <Text style={styles.detailOfficerName}>
+                      {selectedOfficer.firstName} {selectedOfficer.lastName}
+                    </Text>
+                    <View
+                      style={[
+                        styles.detailPositionBadge,
+                        {
+                          backgroundColor: getPositionColor(
+                            selectedOfficer.positionInCommunity,
+                          ),
+                        },
+                      ]}>
+                      <CrownIcon size={16} color={AppColors.white} />
+                      <Text style={styles.detailPositionText}>
+                        {getPositionTitle(
+                          selectedOfficer.positionInCommunity,
+                          selectedOfficer.occupation,
+                        )}
+                      </Text>
+                    </View>
+                    <Text style={styles.detailServiceYears}>
+                      {getYearsOfService(selectedOfficer.createdAt)} as member
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Personal Information */}
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailSectionTitle}>
+                    Personal Information
+                  </Text>
+                  <View style={styles.detailInfoGrid}>
+                    {selectedOfficer.cGotNo && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>ID Number:</Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.cGotNo}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.maritalStatus && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>
+                          Marital Status:
+                        </Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.maritalStatus}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.occupation && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>Occupation:</Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.occupation}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.religion && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>Religion:</Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.religion}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.motherTongue && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>
+                          Mother Tongue:
+                        </Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.motherTongue}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Family Information */}
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailSectionTitle}>
+                    Family Information
+                  </Text>
+                  <View style={styles.detailInfoGrid}>
+                    {selectedOfficer.fatherName && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>
+                          Father's Name:
+                        </Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.fatherName}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.gotra && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>Gotra:</Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.gotra}
+                          {selectedOfficer.subgotra
+                            ? ` (${selectedOfficer.subgotra})`
+                            : ''}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.cast && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>Caste:</Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.cast}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedOfficer.estimatedMembers && (
+                      <View style={styles.detailInfoItem}>
+                        <Text style={styles.detailInfoLabel}>
+                          Family Members:
+                        </Text>
+                        <Text style={styles.detailInfoValue}>
+                          {selectedOfficer.estimatedMembers}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Contact Information */}
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailSectionTitle}>
+                    Contact Information
+                  </Text>
+                  <View style={styles.detailContactSection}>
+                    <View style={styles.detailContactItem}>
+                      <EmailIcon size={16} color={AppColors.gray} />
+                      <Text style={styles.detailContactText}>
+                        {selectedOfficer.email}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.detailContactButton}
+                        onPress={() => handleEmail(selectedOfficer.email)}>
+                        <Text style={styles.detailContactButtonText}>
+                          Email
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {(selectedOfficer.phone ||
+                      selectedOfficer.alternativePhone) && (
+                      <View style={styles.detailContactItem}>
+                        <PhoneIcon size={16} color={AppColors.gray} />
+                        <Text style={styles.detailContactText}>
+                          {selectedOfficer.phone ||
+                            selectedOfficer.alternativePhone}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.detailContactButton}
+                          onPress={() =>
+                            handleCall(
+                              selectedOfficer.phone ||
+                                selectedOfficer.alternativePhone ||
+                                '',
+                            )
+                          }>
+                          <Text style={styles.detailContactButtonText}>
+                            Call
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Address Information */}
+                {selectedOfficer.address && (
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailSectionTitle}>Address</Text>
+                    <Text style={styles.detailAddressText}>
+                      {selectedOfficer.address}
+                      {selectedOfficer.pinCode &&
+                        ` - ${selectedOfficer.pinCode}`}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Additional Information */}
+                {selectedOfficer.thoughtOfMaking && (
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailSectionTitle}>Thoughts</Text>
+                    <Text style={styles.detailThoughtsText}>
+                      {selectedOfficer.thoughtOfMaking}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Interests */}
+                {selectedOfficer.interests &&
+                  selectedOfficer.interests.length > 0 && (
+                    <View style={styles.detailSection}>
+                      <Text style={styles.detailSectionTitle}>Interests</Text>
+                      <View style={styles.detailInterestsContainer}>
+                        {selectedOfficer.interests.map((interest, index) => (
+                          <View key={index} style={styles.detailInterestTag}>
+                            <Text style={styles.detailInterestText}>
+                              {interest}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                {/* Footer Info */}
+                <View style={styles.detailFooter}>
+                  <View style={styles.detailFooterItem}>
+                    <CalendarIcon size={14} color={AppColors.gray} />
+                    <Text style={styles.detailFooterText}>
+                      Joined: {formatDate(selectedOfficer.createdAt)}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.detailStatusChip,
+                      {
+                        backgroundColor:
+                          selectedOfficer.communityStatus === 'approved'
+                            ? AppColors.success
+                            : selectedOfficer.communityStatus === 'pending'
+                            ? AppColors.orange
+                            : AppColors.gray,
+                      },
+                    ]}>
+                    <Text style={styles.detailStatusChipText}>
+                      {selectedOfficer.communityStatus.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (loading) {
     return (
@@ -406,14 +834,18 @@ const OfficersScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
-      
+
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Community Officers</Text>
-          <Text style={styles.headerSubtitle}>{filteredOfficers.length} active officers</Text>
+          <Text style={styles.headerSubtitle}>
+            {filteredOfficers.length} active officers
+          </Text>
         </View>
       </View>
 
@@ -425,15 +857,25 @@ const OfficersScreen = () => {
             <Text style={styles.statLabel}>Total Officers</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{officers.filter(o => o.communityStatus === 'approved').length}</Text>
+            <Text style={styles.statNumber}>
+              {officers.filter(o => o.communityStatus === 'approved').length}
+            </Text>
             <Text style={styles.statLabel}>Approved</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{new Set(officers.map(o => o.occupation).filter(Boolean)).size}</Text>
+            <Text style={styles.statNumber}>
+              {new Set(officers.map(o => o.occupation).filter(Boolean)).size}
+            </Text>
             <Text style={styles.statLabel}>Occupations</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{new Set(officers.map(o => o.positionInCommunity).filter(Boolean)).size}</Text>
+            <Text style={styles.statNumber}>
+              {
+                new Set(
+                  officers.map(o => o.positionInCommunity).filter(Boolean),
+                ).size
+              }
+            </Text>
             <Text style={styles.statLabel}>Roles</Text>
           </View>
         </View>
@@ -450,7 +892,9 @@ const OfficersScreen = () => {
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            style={styles.clearSearchIcon}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>
         )}
@@ -459,8 +903,8 @@ const OfficersScreen = () => {
       {/* Officers List */}
       <FlatList
         data={filteredOfficers}
-        renderItem={({ item }) => <OfficerCard item={item} />}
-        keyExtractor={(item) => item._id}
+        renderItem={({item}) => <OfficerCard item={item} />}
+        keyExtractor={item => item._id}
         style={styles.officersList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -478,8 +922,7 @@ const OfficersScreen = () => {
                 <Text style={styles.emptyText}>{error}</Text>
                 <TouchableOpacity
                   style={styles.retryButton}
-                  onPress={fetchOfficers}
-                >
+                  onPress={fetchOfficers}>
                   <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
               </>
@@ -496,6 +939,7 @@ const OfficersScreen = () => {
           </View>
         }
       />
+      <OfficerDetailModal />
     </SafeAreaView>
   );
 };
@@ -505,7 +949,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.lightGray,
   },
-  
+
   // Header styles
   header: {
     backgroundColor: AppColors.primary,
@@ -533,7 +977,7 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     opacity: 0.9,
   },
-  
+
   // Stats styles
   statsContainer: {
     flexDirection: 'row',
@@ -558,7 +1002,7 @@ const styles = StyleSheet.create({
     color: AppColors.gray,
     textAlign: 'center',
   },
-  
+
   // Search styles
   searchContainer: {
     flexDirection: 'row',
@@ -569,7 +1013,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     margin: 16,
     shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -584,7 +1028,7 @@ const styles = StyleSheet.create({
   clearSearchIcon: {
     padding: 4,
   },
-  
+
   // Officers List styles
   officersList: {
     flex: 1,
@@ -596,12 +1040,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   // Card Header
   cardHeader: {
     flexDirection: 'row',
@@ -688,7 +1132,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: AppColors.gray,
   },
-  
+
   // Responsibilities Section
   responsibilitiesSection: {
     marginBottom: 12,
@@ -716,7 +1160,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
   },
-  
+
   // Contact Section
   contactSection: {
     gap: 8,
@@ -749,7 +1193,7 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontWeight: '500',
   },
-  
+
   // Card Footer
   cardFooter: {
     flexDirection: 'row',
@@ -778,7 +1222,7 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontWeight: '600',
   },
-  
+
   // Loading & Empty states
   loadingContainer: {
     flex: 1,
@@ -817,6 +1261,230 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.dark,
     fontWeight: '600',
+  },
+
+  // Officer Detail Modal Styles
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  detailModalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: height * 0.9,
+  },
+  detailModalContent: {
+    padding: 10,
+  },
+  detailModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  detailModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+  },
+  detailCloseButton: {
+    padding: 8,
+  },
+
+  // Detail Profile Section
+  detailProfileSection: {
+    flexDirection: 'row',
+    padding: 20,
+    alignItems: 'center',
+  },
+  detailProfileImageContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  detailProfileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  detailProfileInitials: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailInitialsText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+  },
+  detailStatusIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: AppColors.white,
+  },
+  detailProfileInfo: {
+    flex: 1,
+  },
+  detailOfficerName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+    marginBottom: 8,
+  },
+  detailPositionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  detailPositionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.white,
+    marginLeft: 6,
+  },
+  detailServiceYears: {
+    fontSize: 14,
+    color: AppColors.gray,
+    fontStyle: 'italic',
+  },
+
+  // Detail Sections
+  detailSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+    marginBottom: 12,
+  },
+  detailInfoGrid: {
+    gap: 12,
+  },
+  detailInfoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  detailInfoLabel: {
+    fontSize: 14,
+    color: AppColors.gray,
+    flex: 1,
+  },
+  detailInfoValue: {
+    fontSize: 14,
+    color: '#2a2a2a',
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
+
+  // Contact Section
+  detailContactSection: {
+    gap: 12,
+  },
+  detailContactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+  },
+  detailContactText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#2a2a2a',
+    marginLeft: 8,
+  },
+  detailContactButton: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  detailContactButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: AppColors.white,
+  },
+
+  // Address and Thoughts
+  detailAddressText: {
+    fontSize: 14,
+    color: '#2a2a2a',
+    lineHeight: 20,
+  },
+  detailThoughtsText: {
+    fontSize: 14,
+    color: '#2a2a2a',
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+
+  // Interests
+  detailInterestsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  detailInterestTag: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  detailInterestText: {
+    fontSize: 12,
+    color: AppColors.white,
+    fontWeight: '500',
+  },
+
+  // Footer
+  detailFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  detailFooterItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailFooterText: {
+    fontSize: 12,
+    color: AppColors.gray,
+    marginLeft: 6,
+  },
+  detailStatusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  detailStatusChipText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: AppColors.white,
   },
 });
 

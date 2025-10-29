@@ -1,6 +1,5 @@
 import {useNavigation} from '@react-navigation/native';
-import {useDrawerAwareNavigation} from '@app/hooks/useDrawerAwareNavigation';
-import React, {useState} from 'react';
+import React, {useState, useMemo, useCallback, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -596,81 +595,17 @@ const getCategoryColor = (categoryId: string) => {
   return category?.color || AppColors.gray;
 };
 
-export const OccasionsScreen = () => {
-  const {goBackToDrawer} = useDrawerAwareNavigation();
-  const [currentView, setCurrentView] = useState<
-    'main' | 'subfilters' | 'details'
-  >('main');
-  const [selectedCategory, setSelectedCategory] =
-    useState<OccasionCategory | null>(null);
-  const [selectedSubFilter, setSelectedSubFilter] = useState<SubFilter | null>(
-    null,
-  );
-  const [selectedType, setSelectedType] = useState('All');
-  const [selectedItem, setSelectedItem] = useState<OccasionItem | null>(null);
-  const [imageModalVisible, setImageModalVisible] = useState(false);
-  const [pdfModalVisible, setPdfModalVisible] = useState(false);
-
-  const navigation = useNavigation();
-
-  // Filter items based on selected category, sub-filter and type
-  const filteredItems = occasionItems.filter(item => {
-    const categoryMatch = selectedCategory
-      ? item.category === selectedCategory.id
-      : true;
-    const subFilterMatch = selectedSubFilter
-      ? item.subCategory === selectedSubFilter.id
-      : true;
-    const typeMatch =
-      selectedType === 'All' ||
-      (selectedType === 'PDF' && item.type === 'pdf') ||
-      (selectedType === 'Image' && item.type === 'image');
-    return categoryMatch && subFilterMatch && typeMatch;
-  });
-
-  const handleCategorySelect = (category: OccasionCategory) => {
-    setSelectedCategory(category);
-    setCurrentView('subfilters');
-    setSelectedSubFilter(null);
-    setSelectedType('All');
-  };
-
-  const handleSubFilterSelect = (subFilter: SubFilter) => {
-    setSelectedSubFilter(subFilter);
-    setCurrentView('details');
-    setSelectedType('All');
-  };
-
-  const handleBackToMain = () => {
-    setCurrentView('main');
-    setSelectedCategory(null);
-    setSelectedSubFilter(null);
-    setSelectedType('All');
-  };
-
-  const handleBackToSubFilters = () => {
-    setCurrentView('subfilters');
-    setSelectedSubFilter(null);
-    setSelectedType('All');
-  };
-
-  const openItem = (item: OccasionItem) => {
-    setSelectedItem(item);
-    if (item.type === 'image') {
-      setImageModalVisible(true);
-    } else {
-      setPdfModalVisible(true);
-    }
-  };
-
-  const closeModals = () => {
-    setImageModalVisible(false);
-    setPdfModalVisible(false);
-    setSelectedItem(null);
-  };
-
-  // PDF Modal Component
-  const PdfModal = () => {
+// PDF Modal Component - Extracted outside to prevent recreation
+const PdfModalComponent = React.memo(
+  ({
+    visible,
+    selectedItem,
+    onClose,
+  }: {
+    visible: boolean;
+    selectedItem: OccasionItem | null;
+    onClose: () => void;
+  }) => {
     const getPdfViewerUrl = (pdfUrl: string) => {
       return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
         pdfUrl,
@@ -679,10 +614,10 @@ export const OccasionsScreen = () => {
 
     return (
       <Modal
-        visible={pdfModalVisible}
+        visible={visible}
         transparent={false}
         animationType="slide"
-        onRequestClose={closeModals}>
+        onRequestClose={onClose}>
         <View style={styles.pdfModalContainer}>
           <StatusBar
             backgroundColor={AppColors.teal}
@@ -698,9 +633,7 @@ export const OccasionsScreen = () => {
                   📖 View-only • No downloads
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={closeModals}
-                style={styles.pdfCloseButton}>
+              <TouchableOpacity onPress={onClose} style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
               </TouchableOpacity>
             </View>
@@ -806,51 +739,22 @@ export const OccasionsScreen = () => {
         </View>
       </Modal>
     );
-  };
+  },
+);
 
-  // Image Modal Component
-  const ImageModal = () => (
-    <Modal
-      visible={imageModalVisible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={closeModals}>
-      <View style={styles.modalOverlay}>
-        <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
-        <View style={styles.modalHeader}>
-          <View style={styles.modalHeaderContent}>
-            <Text style={styles.modalTitle} numberOfLines={1}>
-              {selectedItem?.title}
-            </Text>
-            <TouchableOpacity onPress={closeModals} style={styles.closeButton}>
-              <CloseIcon size={24} color={AppColors.white} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.imageModalContent}>
-          {selectedItem && (
-            <Image
-              source={{uri: selectedItem.url}}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
-          )}
-        </View>
-
-        <View style={styles.modalFooter}>
-          <Text style={styles.modalFooterText}>{selectedItem?.author}</Text>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  // Main Category Selection View
-  const MainView = () => {
+// Main View Component - Extracted outside to prevent recreation
+const MainViewComponent = React.memo(
+  ({
+    handleCategorySelect,
+    goBackToDrawer,
+  }: {
+    handleCategorySelect: (category: OccasionCategory) => void;
+    goBackToDrawer: () => void;
+  }) => {
     const CategoryCard = ({category}: {category: OccasionCategory}) => {
       const IconComponent = category.icon;
       const totalItems = occasionItems.filter(
-        item => item.category === category.id,
+        item => item?.category === category?.id,
       ).length;
 
       return (
@@ -948,7 +852,135 @@ export const OccasionsScreen = () => {
         </ScrollView>
       </>
     );
+  },
+);
+
+// Image Modal Component - Extracted outside to prevent recreation
+const ImageModalComponent = React.memo(
+  ({
+    visible,
+    selectedItem,
+    onClose,
+  }: {
+    visible: boolean;
+    selectedItem: OccasionItem | null;
+    onClose: () => void;
+  }) => (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
+        <View style={styles.modalHeader}>
+          <View style={styles.modalHeaderContent}>
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              {selectedItem?.title}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <CloseIcon size={24} color={AppColors.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.imageModalContent}>
+          {selectedItem && (
+            <Image
+              source={{uri: selectedItem.url}}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+
+        <View style={styles.modalFooter}>
+          <Text style={styles.modalFooterText}>{selectedItem?.author}</Text>
+        </View>
+      </View>
+    </Modal>
+  ),
+);
+
+const OccasionsScreenComponent = () => {
+  const goBackToDrawerRef = useRef<(() => void) | null>(null);
+  const goBackToDrawer = () => {
+    if (goBackToDrawerRef.current) {
+      goBackToDrawerRef.current();
+    }
   };
+  const [currentView, setCurrentView] = useState<
+    'main' | 'subfilters' | 'details'
+  >('main');
+  const [selectedCategory, setSelectedCategory] =
+    useState<OccasionCategory | null>(null);
+  const [selectedSubFilter, setSelectedSubFilter] = useState<SubFilter | null>(
+    null,
+  );
+  const [selectedType, setSelectedType] = useState('All');
+  const [selectedItem, setSelectedItem] = useState<OccasionItem | null>(null);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [pdfModalVisible, setPdfModalVisible] = useState(false);
+
+  const navigation = useNavigation();
+
+  // Filter items based on selected category, sub-filter and type - MEMOIZED
+  const filteredItems = useMemo(() => {
+    return occasionItems.filter(item => {
+      const categoryMatch = selectedCategory
+        ? item.category === selectedCategory.id
+        : true;
+      const subFilterMatch = selectedSubFilter
+        ? item.subCategory === selectedSubFilter.id
+        : true;
+      const typeMatch =
+        selectedType === 'All' ||
+        (selectedType === 'PDF' && item.type === 'pdf') ||
+        (selectedType === 'Image' && item.type === 'image');
+      return categoryMatch && subFilterMatch && typeMatch;
+    });
+  }, [selectedCategory, selectedSubFilter, selectedType]);
+
+  const handleCategorySelect = useCallback((category: OccasionCategory) => {
+    setSelectedCategory(category);
+    setCurrentView('subfilters');
+    setSelectedSubFilter(null);
+    setSelectedType('All');
+  }, []);
+
+  const handleSubFilterSelect = useCallback((subFilter: SubFilter) => {
+    setSelectedSubFilter(subFilter);
+    setCurrentView('details');
+    setSelectedType('All');
+  }, []);
+
+  const handleBackToMain = useCallback(() => {
+    setCurrentView('main');
+    setSelectedCategory(null);
+    setSelectedSubFilter(null);
+    setSelectedType('All');
+  }, []);
+
+  const handleBackToSubFilters = useCallback(() => {
+    setCurrentView('subfilters');
+    setSelectedSubFilter(null);
+    setSelectedType('All');
+  }, []);
+
+  const openItem = useCallback((item: OccasionItem) => {
+    setSelectedItem(item);
+    if (item.type === 'image') {
+      setImageModalVisible(true);
+    } else {
+      setPdfModalVisible(true);
+    }
+  }, []);
+
+  const closeModals = useCallback(() => {
+    setImageModalVisible(false);
+    setPdfModalVisible(false);
+    setSelectedItem(null);
+  }, []);
 
   // Sub-filters View
   const SubFiltersView = () => {
@@ -1239,14 +1271,29 @@ export const OccasionsScreen = () => {
   // Render the appropriate view
   return (
     <SafeAreaView style={styles.container}>
-      {currentView === 'main' && <MainView />}
+      {currentView === 'main' && (
+        <MainViewComponent
+          handleCategorySelect={handleCategorySelect}
+          goBackToDrawer={goBackToDrawer}
+        />
+      )}
       {currentView === 'subfilters' && <SubFiltersView />}
       {currentView === 'details' && <DetailsView />}
-      <ImageModal />
-      <PdfModal />
+      <ImageModalComponent
+        visible={imageModalVisible}
+        selectedItem={selectedItem}
+        onClose={closeModals}
+      />
+      <PdfModalComponent
+        visible={pdfModalVisible}
+        selectedItem={selectedItem}
+        onClose={closeModals}
+      />
     </SafeAreaView>
   );
 };
+
+export const OccasionsScreen = React.memo(OccasionsScreenComponent);
 
 const styles = StyleSheet.create({
   container: {

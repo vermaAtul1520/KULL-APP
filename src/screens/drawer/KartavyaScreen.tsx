@@ -6,7 +6,6 @@
  */
 
 import {useNavigation} from '@react-navigation/native';
-import {useDrawerAwareNavigation} from '@app/hooks/useDrawerAwareNavigation';
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -400,7 +399,7 @@ const getCategoryFromId = (categoryId: string) => {
 };
 
 export default function KartavyaScreen() {
-  const {goBackToDrawer} = useDrawerAwareNavigation();
+  const navigation = useNavigation();
   const [currentView, setCurrentView] = useState<'main' | 'details'>('main');
   const [selectedCategory, setSelectedCategory] =
     useState<KartavyaCategory | null>(null);
@@ -415,8 +414,6 @@ export default function KartavyaScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const navigation = useNavigation();
 
   // Fetch kartavya data from API
   const fetchKartavyaData = async () => {
@@ -773,7 +770,9 @@ export default function KartavyaScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -1043,7 +1042,9 @@ export default function KartavyaScreen() {
           barStyle="light-content"
         />
         <View style={styles.header}>
-          <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>

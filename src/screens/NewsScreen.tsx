@@ -24,7 +24,7 @@ import {BASE_URL} from '@app/constants/constant';
 import BannerComponent from '@app/navigators/BannerComponent';
 import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 
-const AppColors = {
+export const AppColors = {
   primary: '#7dd3c0',
   black: '#000000',
   white: '#ffffff',
@@ -372,6 +372,7 @@ const NewsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BannerComponent />
       <FlatList
         data={filteredNews}
         renderItem={renderNewsItem}
@@ -388,7 +389,6 @@ const NewsScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
-            <BannerComponent />
             {renderHeader()}
             {renderSearchBar()}
           </>

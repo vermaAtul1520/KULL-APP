@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -16,14 +16,16 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@app/constants/constant';
-import { useAuth } from '@app/navigators';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
-import Svg, { Path } from 'react-native-svg';
+import {BASE_URL} from '@app/constants/constant';
+import {useAuth} from '@app/navigators';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+import Svg, {Path} from 'react-native-svg';
 import BannerComponent from '@app/navigators/BannerComponent';
-import { useConfiguration } from '@app/hooks/ConfigContext';
+import {useConfiguration} from '@app/hooks/ConfigContext';
+import {moderateScale} from '@app/constants/scaleUtils';
+import {useLanguage} from '@app/hooks/LanguageContext';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -91,9 +93,9 @@ interface FilterOptions {
 }
 
 const MyPeopleScreen = () => {
-  const { user, token } = useAuth();
-  const { gotraData } = useConfiguration();
-
+  const {user, token} = useAuth();
+  const {gotraData} = useConfiguration();
+  const {t} = useLanguage();
   // State management
   const [users, setUsers] = useState<CommunityUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<CommunityUser[]>([]);
@@ -118,42 +120,60 @@ const MyPeopleScreen = () => {
     gotra: '',
     subgotra: '',
   });
-  const [tempFilters, setTempFilters] = useState<FilterOptions>({ ...filters });
+  const [tempFilters, setTempFilters] = useState<FilterOptions>({...filters});
 
-  const CloseIcon = ({ size = 24, color = "#666" }) => (
+  const CloseIcon = ({size = 24, color = '#666'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+      <Path
+        d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+        fill={color}
+      />
     </Svg>
   );
 
-  const FilterIcon = ({ size = 24, color = "#2a2a2a" }) => (
+  const FilterIcon = ({size = 24, color = '#2a2a2a'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" fill={color}/>
+      <Path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" fill={color} />
     </Svg>
   );
 
-  const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+  const SearchIcon = ({size = 24, color = '#2a2a2a'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+      <Path
+        d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+        fill={color}
+      />
     </Svg>
-   );
+  );
 
-   const EmailIcon = ({ size = 24, color = "#2a2a2a" }) => (
+  const EmailIcon = ({size = 24, color = '#2a2a2a'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill={color}/>
+      <Path
+        d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
+        fill={color}
+      />
     </Svg>
   );
-  
-  const MapMarkerIcon = ({ size = 24, color = "#2a2a2a" }) => (
+
+  const MapMarkerIcon = ({size = 24, color = '#2a2a2a'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill={color}/>
+      <Path
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+        fill={color}
+      />
     </Svg>
   );
-  
-  const AccountGroupIcon = ({ size = 24, color = "#2a2a2a" }) => (
+
+  const AccountGroupIcon = ({size = 24, color = '#2a2a2a'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill={color}/>
-      <Path d="M20 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H20v.5zm-16-1c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H4v.5z" fill={color}/>
+      <Path
+        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+        fill={color}
+      />
+      <Path
+        d="M20 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H20v.5zm-16-1c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 1c-1.33 0-4 .67-4 2v1.5h3V15c0-.17.02-.33.05-.5H4v.5z"
+        fill={color}
+      />
     </Svg>
   );
 
@@ -172,10 +192,13 @@ const MyPeopleScreen = () => {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
       console.log('Fetching community users for:', COMMUNITY_ID);
-      const response = await fetch(`${BASE_URL}/api/communities/${COMMUNITY_ID}/users`, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/communities/${COMMUNITY_ID}/users`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
 
       console.log('Users API response status:', response.status);
 
@@ -193,13 +216,12 @@ const MyPeopleScreen = () => {
         setUsers([]);
         setFilteredUsers([]);
       }
-
     } catch (error) {
       console.error('Error fetching community users:', error);
       Alert.alert(
         'Error',
         'Failed to load community users. Please try again.',
-        [{ text: 'OK', style: 'default' }]
+        [{text: 'OK', style: 'default'}],
       );
       setUsers([]);
       setFilteredUsers([]);
@@ -262,12 +284,12 @@ const MyPeopleScreen = () => {
   };
 
   const openFilterModal = () => {
-    setTempFilters({ ...filters });
+    setTempFilters({...filters});
     setFilterModalVisible(true);
   };
 
   const applyFilters = () => {
-    setFilters({ ...tempFilters });
+    setFilters({...tempFilters});
     setFilterModalVisible(false);
   };
 
@@ -299,13 +321,15 @@ const MyPeopleScreen = () => {
   };
 
   // Render functions
-  const renderUserCard = ({ item }: { item: CommunityUser }) => (
-    <TouchableOpacity style={styles.userCard} onPress={() => handleUserPress(item)}>
+  const renderUserCard = ({item}: {item: CommunityUser}) => (
+    <TouchableOpacity
+      style={styles.userCard}
+      onPress={() => handleUserPress(item)}>
       <View style={styles.userCardHeader}>
         <View style={styles.userCardLeft}>
           {item.profileImage ? (
             <Image
-              source={{ uri: item.profileImage }}
+              source={{uri: item.profileImage}}
               style={styles.profileImage}
             />
           ) : (
@@ -324,10 +348,16 @@ const MyPeopleScreen = () => {
           </View>
         </View>
         <View style={styles.statusContainer}>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: item.communityStatus === 'pending' ? AppColors.orange : AppColors.green }
-          ]}>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor:
+                  item.communityStatus === 'pending'
+                    ? AppColors.orange
+                    : AppColors.green,
+              },
+            ]}>
             <Text style={styles.statusText}>{item.communityStatus}</Text>
           </View>
         </View>
@@ -335,15 +365,15 @@ const MyPeopleScreen = () => {
 
       <View style={styles.userDetails}>
         <View style={styles.detailRow}>
-        <EmailIcon size={14} color={AppColors.gray} />
+          <EmailIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.email}</Text>
         </View>
         <View style={styles.detailRow}>
-        <MapMarkerIcon size={14} color={AppColors.gray} />
+          <MapMarkerIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.address}</Text>
         </View>
         <View style={styles.detailRow}>
-        <AccountGroupIcon size={14} color={AppColors.gray} />
+          <AccountGroupIcon size={14} color={AppColors.gray} />
           <Text style={styles.detailText}>{item.roleInCommunity}</Text>
         </View>
       </View>
@@ -351,7 +381,7 @@ const MyPeopleScreen = () => {
   );
 
   const renderFilterModal = () => {
-    const filterOptions: { [key: string]: string[] } = {
+    const filterOptions: {[key: string]: string[]} = {
       gender: ['male', 'female', 'other'],
       maritalStatus: ['single', 'married', 'divorced', 'widowed'],
     };
@@ -363,8 +393,14 @@ const MyPeopleScreen = () => {
 
     // Add subgotra options based on selected gotra
     if (tempFilters.gotra) {
-      const selectedGotraData = gotraData?.find(g => g.name === tempFilters.gotra);
-      if (selectedGotraData && selectedGotraData.subgotra && selectedGotraData.subgotra.length > 0) {
+      const selectedGotraData = gotraData?.find(
+        g => g.name === tempFilters.gotra,
+      );
+      if (
+        selectedGotraData &&
+        selectedGotraData.subgotra &&
+        selectedGotraData.subgotra.length > 0
+      ) {
         filterOptions.subgotra = selectedGotraData.subgotra;
       }
     }
@@ -374,65 +410,78 @@ const MyPeopleScreen = () => {
         animationType="slide"
         transparent={true}
         visible={filterModalVisible}
-        onRequestClose={() => setFilterModalVisible(false)}
-      >
+        onRequestClose={() => setFilterModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.filterModalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filter Users</Text>
               <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
-              <CloseIcon size={24} color="#666" />
+                <CloseIcon size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.filterScrollView}>
-              {Object.keys(filterOptions).map((filterKey) => (
+              {Object.keys(filterOptions).map(filterKey => (
                 <View key={filterKey} style={styles.filterSection}>
                   <Text style={styles.filterSectionTitle}>
-                    {filterKey.charAt(0).toUpperCase() + filterKey.slice(1).replace(/([A-Z])/g, ' $1')}
+                    {filterKey.charAt(0).toUpperCase() +
+                      filterKey.slice(1).replace(/([A-Z])/g, ' $1')}
                   </Text>
                   <View style={styles.filterOptions}>
                     <TouchableOpacity
                       style={[
                         styles.filterOption,
-                        tempFilters[filterKey as keyof FilterOptions] === '' && styles.filterOptionSelected
+                        tempFilters[filterKey as keyof FilterOptions] === '' &&
+                          styles.filterOptionSelected,
                       ]}
                       onPress={() => {
-                        const updatedFilters = { ...tempFilters, [filterKey]: '' };
+                        const updatedFilters = {
+                          ...tempFilters,
+                          [filterKey]: '',
+                        };
                         // Clear subgotra if gotra is cleared
                         if (filterKey === 'gotra') {
                           updatedFilters.subgotra = '';
                         }
                         setTempFilters(updatedFilters);
-                      }}
-                    >
-                      <Text style={[
-                        styles.filterOptionText,
-                        tempFilters[filterKey as keyof FilterOptions] === '' && styles.filterOptionTextSelected
-                      ]}>
+                      }}>
+                      <Text
+                        style={[
+                          styles.filterOptionText,
+                          tempFilters[filterKey as keyof FilterOptions] ===
+                            '' && styles.filterOptionTextSelected,
+                        ]}>
                         All
                       </Text>
                     </TouchableOpacity>
-                    {filterOptions[filterKey].map((option) => (
+                    {filterOptions[filterKey].map(option => (
                       <TouchableOpacity
                         key={option}
                         style={[
                           styles.filterOption,
-                          tempFilters[filterKey as keyof FilterOptions] === option && styles.filterOptionSelected
+                          tempFilters[filterKey as keyof FilterOptions] ===
+                            option && styles.filterOptionSelected,
                         ]}
                         onPress={() => {
-                          const updatedFilters = { ...tempFilters, [filterKey]: option };
+                          const updatedFilters = {
+                            ...tempFilters,
+                            [filterKey]: option,
+                          };
                           // Clear subgotra if gotra changes
-                          if (filterKey === 'gotra' && tempFilters.gotra !== option) {
+                          if (
+                            filterKey === 'gotra' &&
+                            tempFilters.gotra !== option
+                          ) {
                             updatedFilters.subgotra = '';
                           }
                           setTempFilters(updatedFilters);
-                        }}
-                      >
-                        <Text style={[
-                          styles.filterOptionText,
-                          tempFilters[filterKey as keyof FilterOptions] === option && styles.filterOptionTextSelected
-                        ]}>
+                        }}>
+                        <Text
+                          style={[
+                            styles.filterOptionText,
+                            tempFilters[filterKey as keyof FilterOptions] ===
+                              option && styles.filterOptionTextSelected,
+                          ]}>
                           {option.charAt(0).toUpperCase() + option.slice(1)}
                         </Text>
                       </TouchableOpacity>
@@ -443,10 +492,14 @@ const MyPeopleScreen = () => {
             </ScrollView>
 
             <View style={styles.filterActions}>
-              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={clearFilters}>
                 <Text style={styles.clearButtonText}>Clear All</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={applyFilters}>
                 <Text style={styles.applyButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
@@ -464,8 +517,7 @@ const MyPeopleScreen = () => {
         animationType="slide"
         transparent={true}
         visible={userModalVisible}
-        onRequestClose={closeUserModal}
-      >
+        onRequestClose={closeUserModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.userModalContent}>
             <View style={styles.modalHeader}>
@@ -480,12 +532,22 @@ const MyPeopleScreen = () => {
                 <Text style={styles.userFullName}>
                   {selectedUser.firstName} {selectedUser.lastName}
                 </Text>
-                <Text style={styles.userOccupation}>{selectedUser.occupation}</Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: selectedUser.communityStatus === 'pending' ? AppColors.orange : AppColors.green }
-                ]}>
-                  <Text style={styles.statusText}>{selectedUser.communityStatus}</Text>
+                <Text style={styles.userOccupation}>
+                  {selectedUser.occupation}
+                </Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        selectedUser.communityStatus === 'pending'
+                          ? AppColors.orange
+                          : AppColors.green,
+                    },
+                  ]}>
+                  <Text style={styles.statusText}>
+                    {selectedUser.communityStatus}
+                  </Text>
                 </View>
               </View>
 
@@ -493,7 +555,9 @@ const MyPeopleScreen = () => {
                 <Text style={styles.sectionTitle}>Personal Information</Text>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Father's Name:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.fatherName}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.fatherName}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Gender:</Text>
@@ -501,11 +565,15 @@ const MyPeopleScreen = () => {
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Marital Status:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.maritalStatus}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.maritalStatus}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Religion:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.religion}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.religion}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Cast:</Text>
@@ -518,12 +586,16 @@ const MyPeopleScreen = () => {
                 {selectedUser.subgotra && (
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Subgotra:</Text>
-                    <Text style={styles.detailValue}>{selectedUser.subgotra}</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedUser.subgotra}
+                    </Text>
                   </View>
                 )}
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Mother Tongue:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.motherTongue}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.motherTongue}
+                  </Text>
                 </View>
               </View>
 
@@ -535,7 +607,9 @@ const MyPeopleScreen = () => {
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Phone:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.alternativePhone}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.alternativePhone}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Address:</Text>
@@ -555,15 +629,21 @@ const MyPeopleScreen = () => {
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Role in Community:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.roleInCommunity}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.roleInCommunity}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Estimated Members:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.estimatedMembers}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.estimatedMembers}
+                  </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Thought of Making:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.thoughtOfMaking}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedUser.thoughtOfMaking}
+                  </Text>
                 </View>
               </View>
 
@@ -586,78 +666,92 @@ const MyPeopleScreen = () => {
     );
   };
 
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        {searchQuery.trim() !== ''
+          ? t('No news matches your search') || 'No news matches your search'
+          : t('No news available') || 'No news available'}
+      </Text>
+      {searchQuery.trim() !== '' && (
+        <TouchableOpacity
+          style={styles.clearSearchButton}
+          onPress={() => setSearchQuery('')}>
+          <Text style={styles.clearSearchText}>
+            {t('Clear Search') || 'Clear Search'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>My People</Text>
+      <Text style={styles.headerSubtitle}>
+        {filteredUsers.length} of {users.length} members
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <BannerComponent />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My People</Text>
-        <Text style={styles.headerSubtitle}>
-          {filteredUsers.length} of {users.length} members
-        </Text>
-      </View>
-
-      {/* Search and Filter */}
-      <View style={styles.searchFilterContainer}>
-        <View style={styles.searchContainer}>
-        <SearchIcon size={24} color="#2a2a2a" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, email, occupation..."
-            placeholderTextColor={AppColors.gray}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      <FlatList
+        data={filteredUsers}
+        renderItem={renderUserCard}
+        keyExtractor={(item: any) => item._id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.teal]}
+            tintColor={AppColors.teal}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
-              <Icon name="close" size={20} color={AppColors.gray} />
-            </TouchableOpacity>
-          )}
-        </View>
-        
-        <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-        <FilterIcon size={24} color="#2a2a2a" />
-          {getActiveFilterCount() > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+        }
+        ListHeaderComponent={() => (
+          <>
+            {renderHeader()}
+            {/* Search and Filter */}
+            <View style={styles.searchFilterContainer}>
+              <View style={styles.searchContainer}>
+                <SearchIcon size={24} color="#2a2a2a" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search by name, email, occupation..."
+                  placeholderTextColor={AppColors.gray}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    style={styles.clearSearchIcon}>
+                    <Icon name="close" size={20} color={AppColors.gray} />
+                  </TouchableOpacity>
+                )}
+              </View>
 
-      {/* User List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={AppColors.primary} />
-          <Text style={styles.loadingText}>Loading community members...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredUsers}
-          renderItem={renderUserCard}
-          keyExtractor={(item) => item._id}
-          style={styles.userList}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[AppColors.primary]}
-            />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Icon name="account-group-outline" size={64} color={AppColors.gray} />
-              <Text style={styles.emptyTitle}>No members found</Text>
-              <Text style={styles.emptySubtitle}>
-                {searchQuery || getActiveFilterCount() > 0
-                  ? 'Try adjusting your search or filters'
-                  : 'No community members available'}
-              </Text>
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={openFilterModal}>
+                <FilterIcon size={24} color="#2a2a2a" />
+                {getActiveFilterCount() > 0 && (
+                  <View style={styles.filterBadge}>
+                    <Text style={styles.filterBadgeText}>
+                      {getActiveFilterCount()}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
-          }
-        />
-      )}
+          </>
+        )}
+        ListEmptyComponent={renderEmptyComponent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
 
       {/* Modals */}
       {renderFilterModal()}
@@ -671,9 +765,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.cream,
   },
+  listContainer: {
+    paddingHorizontal: moderateScale(15),
+    paddingBottom: moderateScale(20),
+  },
   header: {
+    flexDirection: 'column',
     padding: 20,
     backgroundColor: AppColors.dark,
+  },
+  emptyText: {
+    fontSize: moderateScale(18),
+    fontWeight: '600',
+    color: AppColors.gray,
+    marginBottom: moderateScale(5),
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: moderateScale(14),
+    color: AppColors.gray,
+    textAlign: 'center',
+  },
+  clearSearchButton: {
+    backgroundColor: AppColors.teal,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(20),
+    marginTop: moderateScale(15),
+  },
+  clearSearchText: {
+    color: AppColors.white,
+    fontSize: moderateScale(14),
+    fontWeight: '600',
+  },
+  separator: {
+    height: moderateScale(1),
+    backgroundColor: 'transparent',
   },
   headerTitle: {
     fontSize: 24,
@@ -759,7 +886,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     elevation: 2,
     shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },

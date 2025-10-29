@@ -15,8 +15,7 @@ import {
 import Svg, {Path, Circle, Rect, Polygon} from 'react-native-svg';
 import {useAuth} from '@app/navigators';
 import {useLanguage} from '@app/hooks/LanguageContext';
-import {useConfiguration} from '@app/hooks/ConfigContext'; // Add this import
-import {useDrawerNavigation} from '@app/contexts/DrawerNavigationContext';
+import {useConfiguration} from '@app/hooks/ConfigContext';
 
 // SVG Icon Components (keep all existing icons unchanged)
 const CalendarIcon = ({size = 24, color = '#7dd3c0'}) => (
@@ -401,8 +400,7 @@ const FamilyTreeIcon = ({size = 24, color = '#7dd3c0'}) => (
 const DrawerContent = (props: DrawerContentComponentProps) => {
   const {user, logout} = useAuth();
   const {t, currentLanguage}: any = useLanguage();
-  const {drorData} = useConfiguration(); // Add this line to get dror data
-  const {addToHistory} = useDrawerNavigation();
+  const {drorData} = useConfiguration();
 
   // Remove static menu items and create dynamic menu based on drorData
   const getMenuItems = () => {
@@ -495,11 +493,6 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = getMenuItems();
 
   const handleMenuPress = (screenName: string) => {
-    // console.log('screenName', screenName); // Removed to prevent infinite re-render logs
-
-    // Add to navigation history for drawer-aware back navigation
-    addToHistory(screenName);
-
     // Navigate to HomeTab first, then to the Home stack, then to the specific screen
     // Since all drawer screens are now part of each tab's stack
     props?.navigation?.navigate('HomeTab', {

@@ -289,27 +289,8 @@ const BhajanScreen = () => {
   };
 
   const handleVideoPress = (video: BhajanVideo) => {
-    Alert.alert(
-      t('Play Video') || 'Play Video',
-      t('How would you like to watch this bhajan?') ||
-        'How would you like to watch this bhajan?',
-      [
-        {
-          text: t('In App') || 'In App',
-          onPress: () => openVideoInModal(video),
-          style: 'default',
-        },
-        {
-          text: t('YouTube App') || 'YouTube App',
-          onPress: () => openVideoInYouTube(video.youtubeUrl),
-          style: 'default',
-        },
-        {
-          text: t('Cancel') || 'Cancel',
-          style: 'cancel',
-        },
-      ],
-    );
+    // Directly open video in app modal
+    openVideoInModal(video);
   };
 
   const renderSearchBar = () => (

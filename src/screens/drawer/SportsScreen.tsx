@@ -21,7 +21,6 @@ import {
 import {WebView} from 'react-native-webview';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {useNavigation} from '@react-navigation/native';
-import {useDrawerAwareNavigation} from '@app/hooks/useDrawerAwareNavigation';
 
 const {width, height} = Dimensions.get('window');
 
@@ -217,7 +216,7 @@ const formatEventDate = (dateString: string) => {
 };
 
 const SportsScreen = () => {
-  const {goBackToDrawer} = useDrawerAwareNavigation();
+  const navigation = useNavigation();
   const [sportsEvents, setSportsEvents] = useState<SportsEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<SportsEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -574,7 +573,7 @@ const SportsScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>

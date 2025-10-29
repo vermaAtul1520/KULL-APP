@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   PermissionsAndroid,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {
@@ -31,6 +32,8 @@ import {
   MediaType,
 } from 'react-native-image-picker';
 import {uploadImageToCloudinary} from '@app/utils/imageUpload';
+import {moderateScale} from '@app/constants/scaleUtils';
+import {AppColors} from './NewsScreen';
 
 const {width, height} = Dimensions.get('window');
 
@@ -1457,6 +1460,34 @@ const PostScreen = () => {
     </Modal>
   );
 
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        {searchQuery.trim() !== ''
+          ? t('No posts matches your search') || 'No posts matches your search'
+          : t('No posts available') || 'No posts available'}
+      </Text>
+      {searchQuery.trim() !== '' && (
+        <TouchableOpacity
+          style={styles.clearSearchButton}
+          onPress={() => setSearchQuery('')}>
+          <Text style={styles.clearSearchText}>
+            {t('Clear Search') || 'Clear Search'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
+      <Text style={styles.headerSubtitle}>
+        {t('Stay updated with latest happenings') ||
+          'Stay updated with latest happenings'}
+      </Text>
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -1471,39 +1502,51 @@ const PostScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <BannerComponent />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}>
-          <ArrowLeftIcon size={24} color="#2a2a2a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
-        <View style={styles.headerRight} />
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <SearchIcon size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={
-              t('Search posts by title, content, author...') ||
-              'Search posts by title, content, author...'
-            }
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
+      <FlatList
+        data={filteredPosts}
+        renderItem={renderPost}
+        keyExtractor={(item: any) => item._id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.teal]}
+            tintColor={AppColors.teal}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              style={styles.clearSearchButton}>
-              <CloseIcon size={20} color="#666" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+        }
+        ListHeaderComponent={() => (
+          <>
+            {renderHeader()}
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInputContainer}>
+                <SearchIcon size={20} color="#666" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={
+                    t('Search posts by title, content, author...') ||
+                    'Search posts by title, content, author...'
+                  }
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#999"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    style={styles.clearSearchButton}>
+                    <CloseIcon size={20} color="#666" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </>
+        )}
+        ListEmptyComponent={renderEmptyComponent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
 
       {/* Results Count */}
       {searchQuery.trim() !== '' && (
@@ -1520,7 +1563,7 @@ const PostScreen = () => {
         </View>
       )}
 
-      <FlatList
+      {/* <FlatList
         data={filteredPosts}
         renderItem={renderPost}
         keyExtractor={(item: any) => item._id}
@@ -1548,7 +1591,7 @@ const PostScreen = () => {
             )}
           </View>
         }
-      />
+      /> */}
 
       {isAdmin && (
         <TouchableOpacity
@@ -1580,13 +1623,33 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  headerContainer: {
+    paddingHorizontal: moderateScale(20),
+    paddingTop: moderateScale(20),
+    paddingBottom: moderateScale(15),
+    backgroundColor: AppColors.white,
+    borderBottomLeftRadius: moderateScale(20),
+    borderBottomRightRadius: moderateScale(20),
+    marginBottom: moderateScale(10),
+  },
+  headerSubtitle: {
+    fontSize: moderateScale(14),
+    color: AppColors.gray,
+    textAlign: 'center',
+    marginTop: moderateScale(5),
+  },
+  separator: {
+    height: moderateScale(1),
+    backgroundColor: 'transparent',
+  },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2a2a2a',
+    fontSize: moderateScale(24),
+    fontWeight: 'bold',
+    color: AppColors.black,
+    textAlign: 'center',
   },
   headerRight: {
     width: 40,
@@ -1673,7 +1736,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 10,
   },
   postCard: {
     backgroundColor: '#2a2a2a',

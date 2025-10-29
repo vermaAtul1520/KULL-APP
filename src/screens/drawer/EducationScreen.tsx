@@ -21,7 +21,6 @@ import {useAuth} from '@app/navigators';
 import Svg, {Path} from 'react-native-svg';
 import {useNavigation} from '@react-navigation/native';
 import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
-import {useDrawerAwareNavigation} from '@app/hooks/useDrawerAwareNavigation';
 
 const {width} = Dimensions.get('window');
 
@@ -151,8 +150,7 @@ interface EducationResponse {
 
 const EducationScreen = () => {
   const {user, token} = useAuth();
-  const {goBackToDrawer} = useDrawerAwareNavigation();
-
+  const navigation = useNavigation();
   // State management
   const [resources, setResources] = useState<EducationResource[]>([]);
   const [filteredResources, setFilteredResources] = useState<
@@ -481,7 +479,9 @@ const EducationScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Education</Text>

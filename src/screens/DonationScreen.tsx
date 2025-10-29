@@ -13,6 +13,7 @@ import {
   Dimensions,
   SafeAreaView,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +22,9 @@ import {useAuth} from '@app/navigators';
 import {useNavigation} from '@react-navigation/native';
 import BannerComponent from '@app/navigators/BannerComponent';
 import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+import {AppColors} from './NewsScreen';
+import {moderateScale} from '@app/constants/scaleUtils';
+import {useLanguage} from '@app/hooks/LanguageContext';
 
 const {width, height} = Dimensions.get('window');
 
@@ -65,6 +69,7 @@ interface FilterState {
 
 const DonationScreen = () => {
   const {user, token} = useAuth();
+  const {t} = useLanguage();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [filteredDonations, setFilteredDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -765,6 +770,32 @@ const DonationScreen = () => {
       </Modal>
     );
   };
+  // const renderEmptyComponent = () => (
+  //   <View style={styles.emptyContainer}>
+  //     <Text style={styles.emptyText}>
+  //       {searchQuery.trim() !== ''
+  //         ? t('No news matches your search') || 'No news matches your search'
+  //         : t('No news available') || 'No news available'}
+  //     </Text>
+  //     {searchQuery.trim() !== '' && (
+  //       <TouchableOpacity
+  //         style={styles.clearSearchButton}
+  //         onPress={() => setSearchQuery('')}>
+  //         <Text style={styles.clearSearchText}>
+  //           {t('Clear Search') || 'Clear Search'}
+  //         </Text>
+  //       </TouchableOpacity>
+  //     )}
+  //   </View>
+  // );
+  const renderHeader = () => (
+    <View style={styles.headerStyle}>
+      <Text style={styles.headerTitle}>Donations</Text>
+      <Text style={styles.headerSubtitle}>
+        {filteredDonations.length} of {donations.length} donations
+      </Text>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -778,105 +809,146 @@ const DonationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <BannerComponent />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}>
-          <ArrowLeftIcon size={24} color="#2a2a2a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Donations</Text>
-        <TouchableOpacity style={styles.filterButton} onPress={openFilterModal}>
-          <FilterIcon size={24} color="#2a2a2a" />
-          {hasActiveFilters() && <View style={styles.filterIndicator} />}
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <SearchIcon size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by title, organization, category..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
+      <FlatList
+        data={filteredDonations}
+        renderItem={renderDonationCard}
+        keyExtractor={(item: any) => item._id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.teal]}
+            tintColor={AppColors.teal}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              style={styles.clearSearchButton}>
-              <CloseIcon size={20} color="#666" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+        }
+        ListHeaderComponent={() => (
+          <>
+            {renderHeader()}
 
-      {/* Active Filters Display */}
-      {hasActiveFilters() && (
-        <View style={styles.activeFiltersContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {searchQuery.trim() !== '' && (
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  Search: "{searchQuery}"
-                </Text>
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <CloseIcon size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {activeFilters.category && activeFilters.category !== 'All' && (
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  {activeFilters.category}
-                </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    setActiveFilters(prev => ({...prev, category: ''}))
-                  }>
-                  <CloseIcon size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {activeFilters.urgency && activeFilters.urgency !== 'All' && (
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  {activeFilters.urgency} urgency
-                </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    setActiveFilters(prev => ({...prev, urgency: ''}))
-                  }>
-                  <CloseIcon size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {activeFilters.organizationType &&
-              activeFilters.organizationType !== 'All' && (
-                <View style={styles.activeFilterChip}>
-                  <Text style={styles.activeFilterText}>
-                    {activeFilters.organizationType}
-                  </Text>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInputContainer}>
+                <SearchIcon size={20} color="#666" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search by title, organization, category..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#999"
+                />
+                {searchQuery.length > 0 && (
                   <TouchableOpacity
-                    onPress={() =>
-                      setActiveFilters(prev => ({
-                        ...prev,
-                        organizationType: '',
-                      }))
-                    }>
-                    <CloseIcon size={16} color="#666" />
+                    onPress={() => setSearchQuery('')}
+                    style={styles.clearSearchButton}>
+                    <CloseIcon size={20} color="#666" />
                   </TouchableOpacity>
-                </View>
-              )}
-            <TouchableOpacity
-              style={styles.clearAllFiltersChip}
-              onPress={clearFilters}>
-              <Text style={styles.clearAllFiltersText}>Clear All</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      )}
+                )}
+              </View>
+              {/* <View> */}
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={openFilterModal}>
+                <FilterIcon size={24} color="#2a2a2a" />
+                {hasActiveFilters() && <View style={styles.filterIndicator} />}
+              </TouchableOpacity>
+              {/* </View> */}
+            </View>
+            {/* Active Filters Display */}
+            {hasActiveFilters() && (
+              <View style={styles.activeFiltersContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {searchQuery.trim() !== '' && (
+                    <View style={styles.activeFilterChip}>
+                      <Text style={styles.activeFilterText}>
+                        Search: "{searchQuery}"
+                      </Text>
+                      <TouchableOpacity onPress={() => setSearchQuery('')}>
+                        <CloseIcon size={16} color="#666" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {activeFilters.category &&
+                    activeFilters.category !== 'All' && (
+                      <View style={styles.activeFilterChip}>
+                        <Text style={styles.activeFilterText}>
+                          {activeFilters.category}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() =>
+                            setActiveFilters(prev => ({...prev, category: ''}))
+                          }>
+                          <CloseIcon size={16} color="#666" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  {activeFilters.urgency && activeFilters.urgency !== 'All' && (
+                    <View style={styles.activeFilterChip}>
+                      <Text style={styles.activeFilterText}>
+                        {activeFilters.urgency} urgency
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          setActiveFilters(prev => ({...prev, urgency: ''}))
+                        }>
+                        <CloseIcon size={16} color="#666" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {activeFilters.organizationType &&
+                    activeFilters.organizationType !== 'All' && (
+                      <View style={styles.activeFilterChip}>
+                        <Text style={styles.activeFilterText}>
+                          {activeFilters.organizationType}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() =>
+                            setActiveFilters(prev => ({
+                              ...prev,
+                              organizationType: '',
+                            }))
+                          }>
+                          <CloseIcon size={16} color="#666" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  <TouchableOpacity
+                    style={styles.clearAllFiltersChip}
+                    onPress={clearFilters}>
+                    <Text style={styles.clearAllFiltersText}>Clear All</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            )}
+          </>
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <HeartIcon size={64} color="#ccc" />
+            <Text style={styles.emptyText}>
+              {hasActiveFilters()
+                ? 'No donations match your search criteria'
+                : 'No donations available'}
+            </Text>
+            {hasActiveFilters() ? (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={clearFilters}>
+                <Text style={styles.retryText}>Clear Filters</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={fetchDonations}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+      {/* <BannerComponent /> */}
 
       {/* Results Count */}
       <View style={styles.resultsContainer}>
@@ -887,7 +959,7 @@ const DonationScreen = () => {
         </Text>
       </View>
 
-      <FlatList
+      {/* <FlatList
         data={filteredDonations}
         renderItem={renderDonationCard}
         keyExtractor={item => item._id}
@@ -918,7 +990,7 @@ const DonationScreen = () => {
             )}
           </View>
         }
-      />
+      /> */}
 
       {renderDonationModal()}
       {renderFilterModal()}
@@ -941,16 +1013,63 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  headerStyle: {
+    flexDirection: 'column',
+    padding: 20,
+    backgroundColor: AppColors.dark,
+  },
+  listContainer: {
+    paddingHorizontal: moderateScale(15),
+    paddingBottom: moderateScale(20),
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: AppColors.primary,
+  },
+  emptyText: {
+    fontSize: moderateScale(18),
+    fontWeight: '600',
+    color: AppColors.gray,
+    marginBottom: moderateScale(5),
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: moderateScale(14),
+    color: AppColors.gray,
+    textAlign: 'center',
+  },
+  clearSearchButton: {
+    backgroundColor: AppColors.teal,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(20),
+    marginTop: moderateScale(15),
+  },
+  clearSearchText: {
+    color: AppColors.white,
+    fontSize: moderateScale(14),
+    fontWeight: '600',
+  },
+  separator: {
+    height: moderateScale(1),
+    backgroundColor: 'transparent',
+  },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2a2a2a',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+    marginBottom: 4,
   },
   filterButton: {
-    padding: 8,
+    backgroundColor: AppColors.primary,
+    borderRadius: 8,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
   filterIndicator: {
@@ -965,25 +1084,20 @@ const styles = StyleSheet.create({
 
   // Search Bar Styles
   searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f5f5dc',
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: AppColors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.lightGray,
   },
   searchInputContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: AppColors.lightGray,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
@@ -992,9 +1106,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingVertical: 4,
   },
-  clearSearchButton: {
-    padding: 4,
-  },
+  // clearSearchButton: {
+  //   padding: 4,
+  // },
 
   // Active Filters Styles
   activeFiltersContainer: {
@@ -1127,9 +1241,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  listContainer: {
-    padding: 16,
-  },
+  // listContainer: {
+  //   padding: 16,
+  // },
   donationCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -1214,13 +1328,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 100,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
+  // emptyText: {
+  //   fontSize: 16,
+  //   color: '#666',
+  //   marginTop: 16,
+  //   marginBottom: 24,
+  //   textAlign: 'center',
+  // },
   retryButton: {
     backgroundColor: '#2a2a2a',
     paddingHorizontal: 24,
