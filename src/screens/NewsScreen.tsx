@@ -216,12 +216,9 @@ const NewsScreen = () => {
       {/* News Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={{
-            uri:
-              item.imageUrl ||
-              'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
-          }}
-          style={styles.newsImage}
+          source={{uri: item.imageUrl}}
+          style={styles.newsItemImage}
+          resizeMode="contain"
         />
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryText}>{item.category}</Text>
@@ -426,11 +423,10 @@ const NewsScreen = () => {
                   {/* News Image */}
                   <Image
                     source={{
-                      uri:
-                        selectedNews.imageUrl ||
-                        'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg',
+                      uri: selectedNews.imageUrl,
                     }}
-                    style={styles.modalImage}
+                    style={styles.newsItemImage}
+                    resizeMode="contain"
                   />
 
                   {/* Category Badge */}
@@ -587,6 +583,14 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+  },
+  newsItemImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   newsImage: {
     width: '100%',

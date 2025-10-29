@@ -354,19 +354,12 @@ const SportsScreen = () => {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Event Content - Image, PDF, or Thumbnail */}
-                  {selectedEvent.type === 'image' && selectedEvent.url && (
-                    <View style={styles.detailModalImageContainer}>
-                      <Image
-                        source={{
-                          uri: getFullImageUrl(
-                            selectedEvent.thumbnailUrl || selectedEvent.url,
-                          ),
-                        }}
-                        style={styles.detailModalFullImage}
-                        resizeMode="contain"
-                      />
-                    </View>
+                  {selectedEvent.thumbnailUrl && (
+                    <Image
+                      source={{uri: selectedEvent.thumbnailUrl}}
+                      style={styles.sportEventImage}
+                      resizeMode="contain"
+                    />
                   )}
 
                   {selectedEvent.type === 'pdf' && selectedEvent.url && (
@@ -507,14 +500,12 @@ const SportsScreen = () => {
         )}
       </View>
 
-      {(item.type === 'image' || item.thumbnailUrl) && (
-        <View style={styles.imagePreview}>
-          <Image
-            source={{uri: getFullImageUrl(item.thumbnailUrl || item.url)}}
-            style={styles.previewImage}
-            resizeMode="cover"
-          />
-        </View>
+      {item.thumbnailUrl && (
+        <Image
+          source={{uri: item.thumbnailUrl}}
+          style={styles.sportEventImage}
+          resizeMode="contain"
+        />
       )}
 
       <View style={styles.eventInfo}>
@@ -1170,6 +1161,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2a2a2a',
     lineHeight: 20,
+  },
+  sportEventImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
 });
 

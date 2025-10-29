@@ -249,15 +249,13 @@ const EmploymentScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Job Content - Image, PDF, or Thumbnail */}
-                {selectedJob.fileType === 'image' &&
-                  selectedJob.thumbnailUrl && (
-                    <Image
-                      source={{uri: getFullImageUrl(selectedJob.thumbnailUrl)}}
-                      style={styles.detailModalFullImage}
-                      resizeMode="contain"
-                    />
-                  )}
+                {selectedJob.thumbnailUrl && (
+                  <Image
+                    source={{uri: selectedJob.thumbnailUrl}}
+                    style={styles.jobImage}
+                    resizeMode="contain"
+                  />
+                )}
 
                 {selectedJob.fileType === 'pdf' && selectedJob.thumbnailUrl && (
                   <View style={styles.pdfContainer}>
@@ -347,72 +345,85 @@ const EmploymentScreen = () => {
   );
 
   // Job Card Component
-  const JobCard = ({item}: {item: JobPost}) => (
-    <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => openJob(item)}
-      activeOpacity={0.8}>
-      <View style={styles.jobHeader}>
-        <View
-          style={[styles.typeIndicator, {backgroundColor: AppColors.primary}]}>
-          {item.fileType === 'pdf' && (
-            <PdfIcon size={24} color={AppColors.white} />
-          )}
-          {item.fileType === 'image' && (
-            <ImageIcon size={24} color={AppColors.white} />
-          )}
-        </View>
-      </View>
-
-      {(item.fileType === 'image' || !item.thumbnailUrl) && (
-        <View style={styles.imagePreview}>
-          <Image
-            source={{uri: getFullImageUrl(item.thumbnailUrl)}}
-            style={styles.previewImage}
-            resizeMode="cover"
-          />
-        </View>
-      )}
-
-      <View style={styles.jobInfo}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
-        <Text style={styles.companyName}>{item.company}</Text>
-        <Text style={styles.jobDescription} numberOfLines={3}>
-          {item.description}
-        </Text>
-
-        <View style={styles.jobFooter}>
-          <View style={styles.jobMeta}>
-            <Text style={styles.locationText}>{item.location}</Text>
-            {item.salary && (
-              <Text style={styles.salaryText}>{item.salary}</Text>
+  const JobCard = ({item}: {item: JobPost}) => {
+    console.log('job item: ', item);
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => openJob(item)}
+        activeOpacity={0.8}>
+        <View style={styles.jobHeader}>
+          <View
+            style={[
+              styles.typeIndicator,
+              {backgroundColor: AppColors.primary},
+            ]}>
+            {item.fileType === 'pdf' && (
+              <PdfIcon size={24} color={AppColors.white} />
             )}
-            {item.experience && (
-              <Text style={styles.experienceText}>{item.experience}</Text>
+            {item.fileType === 'image' && (
+              <ImageIcon size={24} color={AppColors.white} />
             )}
           </View>
-          <View style={styles.badgeContainer}>
-            <View
-              style={[
-                styles.categoryBadge,
-                {backgroundColor: AppColors.primary},
-              ]}>
-              <Text style={styles.categoryBadgeText}>{item.category}</Text>
+        </View>
+        {/* 
+        {(item.fileType === 'image' || !item.thumbnailUrl) && (
+          <View style={styles.imagePreview}>
+            <Image
+              source={{uri: getFullImageUrl(item.thumbnailUrl)}}
+              style={styles.previewImage}
+              resizeMode="cover"
+            />
+          </View>
+        )} */}
+        {item.thumbnailUrl && (
+          <Image
+            source={{uri: item.thumbnailUrl}}
+            style={styles.jobImage}
+            resizeMode="contain"
+          />
+        )}
+
+        <View style={styles.jobInfo}>
+          <Text style={styles.jobTitle}>{item.title}</Text>
+          <Text style={styles.companyName}>{item.company}</Text>
+          <Text style={styles.jobDescription} numberOfLines={3}>
+            {item.description}
+          </Text>
+
+          <View style={styles.jobFooter}>
+            <View style={styles.jobMeta}>
+              <Text style={styles.locationText}>{item.location}</Text>
+              {item.salary && (
+                <Text style={styles.salaryText}>{item.salary}</Text>
+              )}
+              {item.experience && (
+                <Text style={styles.experienceText}>{item.experience}</Text>
+              )}
             </View>
-            {item.language && (
+            <View style={styles.badgeContainer}>
               <View
                 style={[
-                  styles.languageBadge,
-                  {backgroundColor: AppColors.blue},
+                  styles.categoryBadge,
+                  {backgroundColor: AppColors.primary},
                 ]}>
-                <Text style={styles.languageBadgeText}>{item.language}</Text>
+                <Text style={styles.categoryBadgeText}>{item.category}</Text>
               </View>
-            )}
+              {item.language && (
+                <View
+                  style={[
+                    styles.languageBadge,
+                    {backgroundColor: AppColors.blue},
+                  ]}>
+                  <Text style={styles.languageBadgeText}>{item.language}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -643,6 +654,14 @@ const styles = StyleSheet.create({
   previewImage: {
     width: '100%',
     height: '100%',
+  },
+  jobImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   jobInfo: {
     padding: 12,

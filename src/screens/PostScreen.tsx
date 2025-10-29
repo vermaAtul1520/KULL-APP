@@ -625,6 +625,7 @@ const PostScreen = () => {
   };
 
   const openPostDetail = (post: Post) => {
+    console.log('Opening post detail for:', post);
     setSelectedPostDetail(post);
     setShowPostDetailModal(true);
   };
@@ -662,6 +663,7 @@ const PostScreen = () => {
                   <Image
                     source={{uri: selectedPostDetail.imageUrl}}
                     style={styles.detailModalImage}
+                    resizeMode="contain"
                   />
                 )}
 
@@ -679,17 +681,17 @@ const PostScreen = () => {
                 <View style={styles.detailModalAuthorContainer}>
                   <View style={styles.detailModalAuthorAvatar}>
                     <Text style={styles.detailModalAvatarText}>
-                      {`${selectedPostDetail.author.firstName.charAt(
+                      {`${selectedPostDetail?.author?.firstName.charAt(
                         0,
-                      )}${selectedPostDetail.author.lastName.charAt(0)}`}
+                      )}${selectedPostDetail?.author?.lastName.charAt(0)}`}
                     </Text>
                   </View>
                   <View style={styles.detailModalAuthorInfo}>
                     <Text style={styles.detailModalAuthorName}>
-                      {`${selectedPostDetail.author.firstName} ${selectedPostDetail.author.lastName}`}
+                      {`${selectedPostDetail?.author?.firstName} ${selectedPostDetail?.author?.lastName}`}
                     </Text>
                     <Text style={styles.detailModalPublishDate}>
-                      {formatTimeAgo(selectedPostDetail.createdAt)}
+                      {formatTimeAgo(selectedPostDetail?.createdAt)}
                     </Text>
                   </View>
                 </View>
@@ -702,7 +704,7 @@ const PostScreen = () => {
   );
 
   const openComments = async (post: Post) => {
-    console.log('Opening comments for post:', post._id);
+    console.log('Opening comments for post:', post);
     setSelectedPost({...post});
     setShowCommentsModal(true);
 
@@ -1044,7 +1046,7 @@ const PostScreen = () => {
   const renderPost = ({item}: {item: Post}) => {
     // Check if current user has liked this post
     const isLiked =
-      item.likes?.some(like => like.user._id === user?._id) || false;
+      item.likes?.some(like => like.user?._id === user?._id) || false;
     const likesCount = item.likes?.length || 0;
     const commentsCount = item.comments?.length || 0;
 
@@ -1081,7 +1083,11 @@ const PostScreen = () => {
         </TouchableOpacity>
 
         {item.imageUrl && (
-          <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+          <Image
+            source={{uri: item.imageUrl}}
+            style={styles.postImage}
+            resizeMode="contain"
+          />
         )}
 
         <View style={styles.postActions}>
@@ -1103,13 +1109,6 @@ const PostScreen = () => {
             onPress={() => openComments(item)}>
             <CommentIcon size={20} color="#666" />
             <Text style={styles.actionText}>{commentsCount}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleDownload(item.imageUrl, item.title)}>
-            <DownloadIcon size={20} color="#666" />
-            <Text style={styles.actionText}>{t('Download') || 'Download'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1404,9 +1403,9 @@ const PostScreen = () => {
                 renderComment({
                   ...comment,
                   author: {
-                    _id: comment.author._id,
-                    firstName: comment.author.firstName,
-                    lastName: comment.author.lastName,
+                    _id: comment?.author?._id,
+                    firstName: comment?.author?.firstName,
+                    lastName: comment?.author?.lastName,
                   } as CommentAuthor,
                   replies: [],
                 } as ApiComment),
@@ -1726,9 +1725,11 @@ const styles = StyleSheet.create({
   },
   postImage: {
     width: '100%',
-    height: 200,
+    minHeight: 200,
+    maxHeight: 400,
     borderRadius: 12,
     marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   postActions: {
     flexDirection: 'row',
@@ -2177,8 +2178,10 @@ const styles = StyleSheet.create({
   },
   detailModalImage: {
     width: '100%',
-    height: 200,
-    resizeMode: 'cover',
+    minHeight: 200,
+    maxHeight: 500,
+    backgroundColor: '#f5f5f5',
+    marginBottom: 16,
   },
   detailModalTitle: {
     fontSize: 20,

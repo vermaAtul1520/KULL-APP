@@ -495,7 +495,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = getMenuItems();
 
   const handleMenuPress = (screenName: string) => {
-    console.log('screenName', screenName);
+    // console.log('screenName', screenName); // Removed to prevent infinite re-render logs
 
     // Add to navigation history for drawer-aware back navigation
     addToHistory(screenName);
@@ -655,7 +655,15 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       <View style={styles.donationSection}>
         <TouchableOpacity
           style={styles.donationButton}
-          onPress={() => props.navigation.navigate('Settings')}>
+          onPress={() => {
+            // Navigate to HomeTab first, then to the Home stack, then to Settings screen
+            props?.navigation?.navigate('HomeTab', {
+              screen: 'Home',
+              params: {
+                screen: 'Settings',
+              },
+            });
+          }}>
           <SettingsIcon size={24} color="#7dd3c0" />
           <Text style={styles.donationText}>{t('settings')} </Text>
         </TouchableOpacity>

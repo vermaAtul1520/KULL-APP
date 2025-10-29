@@ -574,12 +574,20 @@ const DonationScreen = () => {
 
   const renderDonationCard = ({item}: {item: Donation}) => {
     const CategoryIconComponent = getCategoryIcon(item.category);
-
+    console.log('donation item : ', item);
     return (
       <TouchableOpacity
         style={styles.donationCard}
         onPress={() => openDonationModal(item)}
         activeOpacity={0.8}>
+        {item.images.length > 0 && (
+          <Image
+            source={{uri: item.images[0]}}
+            style={styles.donationImage}
+            resizeMode="contain"
+          />
+        )}
+
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
             <CategoryIconComponent size={20} color="#2a2a2a" />
@@ -1369,6 +1377,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 12,
     backgroundColor: '#f0f0f0',
+  },
+  donationImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
 });
 

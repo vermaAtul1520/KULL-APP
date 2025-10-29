@@ -13,6 +13,7 @@ import {
   Dimensions,
   Linking,
   RefreshControl,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BASE_URL} from '@app/constants/constant';
@@ -133,6 +134,7 @@ interface EducationResource {
   category: string;
   url?: string;
   fileUrl?: string;
+  thumbnailUrl?: string;
   instructor: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   duration: string;
@@ -316,15 +318,19 @@ const EducationScreen = () => {
 
   const renderResourceCard = ({item}: {item: EducationResource}) => {
     const ResourceIcon = getResourceIcon(item.type);
-
+    console.log('resource item: ', item);
     return (
       <TouchableOpacity
         style={styles.resourceCard}
         onPress={() => handleResourcePress(item)}>
+        {item?.thumbnailUrl && (
+          <Image
+            source={{uri: item.thumbnailUrl}}
+            style={styles.resourceImage}
+            resizeMode="contain"
+          />
+        )}
         <View style={styles.resourceCardHeader}>
-          <View style={styles.resourceIcon}>
-            <ResourceIcon size={24} color={AppColors.primary} />
-          </View>
           <View style={styles.resourceInfo}>
             <Text style={styles.resourceTitle}>{item.title}</Text>
             <Text style={styles.resourceInstructor}>by {item.instructor}</Text>
@@ -381,9 +387,13 @@ const EducationScreen = () => {
             <ScrollView style={styles.resourceDetailsScrollView}>
               {/* Resource Header */}
               <View style={styles.resourceDetailsHeader}>
-                <View style={styles.resourceDetailsIcon}>
-                  <ResourceIcon size={32} color={AppColors.primary} />
-                </View>
+                {selectedResource?.thumbnailUrl && (
+                  <Image
+                    source={{uri: selectedResource.thumbnailUrl}}
+                    style={styles.resourceImage}
+                    resizeMode="contain"
+                  />
+                )}
                 <Text style={styles.resourceDetailsTitle}>
                   {selectedResource.title}
                 </Text>
@@ -868,6 +878,14 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  resourceImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
 });
 

@@ -252,15 +252,14 @@ export default function DukanScreen() {
               {/* Header with Banner */}
               <View style={styles.newModalHeader}>
                 {selectedShop.banner ? (
-                  <View style={styles.headerBannerContainer}>
-                    <Image
-                      source={{uri: selectedShop.banner}}
-                      style={styles.headerBannerImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.headerOverlay} />
-                  </View>
+                  // <View style={styles.headerBannerContainer}>
+                  <Image
+                    source={{uri: selectedShop.banner}}
+                    style={styles.bannerCardImage}
+                    resizeMode="contain"
+                  />
                 ) : (
+                  // </View>
                   <View style={styles.headerWithoutBanner} />
                 )}
 
@@ -380,16 +379,12 @@ export default function DukanScreen() {
       style={styles.shopCard}
       onPress={() => openShopDetails(shop)}
       activeOpacity={0.7}>
-      {/* Shop Banner Image */}
       {shop.banner && (
-        <View style={styles.bannerContainer}>
-          <Image
-            source={{uri: shop.banner}}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-          <View style={styles.bannerOverlay} />
-        </View>
+        <Image
+          source={{uri: shop.banner}}
+          style={styles.bannerCardImage}
+          resizeMode="contain"
+        />
       )}
 
       <View style={styles.cardHeader}>
@@ -1109,5 +1104,13 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  bannerCardImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
 });
