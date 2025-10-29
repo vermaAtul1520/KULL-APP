@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,13 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
-import { BASE_URL } from '@app/constants/constant';
+import {useNavigation} from '@react-navigation/native';
+import {Picker} from '@react-native-picker/picker';
+import {BASE_URL} from '@app/constants/constant';
 import ImagePickerComponent from '@app/components/ImagePicker';
 import PasswordHideIcon from '@app/assets/images/hideeye.svg';
 import PasswordShowIcon from '@app/assets/images/showeye.svg';
-import { moderateScale } from '@app/constants/scaleUtils';
+import {moderateScale} from '@app/constants/scaleUtils';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -66,7 +66,7 @@ const RequestCommunityScreen: React.FC = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState<FormData>({
     cast: '',
     cGotNo: '',
@@ -95,16 +95,24 @@ const RequestCommunityScreen: React.FC = () => {
   });
 
   const updateFormData = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({...prev, [field]: value}));
   };
 
   // Define required fields for each page
   const getRequiredFieldsForPage = (page: number) => {
     switch (page) {
       case 1:
-        return ['cast', 'cGotNo', 'name', 'lastName', 'position', 'fatherName'];
+        return ['cast', 'name', 'lastName', 'position', 'fatherName'];
       case 2:
-        return ['address', 'pinCode', 'phoneNo', 'email', 'profession', 'password', 'confirmPassword'];
+        return [
+          'address',
+          'pinCode',
+          'phoneNo',
+          'email',
+          'profession',
+          'password',
+          'confirmPassword',
+        ];
       case 3:
         return ['estimatedMembers', 'thoughtOfMaking', 'gotra', 'subGotra'];
       default:
@@ -114,10 +122,19 @@ const RequestCommunityScreen: React.FC = () => {
 
   const validateCurrentPage = () => {
     const requiredFields = getRequiredFieldsForPage(currentPage);
-    const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
-    
+    console.log('requiredFields', requiredFields);
+    const missingFields = requiredFields.filter(
+      field => !formData[field as keyof FormData],
+    );
+    console.log('missingFields', missingFields);
+
     if (missingFields.length > 0) {
-      Alert.alert('Error', 'Please fill in all required fields before proceeding');
+      Alert.alert(
+        'Error',
+        `Please fill in all required fields ${missingFields.join(
+          ', ',
+        )} before proceeding`,
+      );
       return false;
     }
 
@@ -173,9 +190,9 @@ const RequestCommunityScreen: React.FC = () => {
 
     if (!termsAccepted) {
       Alert.alert(
-        'Terms & Conditions Required', 
+        'Terms & Conditions Required',
         'You must accept the Terms & Conditions before submitting your community request. Please tick the checkbox to proceed.',
-        [{ text: 'OK' }]
+        [{text: 'OK'}],
       );
       return;
     }
@@ -193,9 +210,11 @@ const RequestCommunityScreen: React.FC = () => {
         occupation: formData.profession,
         religion: formData.religion || 'Hindu',
         motherTongue: formData.motherTongue || 'Hindi',
-        interests: formData.interests ? formData.interests.split(',').map(i => i.trim()) : ['community building'],
+        interests: formData.interests
+          ? formData.interests.split(',').map(i => i.trim())
+          : ['community building'],
         cast: formData.cast,
-        cGotNo: formData.cGotNo,
+        cGotNo: formData?.cGotNo || '',
         positionInCommunity: formData.position,
         fatherName: formData.fatherName,
         address: formData.address,
@@ -207,7 +226,7 @@ const RequestCommunityScreen: React.FC = () => {
         gotra: formData.gotra,
         subGotra: formData.subGotra,
         requestType: 'community_request',
-        profileImage: formData.profileImage || undefined
+        profileImage: formData.profileImage || undefined,
       };
 
       const response = await fetch(`${BASE_URL}/api/auth/signup`, {
@@ -222,14 +241,14 @@ const RequestCommunityScreen: React.FC = () => {
 
       if (result.success) {
         Alert.alert(
-          'Success', 
+          'Success',
           result.message || 'Community request submitted successfully!',
           [
             {
               text: 'OK',
               onPress: () => navigation.goBack(),
             },
-          ]
+          ],
         );
       } else {
         Alert.alert('Error', result.message || 'Failed to submit request');
@@ -244,11 +263,11 @@ const RequestCommunityScreen: React.FC = () => {
 
   const renderProgressBar = () => {
     const progress = (currentPage / 3) * 100;
-    
+
     return (
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          <View style={[styles.progressFill, {width: `${progress}%`}]} />
         </View>
         <Text style={styles.progressText}>Step {currentPage} of 3</Text>
       </View>
@@ -263,7 +282,7 @@ const RequestCommunityScreen: React.FC = () => {
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Profile Photo (Optional)</Text>
         <ImagePickerComponent
-          onImageSelected={(imageUrl) => updateFormData('profileImage', imageUrl)}
+          onImageSelected={imageUrl => updateFormData('profileImage', imageUrl)}
           currentImage={formData.profileImage}
           size={100}
         />
@@ -274,7 +293,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.cast}
-          onChangeText={(value) => updateFormData('cast', value)}
+          onChangeText={value => updateFormData('cast', value)}
           placeholder="Enter your cast"
           placeholderTextColor={AppColors.gray}
         />
@@ -285,7 +304,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.cGotNo}
-          onChangeText={(value) => updateFormData('cGotNo', value)}
+          onChangeText={value => updateFormData('cGotNo', value)}
           placeholder="Enter CGotNO"
           placeholderTextColor={AppColors.gray}
         />
@@ -296,7 +315,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.name}
-          onChangeText={(value) => updateFormData('name', value)}
+          onChangeText={value => updateFormData('name', value)}
           placeholder="Enter your first name"
           placeholderTextColor={AppColors.gray}
         />
@@ -307,7 +326,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.lastName}
-          onChangeText={(value) => updateFormData('lastName', value)}
+          onChangeText={value => updateFormData('lastName', value)}
           placeholder="Enter your last name"
           placeholderTextColor={AppColors.gray}
         />
@@ -318,7 +337,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.position}
-          onChangeText={(value) => updateFormData('position', value)}
+          onChangeText={value => updateFormData('position', value)}
           placeholder="Your position/role in community"
           placeholderTextColor={AppColors.gray}
         />
@@ -329,7 +348,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.fatherName}
-          onChangeText={(value) => updateFormData('fatherName', value)}
+          onChangeText={value => updateFormData('fatherName', value)}
           placeholder="Enter father's name"
           placeholderTextColor={AppColors.gray}
         />
@@ -340,13 +359,13 @@ const RequestCommunityScreen: React.FC = () => {
   const renderPage2 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Contact Information</Text>
-      
+
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Address *</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={formData.address}
-          onChangeText={(value) => updateFormData('address', value)}
+          onChangeText={value => updateFormData('address', value)}
           placeholder="Enter your full address"
           placeholderTextColor={AppColors.gray}
           multiline={true}
@@ -359,7 +378,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.pinCode}
-          onChangeText={(value) => updateFormData('pinCode', value)}
+          onChangeText={value => updateFormData('pinCode', value)}
           placeholder="Enter pin code"
           placeholderTextColor={AppColors.gray}
           keyboardType="numeric"
@@ -372,7 +391,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.phoneNo}
-          onChangeText={(value) => updateFormData('phoneNo', value)}
+          onChangeText={value => updateFormData('phoneNo', value)}
           placeholder="Enter phone number"
           placeholderTextColor={AppColors.gray}
           keyboardType="phone-pad"
@@ -385,7 +404,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.alternativePhone}
-          onChangeText={(value) => updateFormData('alternativePhone', value)}
+          onChangeText={value => updateFormData('alternativePhone', value)}
           placeholder="Enter alternative phone number"
           placeholderTextColor={AppColors.gray}
           keyboardType="phone-pad"
@@ -398,7 +417,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.email}
-          onChangeText={(value) => updateFormData('email', value)}
+          onChangeText={value => updateFormData('email', value)}
           placeholder="Enter email address"
           placeholderTextColor={AppColors.gray}
           keyboardType="email-address"
@@ -411,7 +430,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.profession}
-          onChangeText={(value) => updateFormData('profession', value)}
+          onChangeText={value => updateFormData('profession', value)}
           placeholder="Enter your profession"
           placeholderTextColor={AppColors.gray}
         />
@@ -420,11 +439,11 @@ const RequestCommunityScreen: React.FC = () => {
       {/* Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Password *</Text>
-        <View style={{ position: 'relative' }}>
+        <View style={{position: 'relative'}}>
           <TextInput
             style={styles.input}
             value={formData.password}
-            onChangeText={(value) => updateFormData('password', value)}
+            onChangeText={value => updateFormData('password', value)}
             placeholder="Create a strong password"
             placeholderTextColor={AppColors.gray}
             secureTextEntry={!showPassword}
@@ -432,8 +451,7 @@ const RequestCommunityScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.eyeButton}
             onPress={() => setShowPassword(!showPassword)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
             {showPassword ? (
               <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
             ) : (
@@ -449,11 +467,11 @@ const RequestCommunityScreen: React.FC = () => {
       {/* Confirm Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Confirm Password *</Text>
-        <View style={{ position: 'relative' }}>
+        <View style={{position: 'relative'}}>
           <TextInput
             style={styles.input}
             value={formData.confirmPassword}
-            onChangeText={(value) => updateFormData('confirmPassword', value)}
+            onChangeText={value => updateFormData('confirmPassword', value)}
             placeholder="Confirm your password"
             placeholderTextColor={AppColors.gray}
             secureTextEntry={!showConfirmPassword}
@@ -461,8 +479,7 @@ const RequestCommunityScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.eyeButton}
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
             {showConfirmPassword ? (
               <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
             ) : (
@@ -470,9 +487,10 @@ const RequestCommunityScreen: React.FC = () => {
             )}
           </TouchableOpacity>
         </View>
-        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-          <Text style={styles.errorText}>Passwords do not match</Text>
-        )}
+        {formData.confirmPassword &&
+          formData.password !== formData.confirmPassword && (
+            <Text style={styles.errorText}>Passwords do not match</Text>
+          )}
       </View>
     </View>
   );
@@ -480,13 +498,13 @@ const RequestCommunityScreen: React.FC = () => {
   const renderPage3 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Community Details</Text>
-      
+
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Estimated Members in Community *</Text>
         <TextInput
           style={styles.input}
           value={formData.estimatedMembers}
-          onChangeText={(value) => updateFormData('estimatedMembers', value)}
+          onChangeText={value => updateFormData('estimatedMembers', value)}
           placeholder="Estimated number of members"
           placeholderTextColor={AppColors.gray}
           keyboardType="numeric"
@@ -498,7 +516,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={[styles.input, styles.textArea]}
           value={formData.thoughtOfMaking}
-          onChangeText={(value) => updateFormData('thoughtOfMaking', value)}
+          onChangeText={value => updateFormData('thoughtOfMaking', value)}
           placeholder="Why do you want to create this community?"
           placeholderTextColor={AppColors.gray}
           multiline={true}
@@ -511,9 +529,8 @@ const RequestCommunityScreen: React.FC = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.maritalStatus}
-            onValueChange={(value) => updateFormData('maritalStatus', value)}
-            style={styles.picker}
-          >
+            onValueChange={value => updateFormData('maritalStatus', value)}
+            style={styles.picker}>
             <Picker.Item label="Single" value="single" />
             <Picker.Item label="Married" value="married" />
           </Picker>
@@ -525,7 +542,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.gotra}
-          onChangeText={(value) => updateFormData('gotra', value)}
+          onChangeText={value => updateFormData('gotra', value)}
           placeholder="Enter your gotra"
           placeholderTextColor={AppColors.gray}
         />
@@ -536,7 +553,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.subGotra}
-          onChangeText={(value) => updateFormData('subGotra', value)}
+          onChangeText={value => updateFormData('subGotra', value)}
           placeholder="Enter your sub gotra"
           placeholderTextColor={AppColors.gray}
         />
@@ -548,9 +565,8 @@ const RequestCommunityScreen: React.FC = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.gender}
-            onValueChange={(value) => updateFormData('gender', value)}
-            style={styles.picker}
-          >
+            onValueChange={value => updateFormData('gender', value)}
+            style={styles.picker}>
             <Picker.Item label="Select Gender" value="" />
             <Picker.Item label="Male" value="male" />
             <Picker.Item label="Female" value="female" />
@@ -566,9 +582,8 @@ const RequestCommunityScreen: React.FC = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.religion}
-            onValueChange={(value) => updateFormData('religion', value)}
-            style={styles.picker}
-          >
+            onValueChange={value => updateFormData('religion', value)}
+            style={styles.picker}>
             <Picker.Item label="Select Religion" value="" />
             <Picker.Item label="Hindu" value="Hindu" />
             <Picker.Item label="Muslim" value="Muslim" />
@@ -587,9 +602,8 @@ const RequestCommunityScreen: React.FC = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.motherTongue}
-            onValueChange={(value) => updateFormData('motherTongue', value)}
-            style={styles.picker}
-          >
+            onValueChange={value => updateFormData('motherTongue', value)}
+            style={styles.picker}>
             <Picker.Item label="Select Language" value="" />
             <Picker.Item label="Hindi" value="Hindi" />
             <Picker.Item label="English" value="English" />
@@ -614,7 +628,7 @@ const RequestCommunityScreen: React.FC = () => {
         <TextInput
           style={[styles.input, styles.textArea]}
           value={formData.interests}
-          onChangeText={(value) => updateFormData('interests', value)}
+          onChangeText={value => updateFormData('interests', value)}
           placeholder="e.g., community building, leadership, social work"
           placeholderTextColor={AppColors.gray}
           multiline={true}
@@ -629,15 +643,14 @@ const RequestCommunityScreen: React.FC = () => {
       <View style={styles.termsContainer}>
         <TouchableOpacity
           style={styles.checkboxContainer}
-          onPress={() => setTermsAccepted(!termsAccepted)}
-        >
-          <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+          onPress={() => setTermsAccepted(!termsAccepted)}>
+          <View
+            style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
             {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <Text style={styles.termsText}>
             I agree to the{' '}
-            <Text style={styles.termsLink}>Terms & Conditions</Text>
-            {' '}and{' '}
+            <Text style={styles.termsLink}>Terms & Conditions</Text> and{' '}
             <Text style={styles.termsLink}>Privacy Policy</Text>
           </Text>
         </TouchableOpacity>
@@ -655,8 +668,7 @@ const RequestCommunityScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+          onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Community</Text>
@@ -665,7 +677,9 @@ const RequestCommunityScreen: React.FC = () => {
 
       {renderProgressBar()}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
         {currentPage === 1 && renderPage1()}
         {currentPage === 2 && renderPage2()}
         {currentPage === 3 && renderPage3()}
@@ -673,29 +687,31 @@ const RequestCommunityScreen: React.FC = () => {
         {/* Navigation Buttons */}
         <View style={styles.navigationContainer}>
           {currentPage > 1 && (
-            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+            <TouchableOpacity
+              style={styles.previousButton}
+              onPress={handlePrevious}>
               <Text style={styles.previousButtonText}>Previous</Text>
             </TouchableOpacity>
           )}
-          
+
           {currentPage < 3 ? (
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
               <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.submitButton, 
+                styles.submitButton,
                 loading && styles.submitButtonDisabled,
-                !termsAccepted && styles.submitButtonDisabled
-              ]} 
+                !termsAccepted && styles.submitButtonDisabled,
+              ]}
               onPress={handleSubmit}
-              disabled={loading}
-            >
-              <Text style={[
-                styles.submitButtonText,
-                !termsAccepted && styles.submitButtonTextDisabled
-              ]}>
+              disabled={loading}>
+              <Text
+                style={[
+                  styles.submitButtonText,
+                  !termsAccepted && styles.submitButtonTextDisabled,
+                ]}>
                 {loading ? 'Submitting...' : 'Submit Request'}
               </Text>
             </TouchableOpacity>

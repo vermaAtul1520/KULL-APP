@@ -20,8 +20,17 @@ import {
   Dimensions,
   SafeAreaView,
   ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
+import {
+  launchImageLibrary,
+  launchCamera,
+  ImagePickerResponse,
+  MediaType,
+} from 'react-native-image-picker';
+import {uploadImageToCloudinary} from '@app/utils/imageUpload';
 
 const {width, height} = Dimensions.get('window');
 
@@ -105,6 +114,8 @@ const PostScreen = () => {
   });
   const [newComment, setNewComment] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
@@ -112,6 +123,11 @@ const PostScreen = () => {
     id: string;
     author: string;
   } | null>(null);
+  const [selectedPostDetail, setSelectedPostDetail] = useState<Post | null>(
+    null,
+  );
+  const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   console.log('commentsss', filteredPosts);
 
@@ -250,6 +266,23 @@ const PostScreen = () => {
     </Svg>
   );
 
+  const LinkIcon = ({size = 20, color = '#666'}) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+    </Svg>
+  );
+
   const ReplyIcon = ({size = 16, color = '#3b82f6'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -313,16 +346,18 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/posts/`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          ...postData,
-          community: COMMUNITY_ID,
-        }),
-      });
 
-      console.log('responseArvind', response);
+      const response = await fetch(
+        `${BASE_URL}/api/posts/community/${COMMUNITY_ID}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...postData,
+            community: COMMUNITY_ID,
+          }),
+        },
+      );
 
       if (!response.ok) {
         throw new Error('Failed to create post');
@@ -581,6 +616,83 @@ const PostScreen = () => {
     );
   };
 
+  const openPostDetail = (post: Post) => {
+    setSelectedPostDetail(post);
+    setShowPostDetailModal(true);
+  };
+
+  const closePostDetail = () => {
+    setShowPostDetailModal(false);
+    setSelectedPostDetail(null);
+  };
+
+  const renderPostDetailModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showPostDetailModal}
+      onRequestClose={closePostDetail}>
+      <View style={styles.detailModalOverlay}>
+        <View style={styles.detailModalContainer}>
+          <ScrollView
+            style={styles.detailModalContent}
+            showsVerticalScrollIndicator={false}>
+            {selectedPostDetail && (
+              <>
+                {/* Modal Header */}
+                <View style={styles.detailModalHeader}>
+                  <Text style={styles.detailModalTitle}>Post Details</Text>
+                  <TouchableOpacity
+                    onPress={closePostDetail}
+                    style={styles.detailCloseButton}>
+                    <CloseIcon size={24} color="#2a2a2a" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Post Image */}
+                {selectedPostDetail.imageUrl && (
+                  <Image
+                    source={{uri: selectedPostDetail.imageUrl}}
+                    style={styles.detailModalImage}
+                  />
+                )}
+
+                {/* Title */}
+                <Text style={styles.detailModalTitle}>
+                  {selectedPostDetail.title}
+                </Text>
+
+                {/* Content */}
+                <Text style={styles.detailModalContentText}>
+                  {selectedPostDetail.content}
+                </Text>
+
+                {/* Author Info */}
+                <View style={styles.detailModalAuthorContainer}>
+                  <View style={styles.detailModalAuthorAvatar}>
+                    <Text style={styles.detailModalAvatarText}>
+                      {`${selectedPostDetail.author.firstName.charAt(
+                        0,
+                      )}${selectedPostDetail.author.lastName.charAt(0)}`}
+                    </Text>
+                  </View>
+                  <View style={styles.detailModalAuthorInfo}>
+                    <Text style={styles.detailModalAuthorName}>
+                      {`${selectedPostDetail.author.firstName} ${selectedPostDetail.author.lastName}`}
+                    </Text>
+                    <Text style={styles.detailModalPublishDate}>
+                      {formatTimeAgo(selectedPostDetail.createdAt)}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const openComments = async (post: Post) => {
     console.log('Opening comments for post:', post._id);
     setSelectedPost({...post, commentsData: []});
@@ -644,6 +756,7 @@ const PostScreen = () => {
       await loadPosts();
 
       setNewPost({title: '', content: '', imageUrl: '', selectedImage: null});
+      setImageUrl('');
       setShowPostModal(false);
       Alert.alert(
         t('Success') || 'Success',
@@ -660,25 +773,124 @@ const PostScreen = () => {
     }
   };
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: t('Camera Permission') || 'Camera Permission',
+            message:
+              t('This app needs access to camera to take photos.') ||
+              'This app needs access to camera to take photos.',
+            buttonNeutral: t('Ask Me Later') || 'Ask Me Later',
+            buttonNegative: t('Cancel') || 'Cancel',
+            buttonPositive: t('OK') || 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleImageSelection = (type: 'camera' | 'gallery') => {
     setShowImagePicker(false);
 
+    const options = {
+      mediaType: 'photo' as MediaType,
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+      quality: 0.8 as any, // Type assertion for quality
+    };
+
+    const handleImageResponse = async (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorMessage) {
+        if (response.errorMessage) {
+          Alert.alert(t('Error') || 'Error', response.errorMessage);
+        }
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        const asset = response.assets[0];
+        const imageUri = asset.uri;
+
+        if (imageUri) {
+          setUploadingImage(true);
+
+          try {
+            const result = await uploadImageToCloudinary(
+              imageUri,
+              asset.fileName || `post_${Date.now()}.jpg`,
+            );
+
+            if (result.success && result.url) {
+              setNewPost({...newPost, selectedImage: result.url});
+              Alert.alert(
+                t('Success') || 'Success',
+                t('Image uploaded successfully!') ||
+                  'Image uploaded successfully!',
+              );
+            } else {
+              Alert.alert(
+                t('Upload Failed') || 'Upload Failed',
+                result.error ||
+                  t('Failed to upload image') ||
+                  'Failed to upload image',
+              );
+            }
+          } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert(
+              t('Error') || 'Error',
+              t('Failed to upload image. Please try again.') ||
+                'Failed to upload image. Please try again.',
+            );
+          } finally {
+            setUploadingImage(false);
+          }
+        }
+      }
+    };
+
     if (type === 'camera') {
-      Alert.alert(
-        t('Camera') || 'Camera',
-        t('Camera feature would open here. For demo, using a sample image.') ||
-          'Camera feature would open here. For demo, using a sample image.',
-      );
-      const sampleImage = 'https://picsum.photos/800/600?random=1';
-      setNewPost({...newPost, selectedImage: sampleImage});
+      requestCameraPermission().then(hasPermission => {
+        if (hasPermission) {
+          launchCamera(options, handleImageResponse);
+        } else {
+          Alert.alert(
+            t('Permission Required') || 'Permission Required',
+            t('Camera permission is required to take photos.') ||
+              'Camera permission is required to take photos.',
+          );
+        }
+      });
     } else if (type === 'gallery') {
+      launchImageLibrary(options, handleImageResponse);
+    }
+  };
+
+  const handleUrlInput = () => {
+    setShowImagePicker(false);
+    setShowUrlInput(true);
+  };
+
+  const handleUrlSubmit = () => {
+    if (imageUrl.trim()) {
+      setNewPost({...newPost, selectedImage: imageUrl.trim()});
+      setImageUrl('');
+      setShowUrlInput(false);
+    } else {
       Alert.alert(
-        t('Gallery') || 'Gallery',
-        t('Gallery would open here. For demo, using a sample image.') ||
-          'Gallery would open here. For demo, using a sample image.',
+        t('Invalid URL') || 'Invalid URL',
+        t('Please enter a valid image URL.') ||
+          'Please enter a valid image URL.',
       );
-      const sampleImage = 'https://picsum.photos/800/600?random=2';
-      setNewPost({...newPost, selectedImage: sampleImage});
     }
   };
 
@@ -837,8 +1049,19 @@ const PostScreen = () => {
         </View>
       </View>
 
-      <Text style={styles.postTitle}>{item.title}</Text>
-      <Text style={styles.postContent}>{item.content}</Text>
+      <TouchableOpacity
+        onPress={() => openPostDetail(item)}
+        activeOpacity={0.8}>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <View>
+          <Text style={styles.postContent} numberOfLines={3}>
+            {item.content}
+          </Text>
+          {item.content.length > 150 && (
+            <Text style={styles.readMoreText}>...read more</Text>
+          )}
+        </View>
+      </TouchableOpacity>
 
       {item.imageUrl && (
         <Image source={{uri: item.imageUrl}} style={styles.postImage} />
@@ -901,7 +1124,9 @@ const PostScreen = () => {
                 style={styles.titleInput}
                 placeholder={t('Enter post title...') || 'Enter post title...'}
                 value={newPost.title}
-                onChangeText={text => setNewPost({...newPost, title: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, title: text})
+                }
                 multiline
               />
             </View>
@@ -916,7 +1141,9 @@ const PostScreen = () => {
                   t("What's on your mind?") || "What's on your mind?"
                 }
                 value={newPost.content}
-                onChangeText={text => setNewPost({...newPost, content: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, content: text})
+                }
                 multiline
                 textAlignVertical="top"
               />
@@ -928,11 +1155,21 @@ const PostScreen = () => {
               </Text>
               <View style={styles.imageOptions}>
                 <TouchableOpacity
-                  style={styles.imageOption}
-                  onPress={() => setShowImagePicker(true)}>
-                  <CameraIcon size={24} color="#666" />
+                  style={[
+                    styles.imageOption,
+                    uploadingImage && styles.imageOptionDisabled,
+                  ]}
+                  onPress={() => !uploadingImage && setShowImagePicker(true)}
+                  disabled={uploadingImage}>
+                  {uploadingImage ? (
+                    <ActivityIndicator size="small" color="#666" />
+                  ) : (
+                    <CameraIcon size={24} color="#666" />
+                  )}
                   <Text style={styles.imageOptionText}>
-                    {t('Camera/Gallery') || 'Camera/Gallery'}
+                    {uploadingImage
+                      ? t('Uploading...') || 'Uploading...'
+                      : t('Camera/Gallery') || 'Camera/Gallery'}
                   </Text>
                 </TouchableOpacity>
 
@@ -942,9 +1179,10 @@ const PostScreen = () => {
                   style={styles.imageUrlInput}
                   placeholder={t('Paste image URL...') || 'Paste image URL...'}
                   value={newPost.imageUrl}
-                  onChangeText={text =>
+                  onChangeText={(text: any) =>
                     setNewPost({...newPost, imageUrl: text})
                   }
+                  editable={!uploadingImage}
                 />
               </View>
             </View>
@@ -975,7 +1213,7 @@ const PostScreen = () => {
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={() => setShowPostModal(false)}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               <Text style={styles.cancelButtonText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
@@ -984,10 +1222,10 @@ const PostScreen = () => {
               style={[
                 styles.modalButton,
                 styles.postButton,
-                {opacity: isCreatingPost ? 0.6 : 1},
+                {opacity: isCreatingPost || uploadingImage ? 0.6 : 1},
               ]}
               onPress={handleCreatePost}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               {isCreatingPost ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -1028,12 +1266,70 @@ const PostScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.imagePickerOption}
+              onPress={handleUrlInput}>
+              <LinkIcon size={24} color="#2a2a2a" />
+              <Text style={styles.imagePickerOptionText}>
+                {t('Paste Image URL') || 'Paste Image URL'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.imagePickerCancel}
               onPress={() => setShowImagePicker(false)}>
               <Text style={styles.imagePickerCancelText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* URL Input Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showUrlInput}
+        onRequestClose={() => setShowUrlInput(false)}>
+        <View style={styles.imagePickerOverlay}>
+          <View style={styles.imagePickerModal}>
+            <Text style={styles.imagePickerTitle}>
+              {t('Enter Image URL') || 'Enter Image URL'}
+            </Text>
+
+            <TextInput
+              style={styles.urlInput}
+              placeholder={
+                t('Paste image URL here...') || 'Paste image URL here...'
+              }
+              value={imageUrl}
+              onChangeText={setImageUrl}
+              multiline={false}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+
+            <View style={styles.urlModalButtons}>
+              <TouchableOpacity
+                style={[styles.imagePickerOption, styles.urlSubmitButton]}
+                onPress={handleUrlSubmit}>
+                <Text style={styles.imagePickerOptionText}>
+                  {t('Add Image') || 'Add Image'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.imagePickerCancel}
+                onPress={() => {
+                  setShowUrlInput(false);
+                  setImageUrl('');
+                }}>
+                <Text style={styles.imagePickerCancelText}>
+                  {t('Cancel') || 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1194,7 +1490,7 @@ const PostScreen = () => {
       <FlatList
         data={filteredPosts}
         renderItem={renderPost}
-        keyExtractor={item => item._id}
+        keyExtractor={(item: any) => item._id}
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -1231,6 +1527,7 @@ const PostScreen = () => {
 
       {renderCreatePostModal()}
       {renderCommentsModal()}
+      {renderPostDetailModal()}
     </SafeAreaView>
   );
 };
@@ -1529,6 +1826,10 @@ const styles = StyleSheet.create({
     color: '#2a2a2a',
     fontWeight: '500',
   },
+  imageOptionDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#f0f0f0',
+  },
   orText: {
     fontSize: 14,
     color: '#666',
@@ -1642,6 +1943,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontWeight: '500',
+  },
+  urlInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#2a2a2a',
+    backgroundColor: '#f8f9fa',
+    width: '100%',
+    marginBottom: 20,
+    minHeight: 44,
+  },
+  urlModalButtons: {
+    width: '100%',
+    gap: 10,
+  },
+  urlSubmitButton: {
+    backgroundColor: '#7dd3c0',
+    marginBottom: 0,
   },
   // Comments styles
   commentsContent: {
@@ -1785,6 +2107,92 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     padding: 8,
+  },
+  readMoreText: {
+    fontSize: 12,
+    color: '#2a2a2a',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  // Post Detail Modal Styles
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  detailModalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: height * 0.9,
+  },
+  detailModalContent: {
+    padding: 10,
+  },
+  detailModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  detailCloseButton: {
+    padding: 8,
+  },
+  detailModalImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  detailModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  detailModalContentText: {
+    fontSize: 16,
+    color: '#2a2a2a',
+    lineHeight: 24,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  detailModalAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  detailModalAuthorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2a2a2a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  detailModalAvatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  detailModalAuthorInfo: {
+    flex: 1,
+  },
+  detailModalAuthorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+  },
+  detailModalPublishDate: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,15 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { launchImageLibrary, launchCamera, MediaType, ImagePickerResponse } from 'react-native-image-picker';
-import { uploadImageToCloudinary } from '@app/utils/imageUpload';
+import {
+  launchImageLibrary,
+  launchCamera,
+  MediaType,
+  ImagePickerResponse,
+  CameraOptions,
+  ImageLibraryOptions,
+} from 'react-native-image-picker';
+import {uploadImageToCloudinary} from '@app/utils/imageUpload';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -71,9 +78,9 @@ const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({
     };
 
     if (useCamera) {
-      launchCamera(options, callback);
+      launchCamera(options as CameraOptions, callback);
     } else {
-      launchImageLibrary(options, callback);
+      launchImageLibrary(options as ImageLibraryOptions, callback);
     }
   };
 
@@ -100,13 +107,16 @@ const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({
   const renderProfileImage = () => {
     if (currentImage) {
       return (
-        <Image source={{ uri: currentImage }} style={[styles.profileImage, { width: size, height: size }]} />
+        <Image
+          source={{uri: currentImage}}
+          style={[styles.profileImage, {width: size, height: size}]}
+        />
       );
     }
 
     // Default avatar with initials or icon
     return (
-      <View style={[styles.defaultAvatar, { width: size, height: size }]}>
+      <View style={[styles.defaultAvatar, {width: size, height: size}]}>
         <Text style={styles.avatarText}>📷</Text>
       </View>
     );
@@ -115,10 +125,9 @@ const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.imageContainer, { opacity: disabled ? 0.6 : 1 }]}
+        style={[styles.imageContainer, {opacity: disabled ? 0.6 : 1}]}
         onPress={showImagePicker}
-        disabled={disabled}
-      >
+        disabled={disabled}>
         {renderProfileImage()}
 
         {uploading && (
@@ -143,31 +152,29 @@ const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+        onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Image Source</Text>
 
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => selectImage(true)}
-            >
+              onPress={() => selectImage(true)}>
               <Text style={styles.modalButtonText}>📷 Camera</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => selectImage(false)}
-            >
+              onPress={() => selectImage(false)}>
               <Text style={styles.modalButtonText}>🖼️ Gallery</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
+              onPress={() => setModalVisible(false)}>
+              <Text style={[styles.modalButtonText, styles.cancelButtonText]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

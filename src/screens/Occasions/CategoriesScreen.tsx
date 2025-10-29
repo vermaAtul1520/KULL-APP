@@ -1,5 +1,5 @@
 // Screen 2: Categories List (API-driven)
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -12,24 +12,55 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { AppColors } from './constants';
-import { BackIcon } from './components/OccasionIcons';
-import { OccasionApiService, OccasionCategory } from '@app/services/occasionApi';
-import { useOccasion } from '@app/contexts/OccasionContext';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {AppColors} from './constants';
+import {BackIcon} from './components/OccasionIcons';
+import {OccasionApiService, OccasionCategory} from '@app/services/occasionApi';
+import {useOccasion} from '@app/contexts/OccasionContext';
+
+type HomeStackParamList = {
+  HomeScreen: undefined;
+  Occasions: undefined;
+  OccasionCategories: {occasionType: string};
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+  };
+  OccasionGenderSelection: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+  };
+  OccasionContent: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+    gender: string;
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 export const CategoriesScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  const { occasionType } = route.params as { occasionType: string };
-  const { setCategory } = useOccasion();
+  const {occasionType} = route.params as {occasionType: string};
+  const {setCategory} = useOccasion();
 
   const [allCategories, setAllCategories] = useState<OccasionCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Filter categories based on selected occasion type
-  const categories = allCategories.filter((cat: OccasionCategory) => cat.occasionType === occasionType);
+  const categories = allCategories.filter(
+    (cat: OccasionCategory) => cat.occasionType === occasionType,
+  );
 
   useEffect(() => {
     fetchCategories();
@@ -40,7 +71,7 @@ export const CategoriesScreen = () => {
     if (!loading && categories.length === 0) {
       // No categories found, set null and skip to Gotra selection
       setCategory(null, null);
-      navigation.replace('OccasionFilters', {
+      navigation.navigate('OccasionFilters', {
         occasionType,
         categoryId: null,
         categoryName: null,
@@ -55,7 +86,10 @@ export const CategoriesScreen = () => {
       setAllCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      Alert.alert('Error', error.message || 'Failed to load categories');
+      Alert.alert(
+        'Error',
+        (error as Error)?.message || 'Failed to load categories',
+      );
     } finally {
       setLoading(false);
     }
@@ -79,9 +113,14 @@ export const CategoriesScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -102,7 +141,9 @@ export const CategoriesScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -122,17 +163,19 @@ export const CategoriesScreen = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[AppColors.primary]} />
-        }
-      >
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.primary]}
+          />
+        }>
         <View style={styles.cardsContainer}>
-          {categories.map((category) => (
+          {categories.map(category => (
             <TouchableOpacity
               key={category._id}
               style={styles.card}
               onPress={() => handleSelectCategory(category)}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{category.name}</Text>
                 <Text style={styles.cardDescription} numberOfLines={2}>
@@ -239,7 +282,7 @@ const styles = StyleSheet.create({
     borderLeftColor: AppColors.primary,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,

@@ -8,7 +8,7 @@ import {userLogout} from '@app/redux/actions';
 import {HomeTabAStackParamList} from '@app/navigators/types';
 import {StoreRootState} from '@app/redux/store';
 import {GlobalStyles} from '@app/constants';
-import { Button } from 'react-native';
+import {Button} from 'react-native';
 
 const TabA = (): React.JSX.Element => {
   const userData = useSelector(
@@ -27,9 +27,9 @@ const TabA = (): React.JSX.Element => {
     <View style={styles.containerBase}>
       <Button
         onPress={() => navigation.navigate('TabADetails')}
-        label={`Hello, ${userData.username ?? ''}. Go to User Details`}
+        title={`Hello, ${userData.username ?? ''}. Go to User Details`}
       />
-      <Button link marginT-16 onPress={onLogoutPress} label="Logout" />
+      <Button onPress={onLogoutPress} title="Logout" />
     </View>
   );
 };

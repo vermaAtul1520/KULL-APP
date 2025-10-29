@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,62 +7,86 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { useLanguage } from '@app/hooks/LanguageContext';
+import Svg, {Path, Circle} from 'react-native-svg';
+import {useLanguage} from '@app/hooks/LanguageContext';
 
 // SVG Icons
-const ChevronRightIcon = ({ size = 20, color = "#aaa" }) => (
+const ChevronRightIcon = ({size = 20, color = '#aaa'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M9 18l6-6-6-6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const CheckIcon = ({ size = 20, color = "#7dd3c0" }) => (
+const CheckIcon = ({size = 20, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 6L9 17l-5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M20 6L9 17l-5-5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const LanguageIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const LanguageIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1l8 15h-1M10 18h4" 
-          stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1l8 15h-1M10 18h4"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const ThemeIcon = ({ size = 24, color = "#7dd3c0" }) => (
+const ThemeIcon = ({size = 24, color = '#7dd3c0'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
-          stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const BackIcon = ({ size = 24, color = "#fff" }) => (
+const BackIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M12 19l-7-7 7-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M19 12H5M12 19l-7-7 7-7"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const SettingsScreen = ({ navigation }) => {
-  const { currentLanguage, setLanguage, t } = useLanguage();
+const SettingsScreen = ({navigation}: any) => {
+  const {currentLanguage, setLanguage, t} = useLanguage();
   const [currentTheme, setCurrentTheme] = useState('dark');
   const [showLanguageOptions, setShowLanguageOptions] = useState(false);
   const [showThemeOptions, setShowThemeOptions] = useState(false);
 
   console.log('currentLanguage', currentLanguage);
 
-  const saveLanguage = async (language) => {
+  const saveLanguage = async (language: string) => {
     try {
       await setLanguage(language);
       setShowLanguageOptions(false);
-      
+
       // Show success message in new language
       setTimeout(() => {
-        Alert.alert(
-          t('ok'),
-          t('languageUpdated'),
-          [{ text: t('ok') }]
-        );
+        Alert.alert(t('ok'), t('languageUpdated'), [{text: t('ok')}]);
       }, 100);
     } catch (error) {
       console.error('Error saving language:', error);
@@ -86,21 +110,20 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const languageOptions = [
-    { key: 'en', label: t('english') },
-    { key: 'hi', label: t('hindi') },
+    {key: 'en', label: t('english')},
+    {key: 'hi', label: t('hindi')},
   ];
 
   const themeOptions = [
-    { key: 'dark', label: t('dark') },
-    { key: 'light', label: t('light') },
+    {key: 'dark', label: t('dark')},
+    {key: 'light', label: t('light')},
   ];
 
-  const renderLanguageOption = (option) => (
+  const renderLanguageOption = (option: any) => (
     <TouchableOpacity
       key={option.key}
       style={styles.optionItem}
-      onPress={() => saveLanguage(option.key)}
-    >
+      onPress={() => saveLanguage(option.key)}>
       <Text style={styles.optionText}>{option.label}</Text>
       {currentLanguage === option.key && (
         <CheckIcon size={20} color="#7dd3c0" />
@@ -108,19 +131,16 @@ const SettingsScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderThemeOption = (option) => (
+  const renderThemeOption = (option: any) => (
     <TouchableOpacity
       key={option.key}
       style={styles.optionItem}
       onPress={() => {
         setCurrentTheme(option.key);
         setShowThemeOptions(false);
-      }}
-    >
+      }}>
       <Text style={styles.optionText}>{option.label}</Text>
-      {currentTheme === option.key && (
-        <CheckIcon size={20} color="#7dd3c0" />
-      )}
+      {currentTheme === option.key && <CheckIcon size={20} color="#7dd3c0" />}
     </TouchableOpacity>
   );
 
@@ -128,10 +148,7 @@ const SettingsScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackPress}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <BackIcon size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('settings')}</Text>
@@ -142,12 +159,10 @@ const SettingsScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('general')}</Text>
           <View style={styles.sectionContent}>
-            
             {/* Language Setting */}
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={handleLanguagePress}
-            >
+              onPress={handleLanguagePress}>
               <View style={styles.settingItemLeft}>
                 <LanguageIcon />
                 <View style={styles.settingItemText}>
@@ -157,7 +172,11 @@ const SettingsScreen = ({ navigation }) => {
                   </Text>
                 </View>
               </View>
-              <View style={[styles.chevronContainer, showLanguageOptions && styles.chevronRotated]}>
+              <View
+                style={[
+                  styles.chevronContainer,
+                  showLanguageOptions && styles.chevronRotated,
+                ]}>
                 <ChevronRightIcon />
               </View>
             </TouchableOpacity>
@@ -171,9 +190,8 @@ const SettingsScreen = ({ navigation }) => {
 
             {/* Theme Setting */}
             <TouchableOpacity
-              style={[styles.settingItem, { borderBottomWidth: 0 }]}
-              onPress={handleThemePress}
-            >
+              style={[styles.settingItem, {borderBottomWidth: 0}]}
+              onPress={handleThemePress}>
               <View style={styles.settingItemLeft}>
                 <ThemeIcon />
                 <View style={styles.settingItemText}>
@@ -183,7 +201,11 @@ const SettingsScreen = ({ navigation }) => {
                   </Text>
                 </View>
               </View>
-              <View style={[styles.chevronContainer, showThemeOptions && styles.chevronRotated]}>
+              <View
+                style={[
+                  styles.chevronContainer,
+                  showThemeOptions && styles.chevronRotated,
+                ]}>
                 <ChevronRightIcon />
               </View>
             </TouchableOpacity>
@@ -194,10 +216,9 @@ const SettingsScreen = ({ navigation }) => {
                 {themeOptions.map(renderThemeOption)}
               </View>
             )}
-
           </View>
         </View>
-        
+
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -249,7 +270,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -284,10 +305,10 @@ const styles = StyleSheet.create({
   chevronContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ rotate: '0deg' }],
+    transform: [{rotate: '0deg'}],
   },
   chevronRotated: {
-    transform: [{ rotate: '90deg' }],
+    transform: [{rotate: '90deg'}],
   },
   optionsContainer: {
     backgroundColor: '#f8f9fa',

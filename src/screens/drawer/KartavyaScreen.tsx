@@ -6,6 +6,7 @@
  */
 
 import {useNavigation} from '@react-navigation/native';
+import {useDrawerAwareNavigation} from '@app/hooks/useDrawerAwareNavigation';
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -293,6 +294,7 @@ interface KartyaItem {
   title: string;
   description: string;
   category: string;
+  author?: string;
   filetype: 'pdf' | 'image';
   attachment: string;
   thumbnailUrl?: string;
@@ -398,6 +400,7 @@ const getCategoryFromId = (categoryId: string) => {
 };
 
 export default function KartavyaScreen() {
+  const {goBackToDrawer} = useDrawerAwareNavigation();
   const [currentView, setCurrentView] = useState<'main' | 'details'>('main');
   const [selectedCategory, setSelectedCategory] =
     useState<KartavyaCategory | null>(null);
@@ -770,11 +773,7 @@ export default function KartavyaScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => {
-              navigation?.goBack();
-            }}
-            style={styles.backButton}>
+          <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -797,7 +796,7 @@ export default function KartavyaScreen() {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {filteredItems.filter(i => i.type === 'pdf').length}
+              {filteredItems.filter(i => i.filetype === 'pdf').length}
             </Text>
             <Text style={styles.statLabel}>PDFs</Text>
           </View>
@@ -1044,9 +1043,7 @@ export default function KartavyaScreen() {
           barStyle="light-content"
         />
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation?.goBack()}
-            style={styles.backButton}>
+          <TouchableOpacity onPress={goBackToDrawer} style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>

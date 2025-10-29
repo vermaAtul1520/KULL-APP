@@ -1,5 +1,5 @@
 // Screen: Gender Selection
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,42 +9,66 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { AppColors } from './constants';
-import { BackIcon } from './components/OccasionIcons';
-import { useOccasion } from '@app/contexts/OccasionContext';
-import OccasionApiService from '@app/services/occasionApi'; // <-- Import OccasionApiService
-export const GenderSelectionScreen = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const {
-    occasionType,
-    categoryId,
-    categoryName,
-    gotra,
-    subGotra,
-  } = route.params as {
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
+type HomeStackParamList = {
+  HomeScreen: undefined;
+  Occasions: undefined;
+  OccasionCategories: {occasionType: string};
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+  };
+  OccasionGenderSelection: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+  };
+  OccasionContent: {
     occasionType: string;
     categoryId: string | null;
     categoryName: string | null;
     gotra?: string;
     subGotra?: string;
+    gender?: string;
   };
+};
 
-  const { setGender: setContextGender,  setOccasions, filters } = useOccasion();
-  
+type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
+import {AppColors} from './constants';
+import {BackIcon} from './components/OccasionIcons';
+import {useOccasion} from '@app/contexts/OccasionContext';
+import OccasionApiService from '@app/services/occasionApi'; // <-- Import OccasionApiService
+export const GenderSelectionScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute();
+  const {occasionType, categoryId, categoryName, gotra, subGotra} =
+    route.params as {
+      occasionType: string;
+      categoryId: string | null;
+      categoryName: string | null;
+      gotra?: string;
+      subGotra?: string;
+    };
+
+  const {setGender: setContextGender, setOccasions, filters} = useOccasion();
+
   const [selectedGender, setSelectedGender] = useState<string>('');
 
   const genderOptions = [
-    { value: 'male', label: 'Male', icon: '👨' },
-    { value: 'female', label: 'Female', icon: '👩' },
-    { value: '', label: 'All', icon: '👥' },
+    {value: 'male', label: 'Male', icon: '👨'},
+    {value: 'female', label: 'Female', icon: '👩'},
+    {value: '', label: 'All', icon: '👥'},
   ];
 
   const handleContinue = async () => {
     // Save gender to context (convert empty string to null)
     setContextGender(selectedGender || null);
-  
+
     // Navigate to Content screen
     await fetchOccasions();
     navigation.navigate('OccasionContent', {
@@ -52,43 +76,48 @@ export const GenderSelectionScreen = () => {
       categoryId,
       categoryName,
       gotra,
-      subGotra,})
+      subGotra,
+    });
   };
 
-   const fetchOccasions = async () => {
-      try {
-  
-        // Use filters from context - pass non-null values to API
-        const response = await OccasionApiService.fetchOccasions(
-          filters.occasionType!,  // Required - will always be set
-          filters.categoryId,     // Can be null
-          filters.gotra || undefined,       // Convert null to undefined for optional param
-          filters.subGotra || undefined,    // Convert null to undefined for optional param
-          filters.gender || undefined       // Convert null to undefined for optional param
-        );
-  
-        setOccasions(response.data);
-        console.log('Fetched occasions:', response.data);
-      } catch (error) {
-        console.error('Error fetching occasions:', error);
-        Alert.alert('Error', error.message || 'Failed to load content');
-      } finally {
-       
-      }
-    };
-  
+  const fetchOccasions = async () => {
+    try {
+      // Use filters from context - pass non-null values to API
+      const response = await OccasionApiService.fetchOccasions(
+        filters.occasionType!, // Required - will always be set
+        filters.categoryId, // Can be null
+        filters.gotra || undefined, // Convert null to undefined for optional param
+        filters.subGotra || undefined, // Convert null to undefined for optional param
+        filters.gender || undefined, // Convert null to undefined for optional param
+      );
+
+      setOccasions(response.data);
+      console.log('Fetched occasions:', response.data);
+    } catch (error) {
+      console.error('Error fetching occasions:', error);
+      Alert.alert(
+        'Error',
+        (error as Error)?.message || 'Failed to load content',
+      );
+    } finally {
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Gender Selection</Text>
-          <Text style={styles.headerSubtitle}>{categoryName || occasionType}</Text>
+          <Text style={styles.headerSubtitle}>
+            {categoryName || occasionType}
+          </Text>
         </View>
       </View>
 
@@ -99,7 +128,7 @@ export const GenderSelectionScreen = () => {
         </Text>
 
         <View style={styles.optionsContainer}>
-          {genderOptions.map((option) => (
+          {genderOptions.map(option => (
             <TouchableOpacity
               key={option.value}
               style={[
@@ -107,15 +136,13 @@ export const GenderSelectionScreen = () => {
                 selectedGender === option.value && styles.optionCardSelected,
               ]}
               onPress={() => setSelectedGender(option.value)}
-              activeOpacity={0.7}
-            >
+              activeOpacity={0.7}>
               <Text style={styles.optionIcon}>{option.icon}</Text>
               <Text
                 style={[
                   styles.optionLabel,
                   selectedGender === option.value && styles.optionLabelSelected,
-                ]}
-              >
+                ]}>
                 {option.label}
               </Text>
               {selectedGender === option.value && (
@@ -134,8 +161,7 @@ export const GenderSelectionScreen = () => {
           ]}
           onPress={handleContinue}
           disabled={!selectedGender}
-          activeOpacity={0.8}
-        >
+          activeOpacity={0.8}>
           <Text style={styles.continueButtonText}>View Content</Text>
         </TouchableOpacity>
 
@@ -209,7 +235,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,

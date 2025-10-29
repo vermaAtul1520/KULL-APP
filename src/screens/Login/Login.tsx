@@ -55,7 +55,7 @@ const Login = (): React.JSX.Element => {
         />
       </FormProvider>
 
-      <Button onPress={form.handleSubmit(onLoginPress)} label="Login" />
+      <Button onPress={form.handleSubmit(onLoginPress)} title="Login" />
     </View>
   );
 };
