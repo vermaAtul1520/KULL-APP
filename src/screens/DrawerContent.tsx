@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -402,8 +402,8 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
   const {t, currentLanguage}: any = useLanguage();
   const {drorData} = useConfiguration();
 
-  // Remove static menu items and create dynamic menu based on drorData
-  const getMenuItems = () => {
+  // Remove static menu items and create dynamic menu based on drorData - MEMOIZED
+  const menuItems = useMemo(() => {
     if (!drorData) return [];
 
     // Default fallback mappings for backward compatibility
@@ -442,7 +442,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
     };
 
     // Create menu items dynamically from drorData
-    const menuItems: Array<{
+    const items: Array<{
       key: string;
       name: string;
       displayName: string;
@@ -468,7 +468,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
           defaultScreenMapping[key] ||
           key.charAt(0).toUpperCase() + key.slice(1);
 
-        menuItems.push({
+        items.push({
           key: key,
           name: screenName,
           displayName: displayLabel,
@@ -477,9 +477,9 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       }
     });
 
-    const familyTreeExists = menuItems.some(item => item.key === 'familyTree');
+    const familyTreeExists = items.some(item => item.key === 'familyTree');
     if (!familyTreeExists) {
-      menuItems.push({
+      items.push({
         key: 'familyTree',
         name: 'FamilyTree',
         displayName: currentLanguage === 'hi' ? 'वंश वृक्ष' : 'Family Tree',
@@ -487,12 +487,10 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       });
     }
 
-    return menuItems;
-  };
+    return items;
+  }, [drorData, currentLanguage]);
 
-  const menuItems = getMenuItems();
-
-  const handleMenuPress = (screenName: string) => {
+  const handleMenuPress = useCallback((screenName: string) => {
     // Navigate to HomeTab first, then to the Home stack, then to the specific screen
     // Since all drawer screens are now part of each tab's stack
     props?.navigation?.navigate('HomeTab', {
@@ -501,9 +499,9 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         screen: screenName,
       },
     });
-  };
+  }, [props?.navigation]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert(t('Logout'), t('Are you sure you want to logout?'), [
       {
         text: t('Cancel'),
@@ -519,7 +517,7 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         },
       },
     ]);
-  };
+  }, [t, logout, props.navigation]);
 
   const getInitials = () => {
     if (user) {
@@ -605,35 +603,23 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Menu Items - Now dynamically rendered based on drorData */}
       <View style={styles.menuSection}>
-        {menuItems.map((item, index) => {
-          // Debug logging for the first item (likely Occasions)
-          if (index === 0) {
-            console.log(
-              'First menu item:',
-              item.displayName,
-              'Length:',
-              item.displayName.length,
-            );
-          }
-
-          return (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => handleMenuPress(item?.name)}>
-              {renderIcon(item.icon)}
-              <Text
-                style={styles.menuText}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                adjustsFontSizeToFit={true}
-                minimumFontScale={0.7}
-                allowFontScaling={false}>
-                {item.displayName}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {menuItems.map((item, index) => (
+          <TouchableOpacity
+            key={item.key}
+            style={styles.menuItem}
+            onPress={() => handleMenuPress(item?.name)}>
+            {renderIcon(item.icon)}
+            <Text
+              style={styles.menuText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+              allowFontScaling={false}>
+              {item.displayName}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Logout Section */}

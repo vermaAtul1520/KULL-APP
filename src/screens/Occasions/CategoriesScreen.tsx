@@ -13,42 +13,13 @@ import {
   Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AppColors} from './constants';
 import {BackIcon} from './components/OccasionIcons';
 import {OccasionApiService, OccasionCategory} from '@app/services/occasionApi';
 import {useOccasion} from '@app/contexts/OccasionContext';
 
-type HomeStackParamList = {
-  HomeScreen: undefined;
-  Occasions: undefined;
-  OccasionCategories: {occasionType: string};
-  OccasionFilters: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-  };
-  OccasionGenderSelection: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    filterId: string | null;
-    filterName: string | null;
-  };
-  OccasionContent: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    filterId: string | null;
-    filterName: string | null;
-    gender: string;
-  };
-};
-
-type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
-
 export const CategoriesScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
   const route = useRoute();
   const {occasionType} = route.params as {occasionType: string};
   const {setCategory} = useOccasion();
@@ -85,11 +56,7 @@ export const CategoriesScreen = () => {
       const response = await OccasionApiService.fetchCategories();
       setAllCategories(response.data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      Alert.alert(
-        'Error',
-        (error as Error)?.message || 'Failed to load categories',
-      );
+      Alert.alert('Error', 'Failed to load categories');
     } finally {
       setLoading(false);
     }

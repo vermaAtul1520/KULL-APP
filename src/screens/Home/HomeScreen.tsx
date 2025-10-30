@@ -226,11 +226,6 @@ const HomeScreen = () => {
     isDataStale,
     lastUpdated,
   } = useConfiguration();
-  console.log('HomeScreen - Loaded configuration data:', {
-    profileData,
-    bannerData,
-    adPopupImage,
-  });
   const flatListRef = useRef<FlatList>(null);
   const mainFlatListRef = useRef<FlatList>(null);
 
@@ -244,16 +239,6 @@ const HomeScreen = () => {
   // News state
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
-
-  console.log('HomeScreen - Configuration data:', {
-    profileCount: profileData.length,
-    bannerCount: bannerData.length,
-    hasAdPopup: !!adPopupImage,
-    loading,
-    refreshing,
-    isDataStale,
-    lastUpdated: lastUpdated?.toISOString(),
-  });
 
   // Fetch news data
   const fetchNews = async () => {

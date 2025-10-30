@@ -16,7 +16,7 @@ export interface OccasionCategory {
   __v: number;
 }
 
-export interface Content {
+export interface OccasionContent {
   _id: string;
   type: 'pdf' | 'video' | 'image';
   url: string;
@@ -34,7 +34,7 @@ export interface Occasion {
   gender?: string;
   gotra?: string;
   subGotra?: string;
-  contents: Content[];
+  contents: OccasionContent[];
   createdAt: string;
 }
 
@@ -97,7 +97,7 @@ export class OccasionApiService {
       }
      
       const data: CategoriesResponse = await response.json();
-       console.log("Fetched occasion categories:", data);
+
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch categories');
@@ -127,6 +127,8 @@ static async fetchOccasions(
   gender?: string
 ): Promise<OccasionsResponse> {
   try {
+
+
     const headers = await getAuthHeaders();
 
     if (!headers.Authorization) {
@@ -147,7 +149,7 @@ static async fetchOccasions(
     if (gotra) params.append('gotra', gotra);
     if (subGotra) params.append('subGotra', subGotra);
     if (gender) params.append('gender', gender);
-    console.log('Fetching occasions with params:', params.toString());
+
     const url = `${BASE_URL}/api/occasions?${params.toString()}`;
 
     const response = await fetch(url, {
@@ -171,10 +173,8 @@ static async fetchOccasions(
       throw new Error(data.message || 'Failed to fetch occasions');
     }
 
-    // No contentType or language filtering here, just return data
     return data;
   } catch (error) {
-    console.error('OccasionApiService.fetchOccasions error:', error);
     throw error;
   }
 }

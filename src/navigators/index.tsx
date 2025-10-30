@@ -1,4 +1,11 @@
-import React, {useState, useEffect, createContext, useContext} from 'react';
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   Image,
   Pressable,
@@ -61,6 +68,7 @@ import {
   ContentScreen,
 } from '@app/screens/Occasions';
 import {OccasionProvider} from '@app/contexts/OccasionContext';
+// import OccasionsScreen from '@app/screens/drawer/OccasionsScreen';
 import KartavyaScreen from '@app/screens/drawer/KartavyaScreen';
 import BhajanScreen, {BackIcon} from '@app/screens/drawer/BhajanScreen';
 import LawsScreen from '@app/screens/drawer/LawsScreen';
@@ -245,26 +253,29 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
   >([]);
   const [bannerLoading, setBannerLoading] = useState(true);
 
-  const defaultBannerData = [
-    {
-      id: 1,
-      textColor: '#000',
-      image:
-        'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-    {
-      id: 2,
-      textColor: '#FFF',
-      image:
-        'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
-    },
-  ];
+  const defaultBannerData = useMemo(
+    () => [
+      {
+        id: 1,
+        textColor: '#000',
+        image:
+          'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+      },
+      {
+        id: 2,
+        textColor: '#FFF',
+        image:
+          'https://plixlifefcstage-media.farziengineer.co/hosted/shradhaKapoor-a5a533c43c49.jpg',
+      },
+    ],
+    [],
+  );
 
   useEffect(() => {
     checkAuthState();
   }, []);
 
-  const fetchBannerData = async () => {
+  const fetchBannerData = useCallback(async () => {
     try {
       setBannerLoading(true);
       const COMMUNITY_ID = await getCommunityId();
@@ -309,19 +320,20 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
     } finally {
       setBannerLoading(false);
     }
-  };
+  }, [defaultBannerData]);
 
   useEffect(() => {
     if (isLoggedIn) {
       fetchBannerData();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, fetchBannerData]);
 
-  const setBannerData = (
-    banners: {id: number; image: string; textColor: string}[],
-  ) => {
-    setBannerDataState(banners);
-  };
+  const setBannerData = useCallback(
+    (banners: {id: number; image: string; textColor: string}[]) => {
+      setBannerDataState(banners);
+    },
+    [],
+  );
 
   const checkAuthState = async () => {
     try {
@@ -341,48 +353,48 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
     }
   };
 
-  const login = (userData: User, userToken: string) => {
+  const login = useCallback((userData: User, userToken: string) => {
     setUser(userData);
     setToken(userToken);
     setIsLoggedIn(true);
-    console.log(
-      '🔍 AUTH DEBUG - User logged in successfully, configuration will be fetched',
-    );
-  };
+  }, []);
 
-  const updateUser = async (updatedData: Partial<User>) => {
-    if (!user) {
-      throw new Error('No user data available');
-    }
+  const updateUser = useCallback(
+    async (updatedData: Partial<User>) => {
+      if (!user) {
+        throw new Error('No user data available');
+      }
 
-    const headers = await getAuthHeaders();
+      const headers = await getAuthHeaders();
 
-    const response = await fetch(`${BASE_URL}/api/users/profile`, {
-      method: 'PUT',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedData),
-    });
+      const response = await fetch(`${BASE_URL}/api/users/profile`, {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to update profile: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update profile: ${response.status}`);
+      }
 
-    const apiResponse = await response.json();
+      const apiResponse = await response.json();
 
-    if (apiResponse.success && apiResponse.user) {
-      const updatedUser = {...user, ...apiResponse.user};
-      setUser(updatedUser);
-      await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
-    } else {
-      throw new Error(apiResponse.message || 'Failed to update profile');
-    }
-  };
+      if (apiResponse.success && apiResponse.user) {
+        const updatedUser = {...user, ...apiResponse.user};
+        setUser(updatedUser);
+        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+      } else {
+        throw new Error(apiResponse.message || 'Failed to update profile');
+      }
+    },
+    [user],
+  );
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
@@ -392,25 +404,36 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
     } catch (error) {
       console.error('Error during logout:', error);
     }
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        user,
-        token,
-        login,
-        logout,
-        isLoading,
-        updateUser,
-        bannerData,
-        setBannerData,
-        bannerLoading,
-      }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      isLoggedIn,
+      user,
+      token,
+      login,
+      logout,
+      isLoading,
+      updateUser,
+      bannerData,
+      setBannerData,
+      bannerLoading,
+    }),
+    [
+      isLoggedIn,
+      user,
+      token,
+      login,
+      logout,
+      isLoading,
+      updateUser,
+      bannerData,
+      setBannerData,
+      bannerLoading,
+    ],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
@@ -539,17 +562,17 @@ const commonScreenOptions = {
   },
 };
 
-const stackScreenOptions = (): NativeStackNavigationOptions =>
+// Memoize to prevent creating new object references on every render
+const stackScreenOptions: NativeStackNavigationOptions =
   commonScreenOptions as NativeStackNavigationOptions;
 
-const drawerScreenOptions = (): DrawerNavigationOptions =>
+const drawerScreenOptions: DrawerNavigationOptions =
   commonScreenOptions as DrawerNavigationOptions;
 
 // Profile Screen Component
 const ProfileScreen = (): React.JSX.Element => {
   const navigation = useNavigation();
   const {user, logout, updateUser} = useAuth();
-  console.log('Profile Screen - User data:', user);
   const {t} = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
@@ -868,62 +891,90 @@ const AuthStack = (): React.JSX.Element => {
   );
 };
 
+// Tab bar options - CONSTANT to prevent recreation
+const tabBarOptions = {
+  tabBarActiveTintColor: AppColors.primary,
+  tabBarInactiveTintColor: AppColors.gray,
+  headerShown: false,
+  tabBarHideOnKeyboard: true,
+  tabBarStyle: {
+    backgroundColor: AppColors.black,
+    borderTopWidth: 0,
+  },
+  tabBarLabelStyle: {
+    fontSize: 12,
+  },
+};
+
+// Icon render functions - STABLE REFERENCES
+const renderHomeIcon = ({color, size}: {color: string; size: number}) => (
+  <HomeIcon width={size} height={size} color={color} />
+);
+const renderPostIcon = ({color, size}: {color: string; size: number}) => (
+  <PostIcon width={size} height={size} color={color} />
+);
+const renderNewsIcon = ({color, size}: {color: string; size: number}) => (
+  <NewsIcon width={size} height={size} color={color} />
+);
+const renderPeopleIcon = ({color, size}: {color: string; size: number}) => (
+  <PeopleIcon width={size} height={size} color={color} />
+);
+const renderDonationIcon = ({color, size}: {color: string; size: number}) => (
+  <DonationIcon width={size} height={size} color={color} />
+);
+
+// Screen options - CONSTANTS outside component with icons
+const homeTabScreenOptions = {
+  tabBarLabel: 'Home',
+  tabBarIcon: renderHomeIcon,
+};
+const postTabScreenOptions = {
+  tabBarLabel: 'Post',
+  tabBarIcon: renderPostIcon,
+};
+const newsTabScreenOptions = {
+  tabBarLabel: 'News',
+  tabBarIcon: renderNewsIcon,
+};
+const peopleTabScreenOptions = {
+  tabBarLabel: 'My People',
+  tabBarIcon: renderPeopleIcon,
+};
+const donationTabScreenOptions = {
+  tabBarLabel: 'Donation',
+  tabBarIcon: renderDonationIcon,
+};
+
 // Home Tab Navigator with Stack Navigators
 const HomeTab = (): React.JSX.Element => {
   const {Navigator, Screen} = createBottomTabNavigator<HomeTabParamList>();
-  const {t} = useLanguage();
 
   return (
-    <Navigator
-      screenOptions={({route}: {route: any}) => ({
-        tabBarActiveTintColor: AppColors.primary,
-        tabBarInactiveTintColor: AppColors.gray,
-        headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          backgroundColor: AppColors.black,
-          borderTopWidth: 0,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-        tabBarIcon: ({focused, color, size}: any) =>
-          RenderTabBarIcon({focused, color, size, route}),
-      })}>
+    <Navigator screenOptions={tabBarOptions}>
       <Screen
         name="Home"
         component={HomeStackNavigator}
-        options={{
-          tabBarLabel: t('Home') || 'Home',
-        }}
+        options={homeTabScreenOptions}
       />
       <Screen
         name="Post"
         component={PostStackNavigator}
-        options={{
-          tabBarLabel: t('Post') || 'Post',
-        }}
+        options={postTabScreenOptions}
       />
       <Screen
         name="News"
         component={NewsStackNavigator}
-        options={{
-          tabBarLabel: t('News') || 'News',
-        }}
+        options={newsTabScreenOptions}
       />
       <Screen
         name="MyPeople"
         component={MyPeopleStackNavigator}
-        options={{
-          tabBarLabel: t('My People') || 'My People',
-        }}
+        options={peopleTabScreenOptions}
       />
       <Screen
         name="Donation"
         component={DonationStackNavigator}
-        options={{
-          tabBarLabel: t('Donation') || 'Donation',
-        }}
+        options={donationTabScreenOptions}
       />
     </Navigator>
   );
@@ -933,7 +984,7 @@ const HomeTab = (): React.JSX.Element => {
 const HomeStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={stackScreenOptions()}>
+    <Navigator screenOptions={stackScreenOptions}>
       <Screen name="HomeScreen" component={HomeScreen} />
       {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
       <Screen name="Occasions" component={OccasionTypesScreen} />
@@ -971,7 +1022,7 @@ const HomeStackNavigator = (): React.JSX.Element => {
 const PostStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={stackScreenOptions()}>
+    <Navigator screenOptions={stackScreenOptions}>
       <Screen name="PostScreen" component={PostScreen} />
       {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
       <Screen name="Occasions" component={OccasionTypesScreen} />
@@ -1009,7 +1060,7 @@ const PostStackNavigator = (): React.JSX.Element => {
 const NewsStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={stackScreenOptions()}>
+    <Navigator screenOptions={stackScreenOptions}>
       <Screen name="NewsScreen" component={NewsScreen} />
       {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
       <Screen name="Occasions" component={OccasionTypesScreen} />
@@ -1047,7 +1098,7 @@ const NewsStackNavigator = (): React.JSX.Element => {
 const MyPeopleStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={stackScreenOptions()}>
+    <Navigator screenOptions={stackScreenOptions}>
       <Screen name="MyPeopleScreen" component={MyPeopleScreen} />
       {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
       <Screen name="Occasions" component={OccasionTypesScreen} />
@@ -1085,7 +1136,7 @@ const MyPeopleStackNavigator = (): React.JSX.Element => {
 const DonationStackNavigator = (): React.JSX.Element => {
   const {Navigator, Screen} = createNativeStackNavigator();
   return (
-    <Navigator screenOptions={stackScreenOptions()}>
+    <Navigator screenOptions={stackScreenOptions}>
       <Screen name="DonationScreen" component={DonationScreen} />
       {/* Add drawer screens to each tab stack so bottom tabs remain visible */}
       <Screen name="Occasions" component={OccasionTypesScreen} />
@@ -1129,7 +1180,7 @@ const DrawerNavigator = (): React.JSX.Element => {
       drawerContent={(props: any) => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
-        ...drawerScreenOptions(),
+        ...drawerScreenOptions,
         drawerStyle: {
           backgroundColor: AppColors.dark,
           width: 320, // Increased width to accommodate longer text
@@ -1181,7 +1232,13 @@ const LoadingScreen = () => {
 // Main App Navigator
 const AppNavigator = (): React.JSX.Element => {
   const {isLoggedIn, isLoading} = useAuth();
-  const currentTheme = useColorScheme() === 'dark' ? DarkTheme : DefaultTheme;
+  const colorScheme = useColorScheme();
+
+  // Memoize theme to prevent recreation
+  const currentTheme = React.useMemo(
+    () => (colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    [colorScheme],
+  );
 
   if (isLoading) {
     return <LoadingScreen />;

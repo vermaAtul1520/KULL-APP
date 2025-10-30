@@ -1,4 +1,4 @@
-import React, {createContext, useState, useContext, useEffect} from 'react';
+import React, {createContext, useState, useContext, useEffect, useMemo, useCallback} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Language configuration
@@ -516,8 +516,8 @@ export const LanguageProvider = ({children}: {children: React.ReactNode}) => {
     loadLanguage();
   }, []);
 
-  // Function to change language and save to AsyncStorage
-  const setLanguage = async (language: string) => {
+  // Function to change language and save to AsyncStorage - memoized
+  const setLanguage = useCallback(async (language: string) => {
     try {
       if (language === 'en' || language === 'hi') {
         await AsyncStorage.setItem(LANGUAGE_KEY, language);
@@ -526,19 +526,22 @@ export const LanguageProvider = ({children}: {children: React.ReactNode}) => {
     } catch (error) {
       console.error('Error saving language:', error);
     }
-  };
+  }, []);
 
-  // Translation function
-  const t = (key: string) => {
+  // Translation function - memoized
+  const t = useCallback((key: string) => {
     return (translations as any)[currentLanguage]?.[key] || key;
-  };
+  }, [currentLanguage]);
 
-  const value = {
-    currentLanguage,
-    setLanguage,
-    t,
-    translations,
-  };
+  const value = useMemo(
+    () => ({
+      currentLanguage,
+      setLanguage,
+      t,
+      translations,
+    }),
+    [currentLanguage, setLanguage, t],
+  );
 
   return (
     <LanguageContext.Provider value={value}>

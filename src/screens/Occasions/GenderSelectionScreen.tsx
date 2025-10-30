@@ -1,5 +1,5 @@
 // Screen: Gender Selection
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,43 +8,19 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-
-type HomeStackParamList = {
-  HomeScreen: undefined;
-  Occasions: undefined;
-  OccasionCategories: {occasionType: string};
-  OccasionFilters: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-  };
-  OccasionGenderSelection: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    filterId: string | null;
-    filterName: string | null;
-  };
-  OccasionContent: {
-    occasionType: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    gotra?: string;
-    subGotra?: string;
-    gender?: string;
-  };
-};
-
-type NavigationProp = NativeStackNavigationProp<HomeStackParamList>;
+import {
+  useNavigation,
+  useRoute,
+  NavigationProp,
+} from '@react-navigation/native';
 import {AppColors} from './constants';
 import {BackIcon} from './components/OccasionIcons';
 import {useOccasion} from '@app/contexts/OccasionContext';
-import OccasionApiService from '@app/services/occasionApi'; // <-- Import OccasionApiService
+import OccasionApiService from '@app/services/occasionApi';
 export const GenderSelectionScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NavigationProp<any>>();
   const route = useRoute();
   const {occasionType, categoryId, categoryName, gotra, subGotra} =
     route.params as {
@@ -58,12 +34,63 @@ export const GenderSelectionScreen = () => {
   const {setGender: setContextGender, setOccasions, filters} = useOccasion();
 
   const [selectedGender, setSelectedGender] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [genderCounts, setGenderCounts] = useState<{
+    male: number;
+    female: number;
+    all: number;
+  }>({male: 0, female: 0, all: 0});
 
   const genderOptions = [
-    {value: 'male', label: 'Male', icon: '👨'},
-    {value: 'female', label: 'Female', icon: '👩'},
-    {value: '', label: 'All', icon: '👥'},
+    {value: 'male', label: 'Male', icon: '👨', count: genderCounts.male},
+    {value: 'female', label: 'Female', icon: '👩', count: genderCounts.female},
+    {value: '', label: 'All', icon: '👥', count: genderCounts.all},
   ];
+
+  useEffect(() => {
+    fetchGenderCounts();
+  }, []);
+
+  const fetchGenderCounts = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch counts for each gender option
+      const [maleResponse, femaleResponse, allResponse] = await Promise.all([
+        OccasionApiService.fetchOccasions(
+          occasionType,
+          categoryId,
+          gotra,
+          subGotra,
+          'male',
+        ),
+        OccasionApiService.fetchOccasions(
+          occasionType,
+          categoryId,
+          gotra,
+          subGotra,
+          'female',
+        ),
+        OccasionApiService.fetchOccasions(
+          occasionType,
+          categoryId,
+          gotra,
+          subGotra,
+          undefined, // All genders
+        ),
+      ]);
+
+      setGenderCounts({
+        male: maleResponse.data.length,
+        female: femaleResponse.data.length,
+        all: allResponse.data.length,
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load content counts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleContinue = async () => {
     // Save gender to context (convert empty string to null)
@@ -92,13 +119,8 @@ export const GenderSelectionScreen = () => {
       );
 
       setOccasions(response.data);
-      console.log('Fetched occasions:', response.data);
     } catch (error) {
-      console.error('Error fetching occasions:', error);
-      Alert.alert(
-        'Error',
-        (error as Error)?.message || 'Failed to load content',
-      );
+      Alert.alert('Error', 'Failed to load content');
     } finally {
     }
   };
@@ -128,46 +150,61 @@ export const GenderSelectionScreen = () => {
         </Text>
 
         <View style={styles.optionsContainer}>
-          {genderOptions.map(option => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.optionCard,
-                selectedGender === option.value && styles.optionCardSelected,
-              ]}
-              onPress={() => setSelectedGender(option.value)}
-              activeOpacity={0.7}>
-              <Text style={styles.optionIcon}>{option.icon}</Text>
-              <Text
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={AppColors.primary} />
+              <Text style={styles.loadingText}>Loading content counts...</Text>
+            </View>
+          ) : (
+            genderOptions.map(option => (
+              <TouchableOpacity
+                key={option.value}
                 style={[
-                  styles.optionLabel,
-                  selectedGender === option.value && styles.optionLabelSelected,
-                ]}>
-                {option.label}
-              </Text>
-              {selectedGender === option.value && (
-                <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+                  styles.optionCard,
+                  selectedGender === option.value && styles.optionCardSelected,
+                ]}
+                onPress={() => setSelectedGender(option.value)}
+                activeOpacity={0.7}>
+                <Text style={styles.optionIcon}>{option.icon}</Text>
+                <View style={styles.optionContent}>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      selectedGender === option.value &&
+                        styles.optionLabelSelected,
+                    ]}>
+                    {option.label}
+                  </Text>
+                  <Text style={styles.optionCount}>
+                    {option.count} {option.count === 1 ? 'item' : 'items'}{' '}
+                    available
+                  </Text>
                 </View>
-              )}
-            </TouchableOpacity>
-          ))}
+                {selectedGender === option.value && (
+                  <View style={styles.checkmark}>
+                    <Text style={styles.checkmarkText}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <TouchableOpacity
           style={[
             styles.continueButton,
-            !selectedGender && styles.continueButtonDisabled,
+            (!selectedGender || loading) && styles.continueButtonDisabled,
           ]}
           onPress={handleContinue}
-          disabled={!selectedGender}
+          disabled={!selectedGender || loading}
           activeOpacity={0.8}>
           <Text style={styles.continueButtonText}>View Content</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
-            💡 Tip: Select "All" to view content for both male and female
+            💡 Tip: Content counts show available items for each gender option.
+            Select "All" to view content for both male and female.
           </Text>
         </View>
       </View>
@@ -225,6 +262,16 @@ const styles = StyleSheet.create({
   optionsContainer: {
     marginBottom: 32,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: AppColors.gray,
+  },
   optionCard: {
     backgroundColor: AppColors.white,
     borderRadius: 12,
@@ -248,11 +295,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginRight: 16,
   },
+  optionContent: {
+    flex: 1,
+  },
   optionLabel: {
     fontSize: 18,
     fontWeight: '600',
     color: AppColors.dark,
-    flex: 1,
+    marginBottom: 4,
+  },
+  optionCount: {
+    fontSize: 14,
+    color: AppColors.gray,
+    fontWeight: '500',
   },
   optionLabelSelected: {
     color: AppColors.primary,

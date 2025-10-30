@@ -1,4 +1,11 @@
-import React, {createContext, useState, useContext, useEffect} from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import {BASE_URL} from '@app/constants/constant';
@@ -180,9 +187,6 @@ export const ConfigurationProvider = ({
         CONFIG_CACHE_TIMESTAMP_KEY,
       );
 
-      console.log('💾 CACHE DEBUG - Cached data exists:', !!cachedData);
-      console.log('💾 CACHE DEBUG - Cached timestamp:', cachedTimestamp);
-
       if (!cachedData || !cachedTimestamp) {
         return false;
       }
@@ -191,15 +195,12 @@ export const ConfigurationProvider = ({
       const now = Date.now();
       const isExpired = now - timestamp > CACHE_DURATION;
 
-      console.log('💾 CACHE DEBUG - Cache expired:', isExpired);
-
       if (isExpired) {
         setIsDataStale(true);
         return false;
       }
 
       const parsedData = JSON.parse(cachedData);
-      console.log('💾 CACHE DEBUG - Parsed cache data:', parsedData);
 
       if (parsedData.profileData) {
         setProfileData(parsedData.profileData);
@@ -237,9 +238,6 @@ export const ConfigurationProvider = ({
   }) => {
     try {
       const timestamp = Date.now();
-      console.log('💾 CACHE DEBUG - Saving to cache:', data);
-      console.log('💾 CACHE DEBUG - Cache timestamp:', timestamp);
-
       await AsyncStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(data));
       await AsyncStorage.setItem(
         CONFIG_CACHE_TIMESTAMP_KEY,
@@ -251,8 +249,8 @@ export const ConfigurationProvider = ({
     }
   };
 
-  // Clear cache
-  const clearCache = async () => {
+  // Clear cache - wrapped with useCallback to prevent recreation
+  const clearCache = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(CONFIG_CACHE_KEY);
       await AsyncStorage.removeItem(CONFIG_CACHE_TIMESTAMP_KEY);
@@ -261,16 +259,13 @@ export const ConfigurationProvider = ({
     } catch (error) {
       console.error('Error clearing configuration cache:', error);
     }
-  };
+  }, []);
 
   // Fetch configuration from API
   const fetchConfigurationFromAPI = async (
     isRefreshing = false,
   ): Promise<void> => {
     try {
-      console.log('🌐 API DEBUG - Starting fetch configuration');
-      console.log('🌐 API DEBUG - BASE_URL:', BASE_URL);
-
       if (isRefreshing) {
         setRefreshing(true);
       } else {
@@ -278,23 +273,14 @@ export const ConfigurationProvider = ({
       }
 
       const COMMUNITY_ID = await getCommunityId();
-      console.log('🔍 CONFIG DEBUG - Community ID:', COMMUNITY_ID);
 
       if (!COMMUNITY_ID) {
-        console.log(
-          '🔍 CONFIG DEBUG - No community ID found, cannot fetch configuration',
-        );
         throw new Error(
           'Community ID not found. Please ensure you are logged in properly.',
         );
       }
 
       const headers = await getAuthHeaders();
-      console.log('🔍 CONFIG DEBUG - Headers:', headers);
-      console.log(
-        '🌐 API DEBUG - Full URL:',
-        `${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`,
-      );
 
       const response = await fetch(
         `${BASE_URL}/api/communities/${COMMUNITY_ID}/configuration`,
@@ -303,10 +289,6 @@ export const ConfigurationProvider = ({
           headers,
         },
       );
-
-      console.log('🔍 CONFIG DEBUG - Response Status:', response.status);
-      console.log('🌐 API DEBUG - Response object:', response);
-      console.log('🌐 API DEBUG - Response ok:', response.ok);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -319,14 +301,12 @@ export const ConfigurationProvider = ({
           }
 
           if (isTokenExpired(errorData)) {
-            console.log('Token expired, logging out user');
             await handleTokenExpiration();
             return;
           }
         }
 
         if (response.status === 404) {
-          console.log('Configuration not found');
           return;
         }
 
@@ -334,12 +314,6 @@ export const ConfigurationProvider = ({
       }
 
       const responseText = await response.text();
-      console.log(
-        '🔍 CONFIG DEBUG - Raw Response Text:',
-        responseText.substring(0, 500),
-      );
-      console.log('🔍 CONFIG DEBUG - Response Length:', responseText.length);
-      console.log('🌐 API DEBUG - Full response text:', responseText);
 
       let data;
 
@@ -350,49 +324,18 @@ export const ConfigurationProvider = ({
         throw new Error('Invalid JSON response');
       }
 
-      console.log(
-        '🔍 CONFIG DEBUG - Parsed Data:',
-        JSON.stringify(data, null, 2),
-      );
-      console.log('🔍 CONFIG DEBUG - Data Success:', data.success);
-      console.log('🔍 CONFIG DEBUG - Data.data exists:', !!data.data);
-
       // Check if the response indicates token expiration
       if (isTokenExpired(data)) {
-        console.log('Token expired based on response data');
         await handleTokenExpiration();
         return;
       }
 
       if (data.success && data.data) {
-        console.log(
-          '🔍 CONFIG DEBUG - Full data.data object:',
-          JSON.stringify(data.data, null, 2),
-        );
-        console.log(
-          '🔍 CONFIG DEBUG - smaajKeTaaj raw:',
-          data.data.smaajKeTaaj,
-        );
-        console.log('🔍 CONFIG DEBUG - banner raw:', data.data.banner);
-        console.log('🔍 CONFIG DEBUG - addPopup raw:', data.data.addPopup);
-        console.log('🔍 CONFIG DEBUG - gotra raw:', data.data.gotra);
-        console.log('🔍 CONFIG DEBUG - drorOption raw:', data.data.drorOption);
-        console.log(
-          '🔍 CONFIG DEBUG - smaajKeTaaj length:',
-          data.data.smaajKeTaaj?.length,
-        );
-        console.log(
-          '🔍 CONFIG DEBUG - banner length:',
-          data.data.banner?.length,
-        );
-
         // Process profiles - use actual API data
         const profiles =
           data.data.smaajKeTaaj && Array.isArray(data.data.smaajKeTaaj)
             ? data.data.smaajKeTaaj
             : [];
-        console.log('🔍 CONFIG DEBUG - Processed profiles:', profiles);
-        console.log('🔍 CONFIG DEBUG - Profiles count:', profiles.length);
 
         // Process banners - use actual API data
         let banners = [];
@@ -403,8 +346,6 @@ export const ConfigurationProvider = ({
             textColor: index % 2 === 0 ? '#000' : '#FFF',
           }));
         }
-        console.log('🔍 CONFIG DEBUG - Processed banners:', banners);
-        console.log('🔍 CONFIG DEBUG - Banners count:', banners.length);
 
         // Process ad popup - use actual API data
         const adUrl = data.data.addPopup || null;
@@ -429,8 +370,6 @@ export const ConfigurationProvider = ({
           drorData: dror,
         };
 
-        console.log('🔍 CONFIG DEBUG - Final configData:', configData);
-
         // Update state
         setProfileData(configData.profileData);
         setBannerData(configData.bannerData);
@@ -441,18 +380,7 @@ export const ConfigurationProvider = ({
 
         // Save to cache
         await saveToCache(configData);
-
-        console.log('Configuration loaded successfully:', {
-          profiles: configData.profileData.length,
-          banners: configData.bannerData.length,
-          hasAdPopup: !!configData.adPopupImage,
-          gotraCount: configData.gotraData.length,
-          drorOptions: configData.drorData
-            ? Object.keys(configData.drorData).length
-            : 0,
-        });
       } else {
-        console.log('Invalid API response or no data');
       }
     } catch (error) {
       console.error('Error fetching community configuration:', error);
@@ -473,22 +401,19 @@ export const ConfigurationProvider = ({
     }
   };
 
-  // Public methods
-  const fetchConfiguration = async () => {
+  // Public methods - wrapped with useCallback to prevent recreation
+  const fetchConfiguration = useCallback(async () => {
     await fetchConfigurationFromAPI(false);
-  };
+  }, []);
 
-  const refreshConfiguration = async () => {
+  const refreshConfiguration = useCallback(async () => {
     await fetchConfigurationFromAPI(true);
-  };
+  }, []);
 
   // Load configuration when user logs in, clear when logs out
   useEffect(() => {
     const initializeConfiguration = async () => {
       if (!isLoggedIn || !token) {
-        console.log(
-          '🔍 CONFIG DEBUG - User not logged in, clearing configuration data',
-        );
         // Clear all data when user logs out
         setProfileData([]);
         setBannerData([]);
@@ -500,21 +425,18 @@ export const ConfigurationProvider = ({
         return;
       }
 
-      console.log(
-        '🔍 CONFIG DEBUG - User logged in, initializing configuration',
-      );
-
       // First try to load from cache
       const cacheLoaded = await loadFromCache();
 
       // If no cache or cache is stale, fetch from API
-      if (!cacheLoaded || isDataStale) {
+      if (!cacheLoaded) {
         await fetchConfiguration();
       }
     };
 
     initializeConfiguration();
-  }, [isLoggedIn, token]); // Depend on login state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, token]); // Only re-run when login state changes
 
   // Check for stale data periodically
   useEffect(() => {
@@ -530,27 +452,46 @@ export const ConfigurationProvider = ({
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
-  const value: ConfigurationContextType = {
-    // Data
-    profileData,
-    bannerData,
-    adPopupImage,
-    gotraData,
-    drorData,
+  // Memoize drorData to prevent object recreation
+  const memoizedDrorData = useMemo(() => drorData, [drorData]);
 
-    // Loading states
-    loading,
-    refreshing,
+  const value: ConfigurationContextType = useMemo(
+    () => ({
+      // Data
+      profileData,
+      bannerData,
+      adPopupImage,
+      gotraData,
+      drorData: memoizedDrorData,
 
-    // Actions
-    fetchConfiguration,
-    refreshConfiguration,
-    clearCache,
+      // Loading states
+      loading,
+      refreshing,
 
-    // Helpers
-    isDataStale,
-    lastUpdated,
-  };
+      // Actions
+      fetchConfiguration,
+      refreshConfiguration,
+      clearCache,
+
+      // Helpers
+      isDataStale,
+      lastUpdated,
+    }),
+    [
+      profileData,
+      bannerData,
+      adPopupImage,
+      gotraData,
+      memoizedDrorData,
+      loading,
+      refreshing,
+      fetchConfiguration,
+      refreshConfiguration,
+      clearCache,
+      isDataStale,
+      lastUpdated,
+    ],
+  );
 
   return (
     <ConfigurationContext.Provider value={value}>
