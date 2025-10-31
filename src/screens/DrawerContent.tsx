@@ -490,16 +490,19 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
     return items;
   }, [drorData, currentLanguage]);
 
-  const handleMenuPress = useCallback((screenName: string) => {
-    // Navigate to HomeTab first, then to the Home stack, then to the specific screen
-    // Since all drawer screens are now part of each tab's stack
-    props?.navigation?.navigate('HomeTab', {
-      screen: 'Home',
-      params: {
-        screen: screenName,
-      },
-    });
-  }, [props?.navigation]);
+  const handleMenuPress = useCallback(
+    (screenName: string) => {
+      // Navigate to HomeTab first, then to the Home stack, then to the specific screen
+      // Since all drawer screens are now part of each tab's stack
+      props?.navigation?.navigate('HomeTab', {
+        screen: 'Home',
+        params: {
+          screen: screenName,
+        },
+      });
+    },
+    [props?.navigation],
+  );
 
   const handleLogout = useCallback(() => {
     Alert.alert(t('Logout'), t('Are you sure you want to logout?'), [

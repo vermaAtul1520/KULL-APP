@@ -284,7 +284,20 @@ const AppealScreen = () => {
   };
 
   const processMediaFile = (asset: any, mediaType: MediaType) => {
-    if (!asset.uri) return;
+    console.log('📸 Processing media file:', {
+      mediaType,
+      hasUri: !!asset.uri,
+      fileName: asset.fileName,
+      fileSize: asset.fileSize,
+      type: asset.type,
+      hasBase64: !!asset.base64,
+      base64Length: asset.base64?.length || 0,
+    });
+
+    if (!asset.uri) {
+      console.log('❌ No URI found in asset, aborting file processing');
+      return;
+    }
 
     const file: UploadFile = {
       id: Date.now().toString(),
@@ -299,6 +312,16 @@ const AppealScreen = () => {
       base64: asset.base64,
     };
 
+    console.log('✅ Media file processed successfully:', {
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      mimeType: file.mimeType,
+      hasBase64: !!file.base64,
+      base64Length: file.base64?.length || 0,
+    });
+
     setUploadedFile(file);
     setShowTextInput(false);
   };
@@ -309,12 +332,49 @@ const AppealScreen = () => {
     setUploadedFile(null);
   };
 
+  // Base64 encoding function for React Native (Buffer replacement)
+  const encodeBase64 = (text: string): string => {
+    try {
+      // Simple base64 encoding for React Native
+      const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      let result = '';
+      let i = 0;
+
+      while (i < text.length) {
+        const a = text.charCodeAt(i++);
+        const b = i < text.length ? text.charCodeAt(i++) : 0;
+        const c = i < text.length ? text.charCodeAt(i++) : 0;
+
+        const bitmap = (a << 16) | (b << 8) | c;
+
+        result += chars.charAt((bitmap >> 18) & 63);
+        result += chars.charAt((bitmap >> 12) & 63);
+        result += i - 2 < text.length ? chars.charAt((bitmap >> 6) & 63) : '=';
+        result += i - 1 < text.length ? chars.charAt(bitmap & 63) : '=';
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Base64 encoding error:', error);
+      // Fallback: return the text as-is if encoding fails
+      return text;
+    }
+  };
+
   const saveTextNote = () => {
+    console.log('📝 Saving text note:', {
+      textLength: textNote.length,
+      hasContent: !!textNote.trim(),
+    });
+
     if (!textNote.trim()) {
+      console.log('❌ Text note is empty, showing alert');
       Alert.alert('Error', 'Please enter some text for your note.');
       return;
     }
 
+    const base64Data = encodeBase64(textNote);
     const file: UploadFile = {
       id: Date.now().toString(),
       name: `text_note_${Date.now()}.txt`,
@@ -322,8 +382,17 @@ const AppealScreen = () => {
       size: textNote.length,
       uri: 'text://local',
       mimeType: 'text/plain',
-      base64: Buffer.from(textNote, 'utf8').toString('base64'),
+      base64: base64Data,
     };
+
+    console.log('✅ Text note file created:', {
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      mimeType: file.mimeType,
+      base64Length: base64Data.length,
+    });
 
     setUploadedFile(file);
     setShowTextInput(false);
@@ -383,7 +452,11 @@ const AppealScreen = () => {
 
   // Create API payload - UPDATED TO SIMPLIFIED STRUCTURE
   const createApiPayload = async () => {
+    console.log('🔧 Creating API payload...');
+
     const COMMUNITY_ID = await getCommunityId();
+    console.log('🏘️ Community ID:', COMMUNITY_ID);
+
     const payload: any = {
       subject: subject.trim(),
       description: description.trim(),
@@ -391,21 +464,55 @@ const AppealScreen = () => {
       community: COMMUNITY_ID,
     };
 
+    console.log('📝 Basic payload created:', {
+      subject: payload.subject,
+      description: payload.description.substring(0, 50) + '...',
+      category: payload.category,
+      community: payload.community,
+    });
+
     // Add uploaded file if present
     if (uploadedFile) {
-      payload.attachment = {
+      console.log('📎 Processing uploaded file:', {
         id: uploadedFile.id,
         name: uploadedFile.name,
         type: uploadedFile.type,
         size: uploadedFile.size,
         mimeType: uploadedFile.mimeType,
-        base64Data: uploadedFile.base64,
+        uri: uploadedFile.uri,
+        hasBase64: !!uploadedFile.base64,
+        base64Length: uploadedFile.base64?.length || 0,
+      });
+
+      // Send attachment as a JSON string to match API expectations
+      const attachmentData = {
+        id: uploadedFile.id,
+        name: uploadedFile.name,
+        type: uploadedFile.type,
+        size: uploadedFile.size,
+        mimeType: uploadedFile.mimeType,
+        base64Data: uploadedFile.base64 || '',
         uri: uploadedFile.uri,
       };
+
+      // Convert attachment object to JSON string
+      payload.attachment = JSON.stringify(attachmentData);
+
+      console.log('✅ Attachment added to payload as JSON string');
     } else {
       // Set attachment to empty string when no file is uploaded
       payload.attachment = '';
+      console.log('❌ No attachment - setting to empty string');
     }
+
+    console.log('🎯 Final payload structure:', {
+      ...payload,
+      attachment: payload.attachment
+        ? typeof payload.attachment === 'string'
+          ? `[JSON STRING - ${payload.attachment.length} chars]`
+          : payload.attachment
+        : payload.attachment,
+    });
 
     return payload;
   };
@@ -413,17 +520,39 @@ const AppealScreen = () => {
   // Real API submission function
   const submitAppealToAPI = async (payload: any) => {
     try {
-      // console.log('Submitting appeal to API:', APPEALS_ENDPOINT);
-      console.log('Payload:', JSON.stringify(payload, null, 2));
+      console.log('🚀 Starting API submission...');
+      console.log('🌐 API Endpoint:', `${BASE_URL}/api/appeals/`);
+
+      // Log payload with attachment details
+      const logPayload = {
+        ...payload,
+        attachment: payload.attachment
+          ? typeof payload.attachment === 'string'
+            ? `[JSON STRING - ${payload.attachment.length} chars]`
+            : payload.attachment
+          : payload.attachment,
+      };
+      console.log('📦 Full Payload:', JSON.stringify(logPayload, null, 2));
 
       const headers = await getAuthHeaders();
+      console.log('🔑 Headers prepared:', {
+        ...headers,
+        Authorization: headers.Authorization ? '[TOKEN PRESENT]' : '[NO TOKEN]',
+      });
+
+      console.log('📡 Making API request...');
       const response = await fetch(`${BASE_URL}/api/appeals/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
 
-      console.log('API Response', response);
+      console.log('📨 API Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
 
       if (!response.ok) {
         // Handle different HTTP error status codes
@@ -465,32 +594,63 @@ const AppealScreen = () => {
         // Try to get error details from response body
         try {
           const errorData = await response.json();
+          console.log('❌ API Error Data:', errorData);
+
           if (errorData.message) {
             errorMessage = errorData.message;
+            console.log(
+              '📝 Using error message from response:',
+              errorData.message,
+            );
           } else if (errorData.error) {
             errorMessage = errorData.error;
+            console.log('📝 Using error from response:', errorData.error);
           }
-          console.log('API Error Data:', errorData);
+
+          // Log specific attachment-related errors
+          if (errorData.errors) {
+            console.log('🔍 Detailed errors:', errorData.errors);
+            if (errorData.errors.attachment) {
+              console.log('📎 Attachment error:', errorData.errors.attachment);
+            }
+          }
         } catch (jsonError) {
-          console.log('Could not parse error response as JSON');
+          console.log('⚠️ Could not parse error response as JSON:', jsonError);
+
+          // Try to get response text
+          try {
+            const responseText = await response.text();
+            console.log('📄 Raw error response:', responseText);
+          } catch (textError) {
+            console.log('❌ Could not get response text:', textError);
+          }
         }
 
+        console.log('🚨 Throwing error:', errorMessage);
         throw new Error(errorMessage);
       }
 
       const responseData = await response.json();
-      console.log('API Success Response:', responseData);
+      console.log('✅ API Success Response:', responseData);
 
       // Return standardized response format
-      return {
+      const result = {
         success: true,
         appealId:
           responseData.appealId || responseData.id || `APL-${Date.now()}`,
         message: responseData.message || 'Appeal submitted successfully',
         data: responseData,
       };
+
+      console.log('🎉 Returning success result:', result);
+      return result;
     } catch (error) {
-      console.error('API Submission Error:', error);
+      console.error('💥 API Submission Error:', error);
+      console.error('🔍 Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+      });
 
       // Handle network errors
       if (error instanceof TypeError && error.message.includes('Network')) {
@@ -510,24 +670,50 @@ const AppealScreen = () => {
   };
 
   const handleSubmitAppeal = async () => {
+    console.log('🎯 Starting appeal submission process...');
+
     if (!subject.trim() || !description.trim() || !category) {
+      console.log('❌ Validation failed: Missing required fields');
       Alert.alert('Missing Information', 'Please fill in all required fields.');
       return;
     }
 
     // Check file size limit (10MB)
     if (uploadedFile && uploadedFile.size > 10 * 1024 * 1024) {
+      console.log('❌ Validation failed: File too large', {
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileSizeMB: (uploadedFile.size / (1024 * 1024)).toFixed(2),
+      });
       Alert.alert('File Too Large', 'Please select a file smaller than 10MB.');
       return;
     }
 
+    console.log('✅ Validation passed, proceeding with submission');
+    console.log('📋 Form data:', {
+      subject: subject.trim(),
+      description: description.trim().substring(0, 50) + '...',
+      category,
+      hasAttachment: !!uploadedFile,
+      attachmentType: uploadedFile?.type,
+      attachmentSize: uploadedFile?.size,
+    });
+
     setIsSubmitting(true);
 
     try {
+      console.log('🔧 Creating payload...');
       const payload = await createApiPayload();
+
+      console.log('📡 Submitting to API...');
       const response = await submitAppealToAPI(payload);
 
       if (response.success) {
+        console.log('🎉 Appeal submitted successfully!', {
+          appealId: response.appealId,
+          message: response.message,
+        });
+
         Alert.alert(
           'Appeal Submitted Successfully!',
           `Thank you for your submission. Your appeal ID is: ${response.appealId}. We will review your appeal and get back to you within 2-3 business days.`,
@@ -535,6 +721,9 @@ const AppealScreen = () => {
             {
               text: 'OK',
               onPress: () => {
+                console.log(
+                  '🧹 Clearing form data after successful submission',
+                );
                 setSubject('');
                 setDescription('');
                 setCategory('');
@@ -548,10 +737,25 @@ const AppealScreen = () => {
           ],
         );
       } else {
+        console.log('❌ API returned unsuccessful response:', response);
         throw new Error(response.message || 'Failed to submit appeal');
       }
     } catch (error) {
-      console.error('Error submitting appeal:', error);
+      console.error('💥 Error in handleSubmitAppeal:', error);
+      console.error('🔍 Error analysis:', {
+        isError: error instanceof Error,
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        hasAttachment: !!uploadedFile,
+        attachmentDetails: uploadedFile
+          ? {
+              type: uploadedFile.type,
+              size: uploadedFile.size,
+              mimeType: uploadedFile.mimeType,
+              hasBase64: !!uploadedFile.base64,
+            }
+          : null,
+      });
 
       let errorMessage = 'Failed to submit appeal. Please try again.';
       if (error instanceof Error) {
@@ -560,6 +764,7 @@ const AppealScreen = () => {
 
       Alert.alert('Submission Failed', errorMessage);
     } finally {
+      console.log('🏁 Setting isSubmitting to false');
       setIsSubmitting(false);
     }
   };
