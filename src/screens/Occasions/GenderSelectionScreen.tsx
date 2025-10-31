@@ -79,6 +79,12 @@ export const GenderSelectionScreen = () => {
           undefined, // All genders
         ),
       ]);
+      console.log(
+        'maleResponse, femaleRespose, allResponse ',
+        maleResponse,
+        femaleResponse,
+        allResponse,
+      );
 
       setGenderCounts({
         male: maleResponse.data.length,

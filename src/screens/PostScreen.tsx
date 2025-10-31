@@ -311,7 +311,7 @@ const PostScreen = () => {
 
       const data: APIResponse = await response.json();
 
-      console.log('post data: ', data);
+      console.log('post data: ', headers, data);
 
       return data.data.map((post: any) => {
         // Calculate likes count from likes array

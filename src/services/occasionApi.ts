@@ -136,14 +136,7 @@ static async fetchOccasions(
     }
 
     // Build query parameters
-    const params = new URLSearchParams({
-      occasionType,
-    });
-
-    // Add category if provided (may be null when no categories exist)
-    if (categoryId) {
-      params.append('category', categoryId);
-    }
+    const params = new URLSearchParams({});
 
     // Add optional filters if provided
     if (gotra) params.append('gotra', gotra);
@@ -156,6 +149,8 @@ static async fetchOccasions(
       method: 'GET',
       headers,
     });
+
+    console.log('response', url, response);
 
     if (!response.ok) {
       if (response.status === 401) {
