@@ -74,49 +74,21 @@ interface CommentsResponse {
   comments: ApiComment[];
 }
 
-interface Like {
-  _id: string;
-  post: string;
-  user: Author;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-interface Comment {
-  _id: string;
-  post: string;
-  author: Author;
-  content: string;
-  parentComment: string | null;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-interface DebugInfo {
-  likesInArray: number;
-  actualLikeCount: number;
-  commentsInArray: number;
-  actualCommentCount: number;
-}
-
 interface Post {
   _id: string;
   title: string;
   content: string;
-  imageUrl: string;
+  imageUrl: string | null;
   author: Author;
   community: Community;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   __v: number;
-  comments: Comment[];
-  likes: Like[];
-  debug: DebugInfo;
-  // Additional property for local comment data management
+  // Additional local properties
+  likes?: number;
+  comments?: number;
+  isLiked?: boolean;
   commentsData?: ApiComment[];
 }
 
@@ -141,12 +113,10 @@ const PostScreen = () => {
     title: '',
     content: '',
     imageUrl: '',
-    selectedImage: null as string | null,
+    selectedImage: '',
   });
   const [newComment, setNewComment] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const [imageUrl, setImageUrl] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
@@ -297,23 +267,6 @@ const PostScreen = () => {
     </Svg>
   );
 
-  const LinkIcon = ({size = 20, color = '#666'}) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-      />
-      <Path
-        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-      />
-    </Svg>
-  );
-
   const ReplyIcon = ({size = 16, color = '#3b82f6'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -342,7 +295,8 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const communityId = await getCommunityId();
-      console.log('Fetching posts for community:', communityId);
+      const currentUserId = user?._id;
+
       const response = await fetch(
         `${BASE_URL}/api/posts/community/${communityId}`,
         {
@@ -350,7 +304,6 @@ const PostScreen = () => {
           headers,
         },
       );
-      console.log('post response', headers, response);
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
@@ -358,9 +311,69 @@ const PostScreen = () => {
 
       const data: APIResponse = await response.json();
 
-      return data.data.map(post => ({
-        ...post,
-      }));
+      console.log('post data: ', data);
+
+      return data.data.map((post: any) => {
+        // Calculate likes count from likes array
+        const likesCount = post.likes?.length || 0;
+
+        // Check if current user has liked this post
+        const isLiked =
+          post.likes?.some((like: any) => like.user?._id === currentUserId) ||
+          false;
+
+        // Transform comments to ApiComment format and organize replies
+        // Note: post.comments is a flat array from API containing ALL comments (including replies)
+        const totalCommentsFromAPI = post.comments?.length || 0; // Total count from flat API array
+
+        const allComments = (post.comments || []).map((comment: any) => ({
+          _id: comment._id,
+          post: comment.post,
+          author: {
+            _id: comment.author._id,
+            firstName: comment.author.firstName,
+            lastName: comment.author.lastName,
+          },
+          content: comment.content,
+          parentComment: comment.parentComment,
+          isDeleted: comment.isDeleted,
+          createdAt: comment.createdAt,
+          updatedAt: comment.updatedAt,
+          __v: comment.__v || 0,
+          replies: [],
+        }));
+
+        // Organize comments with replies structure
+        const transformedComments: ApiComment[] = [];
+        const commentMap = new Map<string, ApiComment>();
+
+        // First pass: create map of all comments
+        allComments.forEach((comment: ApiComment) => {
+          commentMap.set(comment._id, comment);
+        });
+
+        // Second pass: organize parent-child relationships
+        allComments.forEach((comment: ApiComment) => {
+          if (comment.parentComment) {
+            // This is a reply, add to parent's replies
+            const parent = commentMap.get(comment.parentComment);
+            if (parent) {
+              parent.replies.push(comment);
+            }
+          } else {
+            // This is a top-level comment
+            transformedComments.push(comment);
+          }
+        });
+
+        return {
+          ...post,
+          likes: likesCount,
+          comments: totalCommentsFromAPI,
+          isLiked: isLiked,
+          commentsData: transformedComments,
+        };
+      });
     } catch (error) {
       console.error('Error fetching posts:', error);
       throw error;
@@ -375,18 +388,16 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
+      const response = await fetch(`${BASE_URL}/api/posts/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...postData,
+          community: COMMUNITY_ID,
+        }),
+      });
 
-      const response = await fetch(
-        `${BASE_URL}/api/posts/community/${COMMUNITY_ID}`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            ...postData,
-            community: COMMUNITY_ID,
-          }),
-        },
-      );
+      console.log('responseArvind', response);
 
       if (!response.ok) {
         throw new Error('Failed to create post');
@@ -414,13 +425,75 @@ const PostScreen = () => {
 
       const data = await response.json();
 
-      console.log('dataaaaaaaaa', postId, data);
+      console.log('dataaaaaaaaa', data);
 
       return data;
     } catch (error) {
       console.error('Error liking post:', error);
       throw error;
     }
+  };
+
+  // Helper function to organize comments with replies
+  const organizeCommentsWithReplies = (comments: any[]): ApiComment[] => {
+    console.log(
+      '🔧 organizeCommentsWithReplies called with',
+      comments.length,
+      'comments',
+    );
+
+    if (!comments || comments.length === 0) {
+      console.log('⚠️ No comments to organize, returning empty array');
+      return [];
+    }
+
+    const allComments = comments.map((comment: any) => ({
+      _id: comment._id,
+      post: comment.post,
+      author: {
+        _id: comment.author._id,
+        firstName: comment.author.firstName,
+        lastName: comment.author.lastName,
+      },
+      content: comment.content,
+      parentComment: comment.parentComment,
+      isDeleted: comment.isDeleted,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      __v: comment.__v || 0,
+      replies: [],
+    }));
+
+    const transformedComments: ApiComment[] = [];
+    const commentMap = new Map<string, ApiComment>();
+
+    // First pass: create map of all comments
+    allComments.forEach((comment: ApiComment) => {
+      commentMap.set(comment._id, comment);
+    });
+
+    // Second pass: organize parent-child relationships
+    allComments.forEach((comment: ApiComment) => {
+      if (comment.parentComment) {
+        // This is a reply, add to parent's replies
+        const parent = commentMap.get(comment.parentComment);
+        if (parent) {
+          parent.replies.push(comment);
+        }
+      } else {
+        // This is a top-level comment
+        transformedComments.push(comment);
+      }
+    });
+
+    console.log(
+      '✅ Organized:',
+      transformedComments.length,
+      'top-level,',
+      allComments.length - transformedComments.length,
+      'replies',
+    );
+    return transformedComments;
   };
 
   // Comment API Functions
@@ -441,190 +514,33 @@ const PostScreen = () => {
       const responseText = await response.text();
       console.log('Raw response:', responseText);
 
-      let data: CommentsResponse;
+      let data: {success: boolean; data: CommentsResponse};
       try {
         data = JSON.parse(responseText);
+        console.log('comments dataaaaaaaaa', data);
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
         console.error('Response text:', responseText);
         throw new Error('Invalid response format');
       }
+      console.log('comments dataaaaaaaaa after', data);
+      const rawComments = data?.data?.comments || [];
+      console.log('📋 Raw comments from API:', rawComments.length, 'comments');
 
-      return data.comments || [];
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      throw error;
-    }
-  };
-
-  const postComment = async (
-    postId: string,
-    content: string,
-    parentComment?: string,
-  ) => {
-    try {
-      const headers = await getAuthHeaders();
-      const body: any = {content};
-      if (parentComment) {
-        body.parentComment = parentComment;
-      }
-
-      const response = await fetch(`${BASE_URL}/api/posts/comments/${postId}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      console.log('responseArvind', response);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Post comment API Error:', errorText);
-        throw new Error('Failed to post comment');
-      }
-
-      const responseText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Post comment JSON Parse Error:', parseError);
-        // If it's just a success response without JSON, that's ok
-        data = {success: true};
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error posting comment:', error);
-      throw error;
-    }
-  };
-
-  const deleteComment = async (commentId: string) => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(
-        `${BASE_URL}/api/posts/comments/${commentId}`,
-        {
-          method: 'DELETE',
-          headers,
-        },
+      // Organize comments with reply structure
+      const organized = organizeCommentsWithReplies(rawComments);
+      console.log(
+        '📦 Organized comments:',
+        organized.length,
+        'top-level comments',
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to delete comment');
-      }
-
-      return true;
+      return rawComments;
     } catch (error) {
-      console.error('Error deleting comment:', error);
-      throw error;
+      console.error('❌ Error fetching comments:', error);
+      // Return empty array instead of throwing, so UI doesn't break
+      return [];
     }
-  };
-
-  // Helper Functions
-  const formatTimeAgo = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60),
-    );
-
-    if (diffInMinutes < 1) return t('Just now') || 'Just now';
-    if (diffInMinutes < 60)
-      return `${diffInMinutes} ${t('minutes ago') || 'minutes ago'}`;
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24)
-      return `${diffInHours} ${t('hours ago') || 'hours ago'}`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays} ${t('days ago') || 'days ago'}`;
-
-    return date.toLocaleDateString();
-  };
-
-  const getAuthorAvatar = (author: Author | CommentAuthor): string => {
-    let fullName = '';
-    if (author?.firstName && author?.lastName) {
-      fullName = `${author?.firstName} ${author?.lastName}`;
-    }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      fullName,
-    )}&background=2a2a2a&color=fff&size=100`;
-  };
-
-  // Main Functions
-  useEffect(() => {
-    loadPosts();
-  }, []);
-
-  const loadPosts = async () => {
-    try {
-      setLoading(true);
-      const fetchedPosts = await fetchPosts();
-      setPosts(fetchedPosts);
-      setFilteredPosts(fetchedPosts);
-    } catch (error) {
-      Alert.alert(
-        t('Error') || 'Error',
-        t('Failed to load posts. Please try again.') ||
-          'Failed to load posts. Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadPosts();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleLike = async (post: Post) => {
-    try {
-      await likePost(post._id);
-      // Refresh posts to get updated likes data
-      await fetchPosts();
-    } catch (error) {
-      Alert.alert(
-        t('Error') || 'Error',
-        t('Failed to like post. Please try again.') ||
-          'Failed to like post. Please try again.',
-      );
-    }
-  };
-
-  const handleDownload = (imageUrl: string | null, postTitle: string) => {
-    if (!imageUrl) {
-      Alert.alert(
-        t('Error') || 'Error',
-        t('No image to download') || 'No image to download',
-      );
-      return;
-    }
-
-    Alert.alert(
-      t('Download Image') || 'Download Image',
-      `${t('Download')} "${postTitle}" ${t('image?') || 'image?'}`,
-      [
-        {text: t('Cancel') || 'Cancel', style: 'cancel'},
-        {
-          text: t('Download') || 'Download',
-          onPress: () => {
-            Alert.alert(
-              t('Success') || 'Success',
-              t('Image downloaded successfully!') ||
-                'Image downloaded successfully!',
-            );
-          },
-        },
-      ],
-    );
   };
 
   const openPostDetail = (post: Post) => {
@@ -706,23 +622,216 @@ const PostScreen = () => {
     </Modal>
   );
 
+  const postComment = async (
+    postId: string,
+    content: string,
+    parentComment?: string,
+  ) => {
+    try {
+      const headers = await getAuthHeaders();
+      const body: any = {content};
+      if (parentComment) {
+        body.parentComment = parentComment;
+      }
+
+      const response = await fetch(`${BASE_URL}/api/posts/comments/${postId}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      console.log('responseArvind', response);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Post comment API Error:', errorText);
+        throw new Error('Failed to post comment');
+      }
+
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Post comment JSON Parse Error:', parseError);
+        // If it's just a success response without JSON, that's ok
+        data = {success: true};
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      throw error;
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${BASE_URL}/api/posts/comments/${commentId}`,
+        {
+          method: 'DELETE',
+          headers,
+        },
+      );
+      console.log('delete comment response: ', headers, response);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  };
+
+  // Helper Functions
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60),
+    );
+
+    if (diffInMinutes < 1) return t('Just now') || 'Just now';
+    if (diffInMinutes < 60)
+      return `${diffInMinutes} ${t('minutes ago') || 'minutes ago'}`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24)
+      return `${diffInHours} ${t('hours ago') || 'hours ago'}`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} ${t('days ago') || 'days ago'}`;
+
+    return date.toLocaleDateString();
+  };
+
+  const getAuthorAvatar = (author: Author | CommentAuthor): string => {
+    const fullName = `${author.firstName} ${author.lastName}`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      fullName,
+    )}&background=2a2a2a&color=fff&size=100`;
+  };
+
+  // Main Functions
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      const fetchedPosts = await fetchPosts();
+      setPosts(fetchedPosts);
+      setFilteredPosts(fetchedPosts);
+    } catch (error) {
+      Alert.alert(
+        t('Error') || 'Error',
+        t('Failed to load posts. Please try again.') ||
+          'Failed to load posts. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadPosts();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleLike = async (post: Post) => {
+    try {
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p._id === post._id
+            ? {
+                ...p,
+                isLiked: !p.isLiked,
+                likes: (p.likes || 0) + (p.isLiked ? -1 : 1),
+              }
+            : p,
+        ),
+      );
+
+      await likePost(post._id);
+    } catch (error) {
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p._id === post._id
+            ? {
+                ...p,
+                isLiked: !p.isLiked,
+                likes: (p.likes || 0) + (p.isLiked ? 1 : -1),
+              }
+            : p,
+        ),
+      );
+      Alert.alert(
+        t('Error') || 'Error',
+        t('Failed to like post. Please try again.') ||
+          'Failed to like post. Please try again.',
+      );
+    }
+  };
+
+  const handleDownload = (imageUrl: string | null, postTitle: string) => {
+    if (!imageUrl) {
+      Alert.alert(
+        t('Error') || 'Error',
+        t('No image to download') || 'No image to download',
+      );
+      return;
+    }
+
+    Alert.alert(
+      t('Download Image') || 'Download Image',
+      `${t('Download')} "${postTitle}" ${t('image?') || 'image?'}`,
+      [
+        {text: t('Cancel') || 'Cancel', style: 'cancel'},
+        {
+          text: t('Download') || 'Download',
+          onPress: () => {
+            Alert.alert(
+              t('Success') || 'Success',
+              t('Image downloaded successfully!') ||
+                'Image downloaded successfully!',
+            );
+          },
+        },
+      ],
+    );
+  };
+
   const openComments = async (post: Post) => {
-    console.log('Opening comments for post:', post);
+    console.log('Opening comments for post:', post._id);
+    console.log('Post commentsData:', post.commentsData);
+
+    // Show modal immediately with existing comments
     setSelectedPost({...post});
     setShowCommentsModal(true);
 
-    // If the post already has comments, show them immediately
-    if (post.comments && post.comments.length > 0) {
+    // If we already have comments, show them immediately
+    if (post.commentsData && post.commentsData.length > 0) {
+      console.log('Using existing comments:', post.commentsData.length);
       setLoadingComments(false);
       return;
     }
 
-    // Otherwise, fetch detailed comments with replies
+    // Otherwise fetch fresh comments (shouldn't happen since we load them in fetchPosts)
     try {
       setLoadingComments(true);
-      console.log('Fetching detailed comments for post ID:', post._id);
+      console.log('Fetching comments for post ID:', post._id);
       const comments = await fetchComments(post._id);
-      console.log('Fetched detailed comments:', comments);
+      console.log('Fetched comments:', comments);
 
       setSelectedPost(prev => ({
         ...prev!,
@@ -738,10 +847,9 @@ const PostScreen = () => {
       console.error('Error in openComments:', error);
       Alert.alert(
         t('Error') || 'Error',
-        t('Failed to load detailed comments. Please try again.') ||
-          'Failed to load detailed comments. Please try again.',
+        t('Failed to load comments. Please try again.') ||
+          'Failed to load comments. Please try again.',
       );
-      // Don't close the modal, just show the error state
     } finally {
       setLoadingComments(false);
     }
@@ -772,8 +880,7 @@ const PostScreen = () => {
 
       await loadPosts();
 
-      setNewPost({title: '', content: '', imageUrl: '', selectedImage: null});
-      setImageUrl('');
+      setNewPost({title: '', content: '', imageUrl: '', selectedImage: ''});
       setShowPostModal(false);
       Alert.alert(
         t('Success') || 'Success',
@@ -790,141 +897,105 @@ const PostScreen = () => {
     }
   };
 
-  const requestCameraPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: t('Camera Permission') || 'Camera Permission',
-            message:
-              t('This app needs access to camera to take photos.') ||
-              'This app needs access to camera to take photos.',
-            buttonNeutral: t('Ask Me Later') || 'Ask Me Later',
-            buttonNegative: t('Cancel') || 'Cancel',
-            buttonPositive: t('OK') || 'OK',
-          },
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
-    }
-    return true;
-  };
-
   const handleImageSelection = (type: 'camera' | 'gallery') => {
     setShowImagePicker(false);
 
-    const options = {
-      mediaType: 'photo' as MediaType,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-      quality: 0.8 as any, // Type assertion for quality
-    };
-
-    const handleImageResponse = async (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        if (response.errorMessage) {
-          Alert.alert(t('Error') || 'Error', response.errorMessage);
-        }
-        return;
-      }
-
-      if (response.assets && response.assets[0]) {
-        const asset = response.assets[0];
-        const imageUri = asset.uri;
-
-        if (imageUri) {
-          setUploadingImage(true);
-
-          try {
-            const result = await uploadImageToCloudinary(
-              imageUri,
-              asset.fileName || `post_${Date.now()}.jpg`,
-            );
-
-            if (result.success && result.url) {
-              setNewPost({...newPost, selectedImage: result.url});
-              Alert.alert(
-                t('Success') || 'Success',
-                t('Image uploaded successfully!') ||
-                  'Image uploaded successfully!',
-              );
-            } else {
-              Alert.alert(
-                t('Upload Failed') || 'Upload Failed',
-                result.error ||
-                  t('Failed to upload image') ||
-                  'Failed to upload image',
-              );
-            }
-          } catch (error) {
-            console.error('Upload error:', error);
-            Alert.alert(
-              t('Error') || 'Error',
-              t('Failed to upload image. Please try again.') ||
-                'Failed to upload image. Please try again.',
-            );
-          } finally {
-            setUploadingImage(false);
-          }
-        }
-      }
-    };
-
     if (type === 'camera') {
-      requestCameraPermission().then(hasPermission => {
-        if (hasPermission) {
-          launchCamera(options, handleImageResponse);
-        } else {
-          Alert.alert(
-            t('Permission Required') || 'Permission Required',
-            t('Camera permission is required to take photos.') ||
-              'Camera permission is required to take photos.',
-          );
-        }
-      });
-    } else if (type === 'gallery') {
-      launchImageLibrary(options, handleImageResponse);
-    }
-  };
-
-  const handleUrlInput = () => {
-    setShowImagePicker(false);
-    setShowUrlInput(true);
-  };
-
-  const handleUrlSubmit = () => {
-    if (imageUrl.trim()) {
-      setNewPost({...newPost, selectedImage: imageUrl.trim()});
-      setImageUrl('');
-      setShowUrlInput(false);
-    } else {
       Alert.alert(
-        t('Invalid URL') || 'Invalid URL',
-        t('Please enter a valid image URL.') ||
-          'Please enter a valid image URL.',
+        t('Camera') || 'Camera',
+        t('Camera feature would open here. For demo, using a sample image.') ||
+          'Camera feature would open here. For demo, using a sample image.',
       );
+      const sampleImage = 'https://picsum.photos/800/600?random=1';
+      setNewPost({...newPost, selectedImage: sampleImage});
+    } else if (type === 'gallery') {
+      Alert.alert(
+        t('Gallery') || 'Gallery',
+        t('Gallery would open here. For demo, using a sample image.') ||
+          'Gallery would open here. For demo, using a sample image.',
+      );
+      const sampleImage = 'https://picsum.photos/800/600?random=2';
+      setNewPost({...newPost, selectedImage: sampleImage});
     }
   };
 
   const addComment = async (comment: string) => {
     if (!comment.trim() || !selectedPost) return;
 
+    console.log('🔄 Adding comment:', {
+      comment: comment.trim(),
+      postId: selectedPost._id,
+      isReply: !!replyingTo,
+      replyingTo: replyingTo,
+      currentCommentsCount: selectedPost.commentsData?.length || 0,
+    });
+
     try {
       setPostingComment(true);
-      await postComment(selectedPost._id, comment, replyingTo?.id || undefined);
 
+      // Make API call to post comment
+      console.log('📡 Making API call to post comment...');
+      const postResponse = await postComment(
+        selectedPost._id,
+        comment,
+        replyingTo?.id || undefined,
+      );
+      console.log('✅ Comment posted successfully to API', postResponse);
+
+      // Small delay to ensure server has processed the comment
+      console.log('⏳ Waiting for server to process...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Fetch fresh comments from API to get the real comment with proper ID
+      console.log('🔄 Fetching fresh comments after posting...');
       const updatedComments = await fetchComments(selectedPost._id);
+      console.log(
+        '📥 Received fresh comments:',
+        updatedComments?.length || 0,
+        updatedComments,
+      );
 
+      // Verify we got valid comments back
+      const currentCount = selectedPost.commentsData?.length || 0;
+      if (!updatedComments || !Array.isArray(updatedComments)) {
+        console.warn(
+          '⚠️ fetchComments returned invalid data, keeping existing comments',
+        );
+        // Keep existing comments visible
+        setPostingComment(false);
+        setNewComment('');
+        setReplyingTo(null);
+        return;
+      }
+
+      // Additional safety: if we got fewer comments than before, something went wrong
+      // (unless currentCount was 0, in which case this is the first comment)
+      if (updatedComments.length === 0 && currentCount > 0) {
+        console.error(
+          '⚠️ Received 0 comments but we had',
+          currentCount,
+          'before. Server may not have processed yet.',
+        );
+        Alert.alert(
+          t('Warning') || 'Warning',
+          t(
+            'Comment posted but may take a moment to appear. Please refresh.',
+          ) ||
+            'Comment posted but may take a moment to appear. Please refresh.',
+        );
+        setPostingComment(false);
+        setNewComment('');
+        setReplyingTo(null);
+        return;
+      }
+
+      // Update selectedPost with fresh comments data
       setSelectedPost(prev => ({
         ...prev!,
         commentsData: updatedComments,
       }));
 
+      // Update posts array with fresh comments data
       setPosts(prevPosts =>
         prevPosts.map(post =>
           post._id === selectedPost._id
@@ -936,8 +1007,11 @@ const PostScreen = () => {
         ),
       );
 
+      console.log('🎉 Comment added successfully, clearing input');
+      setNewComment('');
       setReplyingTo(null);
     } catch (error) {
+      console.error('❌ Error adding comment:', error);
       Alert.alert(
         t('Error') || 'Error',
         t('Failed to post comment') || 'Failed to post comment',
@@ -961,15 +1035,38 @@ const PostScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('🗑️ Deleting comment:', commentId);
               await deleteComment(commentId);
+              console.log('✅ Comment deleted successfully from API');
 
+              // Wait for server to process the deletion
+              console.log('⏳ Waiting for server to process deletion...');
+              await new Promise(resolve => setTimeout(resolve, 800));
+
+              // Fetch fresh comments after deletion
+              console.log('🔄 Fetching fresh comments after deletion...');
               const updatedComments = await fetchComments(selectedPost._id);
+              console.log(
+                '📥 Received fresh comments:',
+                updatedComments?.length || 0,
+                updatedComments,
+              );
 
+              // Verify we got a valid response (can be empty array if all deleted)
+              if (updatedComments === null || updatedComments === undefined) {
+                console.warn(
+                  '⚠️ fetchComments returned null/undefined after deletion',
+                );
+                return;
+              }
+
+              // Update selectedPost with fresh comments data
               setSelectedPost(prev => ({
                 ...prev!,
                 commentsData: updatedComments,
               }));
 
+              // Update posts array with fresh comments data
               setPosts(prevPosts =>
                 prevPosts.map(post =>
                   post._id === selectedPost._id
@@ -980,7 +1077,10 @@ const PostScreen = () => {
                     : post,
                 ),
               );
+
+              console.log('🎉 Comment deleted and data refreshed successfully');
             } catch (error) {
+              console.error('❌ Error deleting comment:', error);
               Alert.alert(
                 t('Error') || 'Error',
                 t('Failed to delete comment') || 'Failed to delete comment',
@@ -992,131 +1092,128 @@ const PostScreen = () => {
     );
   };
 
-  const renderComment = (comment: ApiComment, isReply = false) => (
-    <View
-      key={comment._id}
-      style={[styles.commentItem, isReply && styles.replyItem]}>
-      <View style={styles.commentHeader}>
-        <Image
-          source={{uri: getAuthorAvatar(comment.author)}}
-          style={styles.commentAvatar}
-        />
-        <View style={styles.commentInfo}>
-          <Text style={styles.commentAuthor}>
-            {`${comment.author.firstName} ${comment.author.lastName}`.trim()}
-          </Text>
-          <Text style={styles.commentTime}>
-            {formatTimeAgo(comment.createdAt)}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.commentText}>{comment.content}</Text>
-
-      <View style={styles.commentActions}>
-        {!isReply && (
-          <TouchableOpacity
-            style={styles.replyButton}
-            onPress={() =>
-              setReplyingTo({
-                id: comment._id,
-                author: `${comment.author.firstName} ${comment.author.lastName}`,
-              })
-            }>
-            <Text style={styles.replyButtonText}>{t('Reply') || 'Reply'}</Text>
-          </TouchableOpacity>
-        )}
-
-        {user && user._id === comment.author._id && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteComment(comment._id)}>
-            <Text style={styles.deleteButtonText}>
-              {t('Delete') || 'Delete'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {comment.replies && comment.replies.length > 0 && (
-        <View style={styles.repliesContainer}>
-          {comment.replies.map(reply => renderComment(reply, true))}
-        </View>
-      )}
-    </View>
-  );
-
-  const renderPost = ({item}: {item: Post}) => {
-    // Check if current user has liked this post
-    const isLiked =
-      item.likes?.some(like => like.user?._id === user?._id) || false;
-    const likesCount = item.likes?.length || 0;
-    const commentsCount = item.comments?.length || 0;
+  const renderComment = (comment: ApiComment) => {
+    // Check if this is a reply by looking at parentComment
+    const isReply = !!comment.parentComment;
 
     return (
-      <View style={styles.postCard}>
-        <View style={styles.postHeader}>
+      <View
+        key={comment._id}
+        style={[styles.commentItem, isReply && styles.replyItem]}>
+        <View style={styles.commentHeader}>
           <Image
-            source={{uri: getAuthorAvatar(item.author)}}
-            style={styles.authorAvatar}
+            source={{uri: getAuthorAvatar(comment.author)}}
+            style={styles.commentAvatar}
           />
-          <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>
-              {`${item.author.firstName} ${item.author.lastName}`}
+          <View style={styles.commentInfo}>
+            <Text style={styles.commentAuthor}>
+              {`${comment.author.firstName} ${comment.author.lastName}`.trim()}
             </Text>
-            <Text style={styles.timestamp}>
-              {formatTimeAgo(item.createdAt)}
+            <Text style={styles.commentTime}>
+              {formatTimeAgo(comment.createdAt)}
             </Text>
-            <Text style={styles.communityName}>{item.community.name}</Text>
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => openPostDetail(item)}
-          activeOpacity={0.8}>
-          <Text style={styles.postTitle}>{item.title}</Text>
-          <View>
-            <Text style={styles.postContent} numberOfLines={3}>
-              {item.content}
-            </Text>
-            {item.content.length > 150 && (
-              <Text style={styles.readMoreText}>...read more</Text>
+        <Text style={styles.commentText}>{comment.content}</Text>
+
+        <View style={styles.commentActions}>
+          {!isReply && (
+            <TouchableOpacity
+              style={styles.replyButton}
+              onPress={() =>
+                setReplyingTo({
+                  id: comment._id,
+                  author: `${comment.author.firstName} ${comment.author.lastName}`,
+                })
+              }>
+              <Text style={styles.replyButtonText}>
+                {t('Reply') || 'Reply'}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {user &&
+            user._id === comment.author._id &&
+            (user.role === 'admin' || user.role === 'superadmin') && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteComment(comment._id)}>
+                <Text style={styles.deleteButtonText}>
+                  {t('Delete') || 'Delete'}
+                </Text>
+              </TouchableOpacity>
             )}
-          </View>
-        </TouchableOpacity>
-
-        {item.imageUrl && (
-          <Image
-            source={{uri: item.imageUrl}}
-            style={styles.postImage}
-            resizeMode="contain"
-          />
-        )}
-
-        <View style={styles.postActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleLike(item)}>
-            <LikeIcon
-              size={20}
-              color={isLiked ? '#3b82f6' : '#666'}
-              filled={isLiked}
-            />
-            <Text style={[styles.actionText, isLiked && styles.likedText]}>
-              {likesCount}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => openComments(item)}>
-            <CommentIcon size={20} color="#666" />
-            <Text style={styles.actionText}>{commentsCount}</Text>
-          </TouchableOpacity>
         </View>
+
+        {comment.replies && comment.replies.length > 0 && (
+          <View style={styles.repliesContainer}>
+            {comment.replies.map(reply => renderComment(reply))}
+          </View>
+        )}
       </View>
     );
   };
+
+  const renderPost = ({item}: {item: Post}) => (
+    <View style={styles.postCard}>
+      <View style={styles.postHeader}>
+        <Image
+          source={{uri: getAuthorAvatar(item.author)}}
+          style={styles.authorAvatar}
+        />
+        <View style={styles.authorInfo}>
+          <Text style={styles.authorName}>
+            {`${item.author.firstName} ${item.author.lastName}`}
+          </Text>
+          <Text style={styles.timestamp}>{formatTimeAgo(item.createdAt)}</Text>
+          <Text style={styles.communityName}>{item.community.name}</Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPress={() => openPostDetail(item)}
+        activeOpacity={0.8}>
+        <Text style={styles.postTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.postContent} numberOfLines={3}>
+          {item.content}
+        </Text>
+      </TouchableOpacity>
+
+      {item.imageUrl && (
+        <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+      )}
+
+      <View style={styles.postActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleLike(item)}>
+          <LikeIcon
+            size={20}
+            color={item.isLiked ? '#3b82f6' : '#666'}
+            filled={item.isLiked}
+          />
+          <Text style={[styles.actionText, item.isLiked && styles.likedText]}>
+            {item.likes || 0}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => openComments(item)}>
+          <CommentIcon size={20} color="#666" />
+          <Text style={styles.actionText}>
+            {item.commentsData?.length ||
+              (Array.isArray(item.comments)
+                ? item.comments.length
+                : item.comments) ||
+              0}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   const renderCreatePostModal = () => (
     <Modal
@@ -1144,9 +1241,7 @@ const PostScreen = () => {
                 style={styles.titleInput}
                 placeholder={t('Enter post title...') || 'Enter post title...'}
                 value={newPost.title}
-                onChangeText={(text: any) =>
-                  setNewPost({...newPost, title: text})
-                }
+                onChangeText={text => setNewPost({...newPost, title: text})}
                 multiline
               />
             </View>
@@ -1161,9 +1256,7 @@ const PostScreen = () => {
                   t("What's on your mind?") || "What's on your mind?"
                 }
                 value={newPost.content}
-                onChangeText={(text: any) =>
-                  setNewPost({...newPost, content: text})
-                }
+                onChangeText={text => setNewPost({...newPost, content: text})}
                 multiline
                 textAlignVertical="top"
               />
@@ -1175,21 +1268,11 @@ const PostScreen = () => {
               </Text>
               <View style={styles.imageOptions}>
                 <TouchableOpacity
-                  style={[
-                    styles.imageOption,
-                    uploadingImage && styles.imageOptionDisabled,
-                  ]}
-                  onPress={() => !uploadingImage && setShowImagePicker(true)}
-                  disabled={uploadingImage}>
-                  {uploadingImage ? (
-                    <ActivityIndicator size="small" color="#666" />
-                  ) : (
-                    <CameraIcon size={24} color="#666" />
-                  )}
+                  style={styles.imageOption}
+                  onPress={() => setShowImagePicker(true)}>
+                  <CameraIcon size={24} color="#666" />
                   <Text style={styles.imageOptionText}>
-                    {uploadingImage
-                      ? t('Uploading...') || 'Uploading...'
-                      : t('Camera/Gallery') || 'Camera/Gallery'}
+                    {t('Camera/Gallery') || 'Camera/Gallery'}
                   </Text>
                 </TouchableOpacity>
 
@@ -1199,10 +1282,9 @@ const PostScreen = () => {
                   style={styles.imageUrlInput}
                   placeholder={t('Paste image URL...') || 'Paste image URL...'}
                   value={newPost.imageUrl}
-                  onChangeText={(text: any) =>
+                  onChangeText={text =>
                     setNewPost({...newPost, imageUrl: text})
                   }
-                  editable={!uploadingImage}
                 />
               </View>
             </View>
@@ -1219,7 +1301,7 @@ const PostScreen = () => {
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() =>
-                    setNewPost({...newPost, selectedImage: null, imageUrl: ''})
+                    setNewPost({...newPost, selectedImage: '', imageUrl: ''})
                   }>
                   <Text style={styles.removeImageText}>
                     {t('Remove Image') || 'Remove Image'}
@@ -1233,7 +1315,7 @@ const PostScreen = () => {
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={() => setShowPostModal(false)}
-              disabled={isCreatingPost || uploadingImage}>
+              disabled={isCreatingPost}>
               <Text style={styles.cancelButtonText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
@@ -1242,10 +1324,10 @@ const PostScreen = () => {
               style={[
                 styles.modalButton,
                 styles.postButton,
-                {opacity: isCreatingPost || uploadingImage ? 0.6 : 1},
+                {opacity: isCreatingPost ? 0.6 : 1},
               ]}
               onPress={handleCreatePost}
-              disabled={isCreatingPost || uploadingImage}>
+              disabled={isCreatingPost}>
               {isCreatingPost ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -1286,15 +1368,6 @@ const PostScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.imagePickerOption}
-              onPress={handleUrlInput}>
-              <LinkIcon size={24} color="#2a2a2a" />
-              <Text style={styles.imagePickerOptionText}>
-                {t('Paste Image URL') || 'Paste Image URL'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={styles.imagePickerCancel}
               onPress={() => setShowImagePicker(false)}>
               <Text style={styles.imagePickerCancelText}>
@@ -1304,161 +1377,109 @@ const PostScreen = () => {
           </View>
         </View>
       </Modal>
+    </Modal>
+  );
 
-      {/* URL Input Modal */}
+  const renderCommentsModal = () => {
+    return (
       <Modal
-        animationType="fade"
+        animationType="slide"
         transparent={true}
-        visible={showUrlInput}
-        onRequestClose={() => setShowUrlInput(false)}>
-        <View style={styles.imagePickerOverlay}>
-          <View style={styles.imagePickerModal}>
-            <Text style={styles.imagePickerTitle}>
-              {t('Enter Image URL') || 'Enter Image URL'}
-            </Text>
-
-            <TextInput
-              style={styles.urlInput}
-              placeholder={
-                t('Paste image URL here...') || 'Paste image URL here...'
-              }
-              value={imageUrl}
-              onChangeText={setImageUrl}
-              multiline={false}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-
-            <View style={styles.urlModalButtons}>
+        visible={showCommentsModal}
+        onRequestClose={() => {
+          setShowCommentsModal(false);
+          setReplyingTo(null);
+        }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.commentsModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t('Comments') || 'Comments'} (
+                {selectedPost?.commentsData?.length || 0})
+              </Text>
               <TouchableOpacity
-                style={[styles.imagePickerOption, styles.urlSubmitButton]}
-                onPress={handleUrlSubmit}>
-                <Text style={styles.imagePickerOptionText}>
-                  {t('Add Image') || 'Add Image'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.imagePickerCancel}
                 onPress={() => {
-                  setShowUrlInput(false);
-                  setImageUrl('');
+                  setShowCommentsModal(false);
+                  setReplyingTo(null);
                 }}>
-                <Text style={styles.imagePickerCancelText}>
-                  {t('Cancel') || 'Cancel'}
+                <CloseIcon size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.commentsContent}>
+              {loadingComments ? (
+                <View style={styles.loadingCommentsContainer}>
+                  <ActivityIndicator size="small" color="#2a2a2a" />
+                  <Text style={styles.loadingCommentsText}>
+                    {t('Loading comments...') || 'Loading comments...'}
+                  </Text>
+                </View>
+              ) : selectedPost?.commentsData?.length === 0 ? (
+                <View style={styles.noCommentsContainer}>
+                  <Text style={styles.noCommentsText}>
+                    {t('No comments yet. Be the first to comment!') ||
+                      'No comments yet. Be the first to comment!'}
+                  </Text>
+                </View>
+              ) : (
+                selectedPost?.commentsData?.map(comment =>
+                  renderComment(comment),
+                )
+              )}
+            </ScrollView>
+
+            {replyingTo && (
+              <View style={styles.replyingToIndicator}>
+                <Text style={styles.replyingToText}>
+                  {t('Replying to') || 'Replying to'} {replyingTo.author}
                 </Text>
+                <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                  <Text style={styles.cancelReplyText}>
+                    {t('Cancel') || 'Cancel'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder={
+                  replyingTo
+                    ? t('Add a reply...') || 'Add a reply...'
+                    : t('Add a comment...') || 'Add a comment...'
+                }
+                value={newComment}
+                onChangeText={setNewComment}
+                multiline
+              />
+              <TouchableOpacity
+                style={[styles.sendButton, {opacity: postingComment ? 0.6 : 1}]}
+                onPress={() => addComment(newComment)}
+                disabled={postingComment}>
+                {postingComment ? (
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                ) : (
+                  <SendIcon size={20} color="#3b82f6" />
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </Modal>
-  );
+    );
+  };
 
-  const renderCommentsModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={showCommentsModal}
-      onRequestClose={() => {
-        setShowCommentsModal(false);
-        setReplyingTo(null);
-      }}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.commentsModal}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {t('Comments') || 'Comments'} (
-              {selectedPost?.comments?.length || 0})
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setShowCommentsModal(false);
-                setReplyingTo(null);
-              }}>
-              <CloseIcon size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.commentsContent}>
-            {loadingComments ? (
-              <View style={styles.loadingCommentsContainer}>
-                <ActivityIndicator size="small" color="#2a2a2a" />
-                <Text style={styles.loadingCommentsText}>
-                  {t('Loading comments...') || 'Loading comments...'}
-                </Text>
-              </View>
-            ) : selectedPost?.commentsData?.length === 0 &&
-              selectedPost?.comments?.length === 0 ? (
-              <View style={styles.noCommentsContainer}>
-                <Text style={styles.noCommentsText}>
-                  {t('No comments yet. Be the first to comment!') ||
-                    'No comments yet. Be the first to comment!'}
-                </Text>
-              </View>
-            ) : // Use commentsData if available (detailed comments with replies), otherwise use comments from post
-            selectedPost?.commentsData &&
-              selectedPost.commentsData.length > 0 ? (
-              selectedPost.commentsData.map(comment => renderComment(comment))
-            ) : (
-              selectedPost?.comments?.map(comment =>
-                renderComment({
-                  ...comment,
-                  author: {
-                    _id: comment?.author?._id,
-                    firstName: comment?.author?.firstName,
-                    lastName: comment?.author?.lastName,
-                  } as CommentAuthor,
-                  replies: [],
-                } as ApiComment),
-              )
-            )}
-          </ScrollView>
-
-          {replyingTo && (
-            <View style={styles.replyingToIndicator}>
-              <Text style={styles.replyingToText}>
-                {t('Replying to') || 'Replying to'} {replyingTo.author}
-              </Text>
-              <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                <Text style={styles.cancelReplyText}>
-                  {t('Cancel') || 'Cancel'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder={
-                replyingTo
-                  ? t('Add a reply...') || 'Add a reply...'
-                  : t('Add a comment...') || 'Add a comment...'
-              }
-              value={newComment}
-              onChangeText={setNewComment}
-              multiline
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, {opacity: postingComment ? 0.6 : 1}]}
-              onPress={() => {
-                addComment(newComment);
-                setNewComment('');
-              }}
-              disabled={postingComment}>
-              {postingComment ? (
-                <ActivityIndicator size="small" color="#3b82f6" />
-              ) : (
-                <SendIcon size={20} color="#3b82f6" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2a2a2a" />
+        <Text style={styles.loadingText}>
+          {t('Loading posts...') || 'Loading posts...'}
+        </Text>
       </View>
-    </Modal>
-  );
+    );
+  }
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
@@ -1488,17 +1509,6 @@ const PostScreen = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2a2a2a" />
-        <Text style={styles.loadingText}>
-          {t('Loading posts...') || 'Loading posts...'}
-        </Text>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <BannerComponent />
@@ -1518,7 +1528,16 @@ const PostScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
-            {renderHeader()}
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}>
+                <ArrowLeftIcon size={24} color="#2a2a2a" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
+              <View style={styles.headerRight} />
+            </View>
+
             {/* Search Bar */}
             <View style={styles.searchContainer}>
               <View style={styles.searchInputContainer}>
@@ -1544,33 +1563,6 @@ const PostScreen = () => {
             </View>
           </>
         )}
-        ListEmptyComponent={renderEmptyComponent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-
-      {/* Results Count */}
-      {searchQuery.trim() !== '' && (
-        <View style={styles.resultsContainer}>
-          <Text style={styles.resultsText}>
-            {filteredPosts.length}{' '}
-            {filteredPosts.length !== 1
-              ? t('posts') || 'posts'
-              : t('post') || 'post'}{' '}
-            {t('found') || 'found'}
-            {filteredPosts.length !== posts.length &&
-              ` (${t('filtered from') || 'filtered from'} ${posts.length})`}
-          </Text>
-        </View>
-      )}
-
-      {/* <FlatList
-        data={filteredPosts}
-        renderItem={renderPost}
-        keyExtractor={(item: any) => item._id}
-        showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -1591,8 +1583,23 @@ const PostScreen = () => {
             )}
           </View>
         }
-      /> */}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
 
+      {/* Results Count */}
+      {searchQuery.trim() !== '' && (
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsText}>
+            {filteredPosts.length}{' '}
+            {filteredPosts.length !== 1
+              ? t('posts') || 'posts'
+              : t('post') || 'post'}{' '}
+            {t('found') || 'found'}
+            {filteredPosts.length !== posts.length &&
+              ` (${t('filtered from') || 'filtered from'} ${posts.length})`}
+          </Text>
+        </View>
+      )}
       {isAdmin && (
         <TouchableOpacity
           style={styles.fab}
