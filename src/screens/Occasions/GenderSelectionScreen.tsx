@@ -33,7 +33,12 @@ export const GenderSelectionScreen = () => {
 
   const {setGender: setContextGender, setOccasions, filters} = useOccasion();
 
-  const [selectedGender, setSelectedGender] = useState<string>('');
+  const [selectedGender, setSelectedGender] = useState<{
+    value: string;
+    count: number;
+    icon: string;
+    label: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [genderCounts, setGenderCounts] = useState<{
     male: number;
@@ -76,16 +81,9 @@ export const GenderSelectionScreen = () => {
           categoryId,
           gotra,
           subGotra,
-          undefined, // All genders
+          'not specified',
         ),
       ]);
-      console.log(
-        'maleResponse, femaleRespose, allResponse ',
-        maleResponse,
-        femaleResponse,
-        allResponse,
-      );
-
       setGenderCounts({
         male: maleResponse.data.length,
         female: femaleResponse.data.length,
@@ -100,7 +98,7 @@ export const GenderSelectionScreen = () => {
 
   const handleContinue = async () => {
     // Save gender to context (convert empty string to null)
-    setContextGender(selectedGender || null);
+    setContextGender(selectedGender?.value || null);
 
     // Navigate to Content screen
     await fetchOccasions();
@@ -167,16 +165,17 @@ export const GenderSelectionScreen = () => {
                 key={option.value}
                 style={[
                   styles.optionCard,
-                  selectedGender === option.value && styles.optionCardSelected,
+                  selectedGender?.value === option.value &&
+                    styles.optionCardSelected,
                 ]}
-                onPress={() => setSelectedGender(option.value)}
+                onPress={() => setSelectedGender(option)}
                 activeOpacity={0.7}>
                 <Text style={styles.optionIcon}>{option.icon}</Text>
                 <View style={styles.optionContent}>
                   <Text
                     style={[
                       styles.optionLabel,
-                      selectedGender === option.value &&
+                      selectedGender?.value === option.value &&
                         styles.optionLabelSelected,
                     ]}>
                     {option.label}
@@ -186,7 +185,7 @@ export const GenderSelectionScreen = () => {
                     available
                   </Text>
                 </View>
-                {selectedGender === option.value && (
+                {selectedGender?.value === option.value && (
                   <View style={styles.checkmark}>
                     <Text style={styles.checkmarkText}>✓</Text>
                   </View>
@@ -199,10 +198,11 @@ export const GenderSelectionScreen = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            (!selectedGender || loading) && styles.continueButtonDisabled,
+            (!selectedGender?.count || loading) &&
+              styles.continueButtonDisabled,
           ]}
           onPress={handleContinue}
-          disabled={!selectedGender || loading}
+          disabled={!selectedGender?.count || loading}
           activeOpacity={0.8}>
           <Text style={styles.continueButtonText}>View Content</Text>
         </TouchableOpacity>

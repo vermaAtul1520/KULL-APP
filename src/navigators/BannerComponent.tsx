@@ -82,15 +82,17 @@ export default BannerComponent;
 const bannerStyles = StyleSheet.create({
   headerBanner: {
     backgroundColor: '#f5f5dc',
-    paddingBottom: 10,
+    // paddingBottom: 10,
   },
   bannerSlide: {
-    height: 180,
+    height: 'auto',
+    width: width,
     padding: 8,
     borderRadius: 20,
   },
   bannerImage: {
-    height: '100%',
+    height: 'auto',
+    aspectRatio: 2,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',

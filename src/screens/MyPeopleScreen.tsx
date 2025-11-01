@@ -696,7 +696,6 @@ const MyPeopleScreen = () => {
 
   return (
     <View style={styles.container}>
-      <BannerComponent />
       <FlatList
         data={filteredUsers}
         renderItem={renderUserCard}
@@ -713,6 +712,7 @@ const MyPeopleScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
+            <BannerComponent />
             {renderHeader()}
             {/* Search and Filter */}
             <View style={styles.searchFilterContainer}>
@@ -766,12 +766,13 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.cream,
   },
   listContainer: {
-    paddingHorizontal: moderateScale(15),
+    // paddingHorizontal: moderateScale(15),
     paddingBottom: moderateScale(20),
   },
   header: {
     flexDirection: 'column',
-    padding: 20,
+    padding: 12,
+    marginHorizontal: moderateScale(10),
     backgroundColor: AppColors.dark,
   },
   emptyText: {
@@ -815,7 +816,7 @@ const styles = StyleSheet.create({
   searchFilterContainer: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: AppColors.white,
+    // backgroundColor: AppColors.white,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.lightGray,
   },
@@ -884,6 +885,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    marginHorizontal: moderateScale(10),
     elevation: 2,
     shadowColor: AppColors.black,
     shadowOffset: {width: 0, height: 1},

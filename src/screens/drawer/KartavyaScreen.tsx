@@ -414,7 +414,6 @@ export default function KartavyaScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
   // Fetch kartavya data from API
   const fetchKartavyaData = async () => {
     try {
@@ -540,11 +539,10 @@ export default function KartavyaScreen() {
 
   // PDF Modal Component
   const PdfModal = () => {
-    const getPdfViewerUrl = (pdfUrl: string) => {
-      return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
-        pdfUrl,
-      )}`;
-    };
+    const [pdfLoading, setPdfLoading] = useState(true);
+
+    console.log('selectedItem : ', selectedItem);
+    console.log('pdfUrl: ', selectedItem?.attachment);
 
     return (
       <Modal
@@ -576,100 +574,55 @@ export default function KartavyaScreen() {
           </View>
 
           <View style={styles.pdfContent}>
-            {selectedItem && (
-              <WebView
-                source={{uri: getPdfViewerUrl(selectedItem.attachment)}}
-                style={styles.webView}
-                startInLoadingState={true}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                injectedJavaScript={`
-                  function hideUIElements() {
-                    const elementsToHide = [
-                      '#toolbarContainer',
-                      '#sidebarContainer', 
-                      '#secondaryToolbar',
-                      '.toolbar',
-                      '.findbar',
-                      '#errorWrapper',
-                      '#overlayContainer',
-                      '.doorHanger',
-                      '.dropdownToolbarButton',
-                      '#pageNumberLabel',
-                      '#scaleSelectContainer',
-                      '#loadingBar'
-                    ];
-                    
-                    const style = document.createElement('style');
-                    style.innerHTML = elementsToHide.join(', ') + \` { 
-                      display: none !important; 
-                      visibility: hidden !important;
-                      opacity: 0 !important;
-                    }\` + \`
-                    #viewerContainer { 
-                      top: 0 !important; 
-                      bottom: 0 !important; 
-                      left: 0 !important; 
-                      right: 0 !important;
-                      overflow-y: auto !important;
-                      background: #f0f0f0 !important;
-                    }
-                    #viewer {
-                      padding: 10px !important;
-                      background: #f0f0f0 !important;
-                    }
-                    .page {
-                      margin: 10px auto !important;
-                      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-                      border-radius: 8px !important;
-                    }
-                    html, body { 
-                      margin: 0 !important; 
-                      padding: 0 !important; 
-                      background: #f0f0f0 !important;
-                      overflow: hidden !important;
-                    }
-                    \`;
-                    document.head.appendChild(style);
-                    
-                    elementsToHide.forEach(selector => {
-                      const elements = document.querySelectorAll(selector);
-                      elements.forEach(el => {
-                        if (el) {
-                          el.style.display = 'none';
-                          el.remove();
-                        }
-                      });
-                    });
-                    
-                    document.addEventListener('contextmenu', function(e) {
-                      e.preventDefault();
-                      return false;
-                    }, true);
-                  }
-                  
-                  hideUIElements();
-                  setTimeout(hideUIElements, 500);
-                  setTimeout(hideUIElements, 1000);
-                  setTimeout(hideUIElements, 2000);
-                  
-                  document.addEventListener('DOMContentLoaded', hideUIElements);
-                  window.addEventListener('load', hideUIElements);
-                  
-                  true;
-                `}
-                renderLoading={() => (
-                  <View style={styles.loadingContainer}>
-                    <View style={styles.loadingSpinner}>
-                      <Text style={styles.loadingEmoji}>📖</Text>
+            {selectedItem && selectedItem.attachment ? (
+              <>
+                <WebView
+                  source={{uri: selectedItem.attachment}}
+                  style={styles.pdf}
+                  startInLoadingState={true}
+                  onLoadStart={() => {
+                    console.log('📄 PDF loading started');
+                    console.log('URL:', selectedItem.attachment);
+                    setPdfLoading(true);
+                  }}
+                  onLoadEnd={() => {
+                    console.log('✅ PDF loaded successfully');
+                    setPdfLoading(false);
+                  }}
+                  onError={syntheticEvent => {
+                    const {nativeEvent} = syntheticEvent;
+                    console.error('❌ PDF Error:', nativeEvent);
+                    setPdfLoading(false);
+                    Alert.alert(
+                      'Error',
+                      'Could not load PDF. Please check your internet connection.',
+                    );
+                  }}
+                  javaScriptEnabled={true}
+                  domStorageEnabled={true}
+                  scalesPageToFit={true}
+                  originWhitelist={['*']}
+                  renderLoading={() => (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color={AppColors.teal} />
+                      <Text style={styles.loadingText}>Loading PDF...</Text>
+                      <Text style={styles.loadingSubtext}>
+                        {selectedItem.title}
+                      </Text>
                     </View>
-                    <Text style={styles.loadingText}>Loading Document...</Text>
+                  )}
+                />
+                {pdfLoading && (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={AppColors.teal} />
+                    <Text style={styles.loadingText}>Loading PDF...</Text>
                   </View>
                 )}
-                onError={() => {
-                  Alert.alert('Error', 'Unable to load document');
-                }}
-              />
+              </>
+            ) : (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>No PDF available</Text>
+              </View>
             )}
           </View>
         </View>
@@ -718,7 +671,7 @@ export default function KartavyaScreen() {
   const MainView = () => {
     const CategoryCard = ({category}: {category: KartavyaCategory}) => {
       const IconComponent = category.icon;
-
+      console.log('category: ', category);
       return (
         <TouchableOpacity
           style={[styles.categoryCard, {borderLeftColor: category.color}]}
@@ -845,12 +798,12 @@ export default function KartavyaScreen() {
           </View>
         </View>
 
-        {item.filetype === 'image' && item.thumbnailUrl && (
+        {item.thumbnailUrl && (
           <View style={styles.imagePreview}>
             <Image
               source={{uri: item.thumbnailUrl}}
               style={styles.previewImage}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           </View>
         )}
@@ -1340,7 +1293,11 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   kartyaInfo: {
     padding: 12,
@@ -1507,7 +1464,7 @@ const styles = StyleSheet.create({
   pdfContent: {
     flex: 1,
   },
-  webView: {
+  pdf: {
     flex: 1,
   },
   loadingContainer: {
@@ -1537,9 +1494,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: 18,
     color: AppColors.dark,
     marginTop: 10,
     fontWeight: '600',
+  },
+  loadingSubtext: {
+    color: AppColors.gray,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

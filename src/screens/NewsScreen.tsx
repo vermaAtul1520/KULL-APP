@@ -372,7 +372,6 @@ const NewsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <BannerComponent />
       <FlatList
         data={filteredNews}
         renderItem={renderNewsItem}
@@ -389,6 +388,7 @@ const NewsScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
+            <BannerComponent />
             {renderHeader()}
             {renderSearchBar()}
           </>
@@ -564,13 +564,14 @@ const styles = StyleSheet.create({
   },
 
   listContainer: {
-    paddingHorizontal: moderateScale(15),
+    // paddingHorizontal: moderateScale(15),
     paddingBottom: moderateScale(20),
   },
   newsCard: {
     backgroundColor: AppColors.white,
     borderRadius: moderateScale(15),
     marginVertical: moderateScale(8),
+    marginHorizontal: moderateScale(15),
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

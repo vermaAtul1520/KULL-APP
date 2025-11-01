@@ -1511,7 +1511,6 @@ const PostScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <BannerComponent />
       <FlatList
         data={filteredPosts}
         renderItem={renderPost}
@@ -1528,6 +1527,7 @@ const PostScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
+            <BannerComponent />
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -1618,6 +1618,7 @@ const PostScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+
     backgroundColor: '#f5f5dc',
   },
   header: {
@@ -1629,6 +1630,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5dc',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  headerBanner: {
+    backgroundColor: '#f5f5dc',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerContainer: {
     paddingHorizontal: moderateScale(20),
@@ -1743,13 +1749,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContainer: {
-    paddingHorizontal: 10,
+    // paddingHorizontal: 10,
   },
   postCard: {
     backgroundColor: '#2a2a2a',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    marginHorizontal: 16,
   },
   postHeader: {
     flexDirection: 'row',

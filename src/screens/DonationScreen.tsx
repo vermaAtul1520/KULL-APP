@@ -579,7 +579,6 @@ const DonationScreen = () => {
 
   const renderDonationCard = ({item}: {item: Donation}) => {
     const CategoryIconComponent = getCategoryIcon(item.category);
-    console.log('donation item : ', item);
     return (
       <TouchableOpacity
         style={styles.donationCard}
@@ -770,24 +769,6 @@ const DonationScreen = () => {
       </Modal>
     );
   };
-  // const renderEmptyComponent = () => (
-  //   <View style={styles.emptyContainer}>
-  //     <Text style={styles.emptyText}>
-  //       {searchQuery.trim() !== ''
-  //         ? t('No news matches your search') || 'No news matches your search'
-  //         : t('No news available') || 'No news available'}
-  //     </Text>
-  //     {searchQuery.trim() !== '' && (
-  //       <TouchableOpacity
-  //         style={styles.clearSearchButton}
-  //         onPress={() => setSearchQuery('')}>
-  //         <Text style={styles.clearSearchText}>
-  //           {t('Clear Search') || 'Clear Search'}
-  //         </Text>
-  //       </TouchableOpacity>
-  //     )}
-  //   </View>
-  // );
   const renderHeader = () => (
     <View style={styles.headerStyle}>
       <Text style={styles.headerTitle}>Donations</Text>
@@ -808,7 +789,6 @@ const DonationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <BannerComponent />
       <FlatList
         data={filteredDonations}
         renderItem={renderDonationCard}
@@ -825,6 +805,7 @@ const DonationScreen = () => {
         }
         ListHeaderComponent={() => (
           <>
+            <BannerComponent />
             {renderHeader()}
 
             {/* Search Bar */}
@@ -959,39 +940,6 @@ const DonationScreen = () => {
         </Text>
       </View>
 
-      {/* <FlatList
-        data={filteredDonations}
-        renderItem={renderDonationCard}
-        keyExtractor={item => item._id}
-        showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <HeartIcon size={64} color="#ccc" />
-            <Text style={styles.emptyText}>
-              {hasActiveFilters()
-                ? 'No donations match your search criteria'
-                : 'No donations available'}
-            </Text>
-            {hasActiveFilters() ? (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={clearFilters}>
-                <Text style={styles.retryText}>Clear Filters</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={fetchDonations}>
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
-      /> */}
-
       {renderDonationModal()}
       {renderFilterModal()}
     </SafeAreaView>
@@ -1015,11 +963,12 @@ const styles = StyleSheet.create({
   },
   headerStyle: {
     flexDirection: 'column',
-    padding: 20,
+    padding: 15,
     backgroundColor: AppColors.dark,
+    marginHorizontal: moderateScale(10),
   },
   listContainer: {
-    paddingHorizontal: moderateScale(15),
+    // paddingHorizontal: moderateScale(15),
     paddingBottom: moderateScale(20),
   },
   headerSubtitle: {
@@ -1086,7 +1035,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: AppColors.white,
+    // backgroundColor: AppColors.white,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.lightGray,
   },
@@ -1247,6 +1196,7 @@ const styles = StyleSheet.create({
   donationCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
+    marginHorizontal: moderateScale(15),
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
