@@ -1134,8 +1134,9 @@ const PostScreen = () => {
           )}
 
           {user &&
-            user._id === comment.author._id &&
-            (user.role === 'admin' || user.role === 'superadmin') && (
+            (user._id === comment.author._id ||
+              user.roleInCommunity === 'admin' ||
+              user.roleInCommunity === 'superadmin') && (
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => handleDeleteComment(comment._id)}>

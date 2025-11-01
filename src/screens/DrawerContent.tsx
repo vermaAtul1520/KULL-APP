@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   Image,
   Alert,
@@ -492,14 +493,20 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
   const handleMenuPress = useCallback(
     (screenName: string) => {
-      // Navigate to HomeTab first, then to the Home stack, then to the specific screen
-      // Since all drawer screens are now part of each tab's stack
-      props?.navigation?.navigate('HomeTab', {
-        screen: 'Home',
-        params: {
-          screen: screenName,
-        },
-      });
+      console.log('🔄 Drawer menu item pressed:', screenName);
+      try {
+        // Navigate to HomeTab first, then to the Home stack, then to the specific screen
+        // Since all drawer screens are now part of each tab's stack
+        props?.navigation?.navigate('HomeTab', {
+          screen: 'Home',
+          params: {
+            screen: screenName,
+          },
+        });
+        console.log('✅ Navigation successful to:', screenName);
+      } catch (error) {
+        console.error('❌ Navigation error:', error);
+      }
     },
     [props?.navigation],
   );
@@ -572,7 +579,11 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
     <DrawerContentScrollView
       {...props}
       style={styles.drawerContent}
-      contentContainerStyle={styles.drawerContentContainer}>
+      contentContainerStyle={styles.drawerContentContainer}
+      scrollEnabled={true}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled={true}
+      showsVerticalScrollIndicator={false}>
       {/* User Profile Section */}
       <View style={styles.userProfile}>
         <View style={styles.avatar}>
@@ -607,10 +618,25 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       {/* Menu Items - Now dynamically rendered based on drorData */}
       <View style={styles.menuSection}>
         {menuItems.map((item, index) => (
-          <TouchableOpacity
+          <Pressable
             key={item.key}
-            style={styles.menuItem}
-            onPress={() => handleMenuPress(item?.name)}>
+            style={({pressed}) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => {
+              console.log(
+                '🔄 Menu item pressed (Pressable):',
+                item.displayName,
+              );
+              handleMenuPress(item?.name);
+            }}
+            hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+            pressRetentionOffset={{top: 15, bottom: 15, left: 15, right: 15}}
+            android_ripple={{
+              color: 'rgba(125, 211, 192, 0.2)',
+              borderless: false,
+            }}>
             {renderIcon(item.icon)}
             <Text
               style={styles.menuText}
@@ -621,13 +647,20 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
               allowFontScaling={false}>
               {item.displayName}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
       {/* Logout Section */}
       <View style={styles.logoutSection}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          pressRetentionOffset={{top: 10, bottom: 10, left: 10, right: 10}}
+          delayPressIn={0}
+          delayPressOut={0}>
           <LogoutIcon size={24} color="#ef4444" />
           <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
@@ -645,7 +678,12 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
                 screen: 'Settings',
               },
             });
-          }}>
+          }}
+          activeOpacity={0.7}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          pressRetentionOffset={{top: 10, bottom: 10, left: 10, right: 10}}
+          delayPressIn={0}
+          delayPressOut={0}>
           <SettingsIcon size={24} color="#7dd3c0" />
           <Text style={styles.donationText}>{t('settings')} </Text>
         </TouchableOpacity>
@@ -717,6 +755,13 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     minHeight: 50,
     width: '100%',
+    backgroundColor: 'transparent',
+    elevation: 0,
+    zIndex: 1,
+  },
+  menuItemPressed: {
+    backgroundColor: 'rgba(125, 211, 192, 0.1)',
+    opacity: 0.8,
   },
   menuText: {
     color: '#fff',
@@ -736,6 +781,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    zIndex: 1,
   },
   donationText: {
     color: '#7dd3c0',
@@ -753,6 +801,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    zIndex: 1,
   },
   logoutText: {
     color: '#ef4444',
