@@ -117,6 +117,8 @@ const PostScreen = () => {
   });
   const [newComment, setNewComment] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
@@ -267,6 +269,23 @@ const PostScreen = () => {
     </Svg>
   );
 
+  const LinkIcon = ({size = 20, color = '#666'}) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+    </Svg>
+  );
+
   const ReplyIcon = ({size = 16, color = '#3b82f6'}) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -388,16 +407,18 @@ const PostScreen = () => {
     try {
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/posts/`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          ...postData,
-          community: COMMUNITY_ID,
-        }),
-      });
 
-      console.log('responseArvind', response);
+      const response = await fetch(
+        `${BASE_URL}/api/posts/community/${COMMUNITY_ID}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...postData,
+            community: COMMUNITY_ID,
+          }),
+        },
+      );
 
       if (!response.ok) {
         throw new Error('Failed to create post');
@@ -881,6 +902,7 @@ const PostScreen = () => {
       await loadPosts();
 
       setNewPost({title: '', content: '', imageUrl: '', selectedImage: ''});
+      setImageUrl('');
       setShowPostModal(false);
       Alert.alert(
         t('Success') || 'Success',
@@ -897,25 +919,124 @@ const PostScreen = () => {
     }
   };
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: t('Camera Permission') || 'Camera Permission',
+            message:
+              t('This app needs access to camera to take photos.') ||
+              'This app needs access to camera to take photos.',
+            buttonNeutral: t('Ask Me Later') || 'Ask Me Later',
+            buttonNegative: t('Cancel') || 'Cancel',
+            buttonPositive: t('OK') || 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleImageSelection = (type: 'camera' | 'gallery') => {
     setShowImagePicker(false);
 
+    const options = {
+      mediaType: 'photo' as MediaType,
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+      quality: 0.8 as any, // Type assertion for quality
+    };
+
+    const handleImageResponse = async (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorMessage) {
+        if (response.errorMessage) {
+          Alert.alert(t('Error') || 'Error', response.errorMessage);
+        }
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        const asset = response.assets[0];
+        const imageUri = asset.uri;
+
+        if (imageUri) {
+          setUploadingImage(true);
+
+          try {
+            const result = await uploadImageToCloudinary(
+              imageUri,
+              asset.fileName || `post_${Date.now()}.jpg`,
+            );
+
+            if (result.success && result.url) {
+              setNewPost({...newPost, selectedImage: result.url});
+              Alert.alert(
+                t('Success') || 'Success',
+                t('Image uploaded successfully!') ||
+                  'Image uploaded successfully!',
+              );
+            } else {
+              Alert.alert(
+                t('Upload Failed') || 'Upload Failed',
+                result.error ||
+                  t('Failed to upload image') ||
+                  'Failed to upload image',
+              );
+            }
+          } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert(
+              t('Error') || 'Error',
+              t('Failed to upload image. Please try again.') ||
+                'Failed to upload image. Please try again.',
+            );
+          } finally {
+            setUploadingImage(false);
+          }
+        }
+      }
+    };
+
     if (type === 'camera') {
-      Alert.alert(
-        t('Camera') || 'Camera',
-        t('Camera feature would open here. For demo, using a sample image.') ||
-          'Camera feature would open here. For demo, using a sample image.',
-      );
-      const sampleImage = 'https://picsum.photos/800/600?random=1';
-      setNewPost({...newPost, selectedImage: sampleImage});
+      requestCameraPermission().then(hasPermission => {
+        if (hasPermission) {
+          launchCamera(options, handleImageResponse);
+        } else {
+          Alert.alert(
+            t('Permission Required') || 'Permission Required',
+            t('Camera permission is required to take photos.') ||
+              'Camera permission is required to take photos.',
+          );
+        }
+      });
     } else if (type === 'gallery') {
+      launchImageLibrary(options, handleImageResponse);
+    }
+  };
+
+  const handleUrlInput = () => {
+    setShowImagePicker(false);
+    setShowUrlInput(true);
+  };
+
+  const handleUrlSubmit = () => {
+    if (imageUrl.trim()) {
+      setNewPost({...newPost, selectedImage: imageUrl.trim()});
+      setImageUrl('');
+      setShowUrlInput(false);
+    } else {
       Alert.alert(
-        t('Gallery') || 'Gallery',
-        t('Gallery would open here. For demo, using a sample image.') ||
-          'Gallery would open here. For demo, using a sample image.',
+        t('Invalid URL') || 'Invalid URL',
+        t('Please enter a valid image URL.') ||
+          'Please enter a valid image URL.',
       );
-      const sampleImage = 'https://picsum.photos/800/600?random=2';
-      setNewPost({...newPost, selectedImage: sampleImage});
     }
   };
 
@@ -1242,7 +1363,9 @@ const PostScreen = () => {
                 style={styles.titleInput}
                 placeholder={t('Enter post title...') || 'Enter post title...'}
                 value={newPost.title}
-                onChangeText={text => setNewPost({...newPost, title: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, title: text})
+                }
                 multiline
               />
             </View>
@@ -1257,7 +1380,9 @@ const PostScreen = () => {
                   t("What's on your mind?") || "What's on your mind?"
                 }
                 value={newPost.content}
-                onChangeText={text => setNewPost({...newPost, content: text})}
+                onChangeText={(text: any) =>
+                  setNewPost({...newPost, content: text})
+                }
                 multiline
                 textAlignVertical="top"
               />
@@ -1269,24 +1394,23 @@ const PostScreen = () => {
               </Text>
               <View style={styles.imageOptions}>
                 <TouchableOpacity
-                  style={styles.imageOption}
-                  onPress={() => setShowImagePicker(true)}>
-                  <CameraIcon size={24} color="#666" />
+                  style={[
+                    styles.imageOption,
+                    uploadingImage && styles.imageOptionDisabled,
+                  ]}
+                  onPress={() => !uploadingImage && setShowImagePicker(true)}
+                  disabled={uploadingImage}>
+                  {uploadingImage ? (
+                    <ActivityIndicator size="small" color="#666" />
+                  ) : (
+                    <CameraIcon size={24} color="#666" />
+                  )}
                   <Text style={styles.imageOptionText}>
-                    {t('Camera/Gallery') || 'Camera/Gallery'}
+                    {uploadingImage
+                      ? t('Uploading...') || 'Uploading...'
+                      : t('Camera/Gallery') || 'Camera/Gallery'}
                   </Text>
                 </TouchableOpacity>
-
-                <Text style={styles.orText}>{t('OR') || 'OR'}</Text>
-
-                <TextInput
-                  style={styles.imageUrlInput}
-                  placeholder={t('Paste image URL...') || 'Paste image URL...'}
-                  value={newPost.imageUrl}
-                  onChangeText={text =>
-                    setNewPost({...newPost, imageUrl: text})
-                  }
-                />
               </View>
             </View>
 
@@ -1316,7 +1440,7 @@ const PostScreen = () => {
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={() => setShowPostModal(false)}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               <Text style={styles.cancelButtonText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
@@ -1325,10 +1449,10 @@ const PostScreen = () => {
               style={[
                 styles.modalButton,
                 styles.postButton,
-                {opacity: isCreatingPost ? 0.6 : 1},
+                {opacity: isCreatingPost || uploadingImage ? 0.6 : 1},
               ]}
               onPress={handleCreatePost}
-              disabled={isCreatingPost}>
+              disabled={isCreatingPost || uploadingImage}>
               {isCreatingPost ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -1369,12 +1493,70 @@ const PostScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.imagePickerOption}
+              onPress={handleUrlInput}>
+              <LinkIcon size={24} color="#2a2a2a" />
+              <Text style={styles.imagePickerOptionText}>
+                {t('Paste Image URL') || 'Paste Image URL'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.imagePickerCancel}
               onPress={() => setShowImagePicker(false)}>
               <Text style={styles.imagePickerCancelText}>
                 {t('Cancel') || 'Cancel'}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* URL Input Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showUrlInput}
+        onRequestClose={() => setShowUrlInput(false)}>
+        <View style={styles.imagePickerOverlay}>
+          <View style={styles.imagePickerModal}>
+            <Text style={styles.imagePickerTitle}>
+              {t('Enter Image URL') || 'Enter Image URL'}
+            </Text>
+
+            <TextInput
+              style={styles.urlInput}
+              placeholder={
+                t('Paste image URL here...') || 'Paste image URL here...'
+              }
+              value={imageUrl}
+              onChangeText={setImageUrl}
+              multiline={false}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+
+            <View style={styles.urlModalButtons}>
+              <TouchableOpacity
+                style={[styles.imagePickerOption, styles.urlSubmitButton]}
+                onPress={handleUrlSubmit}>
+                <Text style={styles.imagePickerOptionText}>
+                  {t('Add Image') || 'Add Image'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.imagePickerCancel}
+                onPress={() => {
+                  setShowUrlInput(false);
+                  setImageUrl('');
+                }}>
+                <Text style={styles.imagePickerCancelText}>
+                  {t('Cancel') || 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
