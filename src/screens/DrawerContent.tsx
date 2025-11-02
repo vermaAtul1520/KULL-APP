@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
-  ScrollView,
   Image,
   Alert,
 } from 'react-native';
@@ -13,7 +11,7 @@ import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
 } from '@react-navigation/drawer';
-import Svg, {Path, Circle, Rect, Polygon} from 'react-native-svg';
+import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {useAuth} from '@app/navigators';
 import {useLanguage} from '@app/hooks/LanguageContext';
 import {useConfiguration} from '@app/hooks/ConfigContext';
@@ -617,37 +615,31 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Menu Items - Now dynamically rendered based on drorData */}
       <View style={styles.menuSection}>
-        {menuItems.map((item, index) => (
-          <Pressable
+        {menuItems.map(item => (
+          <View
             key={item.key}
-            style={({pressed}) => [
-              styles.menuItem,
-              pressed && styles.menuItemPressed,
-            ]}
-            onPress={() => {
-              console.log(
-                '🔄 Menu item pressed (Pressable):',
-                item.displayName,
-              );
+            style={styles.menuItemContainer}
+            onTouchEnd={event => {
+              console.log('🔥 Direct touch on menu item:', item.displayName);
+              event.preventDefault();
+              event.stopPropagation();
               handleMenuPress(item?.name);
-            }}
-            hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
-            pressRetentionOffset={{top: 15, bottom: 15, left: 15, right: 15}}
-            android_ripple={{
-              color: 'rgba(125, 211, 192, 0.2)',
-              borderless: false,
             }}>
-            {renderIcon(item.icon)}
-            <Text
-              style={styles.menuText}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.7}
-              allowFontScaling={false}>
-              {item.displayName}
-            </Text>
-          </Pressable>
+            <View style={styles.menuItem}>
+              <View style={styles.menuItemContent}>
+                {renderIcon(item.icon)}
+                <Text
+                  style={styles.menuText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                  allowFontScaling={false}>
+                  {item.displayName}
+                </Text>
+              </View>
+            </View>
+          </View>
         ))}
       </View>
 
@@ -748,20 +740,30 @@ const styles = StyleSheet.create({
   menuSection: {
     paddingTop: 20,
   },
+  menuItemContainer: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    marginVertical: 2,
+    paddingHorizontal: 5,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10, // Further reduced padding
-    paddingVertical: 15,
-    minHeight: 50,
+    paddingHorizontal: 15,
+    paddingVertical: 20,
+    minHeight: 56,
     width: '100%',
-    backgroundColor: 'transparent',
-    elevation: 0,
-    zIndex: 1,
+    backgroundColor: 'rgba(125, 211, 192, 0.05)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(125, 211, 192, 0.1)',
   },
-  menuItemPressed: {
-    backgroundColor: 'rgba(125, 211, 192, 0.1)',
-    opacity: 0.8,
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   menuText: {
     color: '#fff',

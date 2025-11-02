@@ -577,17 +577,27 @@ export default function KartavyaScreen() {
             {selectedItem && selectedItem.attachment ? (
               <>
                 <WebView
-                  source={{uri: selectedItem.attachment}}
+                  source={{
+                    uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
+                      selectedItem.attachment,
+                    )}`,
+                  }}
                   style={styles.pdf}
                   startInLoadingState={true}
                   onLoadStart={() => {
                     console.log('📄 PDF loading started');
                     console.log('URL:', selectedItem.attachment);
+                    console.log(
+                      'Viewer URL:',
+                      `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
+                        selectedItem.attachment,
+                      )}`,
+                    );
                     setPdfLoading(true);
                   }}
                   onLoadEnd={() => {
                     console.log('✅ PDF loaded successfully');
-                    setPdfLoading(false);
+                    setTimeout(() => setPdfLoading(false), 1000);
                   }}
                   onError={syntheticEvent => {
                     const {nativeEvent} = syntheticEvent;
@@ -602,6 +612,18 @@ export default function KartavyaScreen() {
                   domStorageEnabled={true}
                   scalesPageToFit={true}
                   originWhitelist={['*']}
+                  setSupportMultipleWindows={false}
+                  onShouldStartLoadWithRequest={request => {
+                    // Prevent download requests
+                    if (
+                      request.url.includes('.pdf') &&
+                      !request.url.includes('docs.google.com')
+                    ) {
+                      console.log('Blocked direct PDF download:', request.url);
+                      return false;
+                    }
+                    return true;
+                  }}
                   renderLoading={() => (
                     <View style={styles.loadingContainer}>
                       <ActivityIndicator size="large" color={AppColors.teal} />
