@@ -34,6 +34,7 @@ import {
   DefaultTheme,
   NavigationContainer,
   useNavigation,
+  useNavigationState,
   NavigatorScreenParams,
   CommonActions,
 } from '@react-navigation/native';
@@ -455,7 +456,7 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
 export const useAuth = () => useContext(AuthContext);
 
 // Profile Avatar Component
-const ProfileAvatar = (): React.JSX.Element => {
+const ProfileAvatar = React.memo((): React.JSX.Element => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {user} = useAuth();
@@ -469,9 +470,13 @@ const ProfileAvatar = (): React.JSX.Element => {
     return 'U';
   };
 
+  const handlePress = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
+
   return (
     <Pressable
-      onPress={() => navigation.navigate('Profile')}
+      onPress={handlePress}
       style={styles.profileAvatarContainer}>
       <View style={styles.profileAvatar}>
         {user?.profileImage ? (
@@ -482,9 +487,9 @@ const ProfileAvatar = (): React.JSX.Element => {
       </View>
     </Pressable>
   );
-};
+});
 
-const DrawerButton = (): React.JSX.Element => {
+const DrawerButton = React.memo((): React.JSX.Element => {
   const {toggleDrawer} =
     useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   return (
@@ -492,29 +497,30 @@ const DrawerButton = (): React.JSX.Element => {
       <Logo width={20} height={20} color={AppColors.black} />
     </Pressable>
   );
-};
+});
 
-const CustomHeaderTitle = () => {
+const CustomHeaderTitle = React.memo(() => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   const {user} = useAuth();
   const {t} = useLanguage();
 
-  const currentRouteName = navigation.getState()?.routes[
-    navigation.getState()?.index || 0
-  ]?.name as keyof RootDrawerParamList | undefined;
+  // Use useNavigationState to get current route name reactively
+  const currentRouteName = useNavigationState(
+    state => state?.routes[state?.index || 0]?.name,
+  ) as keyof RootDrawerParamList | undefined;
 
-  const navigateToHome = () => {
+  const navigateToHome = useCallback(() => {
     navigation.navigate('HomeTab');
-  };
+  }, [navigation]);
 
-  const getCommunityName = () => {
+  const getCommunityName = useCallback(() => {
     if (user?.community?.name) {
       return user.community.name.toUpperCase();
     }
     return 'KULL-APP';
-  };
+  }, [user]);
 
-  const getDisplayTitle = () => {
+  const displayTitle = useMemo(() => {
     if (currentRouteName === 'HomeTab') {
       return getCommunityName();
     }
@@ -547,20 +553,26 @@ const CustomHeaderTitle = () => {
     return (
       (currentRouteName && screenTitles[currentRouteName]) || getCommunityName()
     );
-  };
+  }, [currentRouteName, getCommunityName, t]);
 
   return (
     <Pressable onPress={navigateToHome} style={styles.headerTitleContainer}>
-      <Text style={styles.headerTitleText}>{getDisplayTitle()}</Text>
+      <Text style={styles.headerTitleText}>{displayTitle}</Text>
     </Pressable>
   );
-};
+});
+
+// Stable header component renderers
+const renderDrawerButton = () => <DrawerButton />;
+const renderCustomHeaderTitle = () => <CustomHeaderTitle />;
+const renderProfileAvatar = () => <ProfileAvatar />;
 
 // Common screen options that work for both NativeStack and Drawer navigators
 const commonScreenOptions = {
-  headerLeft: () => <DrawerButton />,
-  headerTitle: () => <CustomHeaderTitle />,
-  headerRight: () => <ProfileAvatar />,
+  headerShown: true,
+  headerLeft: renderDrawerButton,
+  headerTitle: renderCustomHeaderTitle,
+  headerRight: renderProfileAvatar,
   headerStyle: {
     backgroundColor: AppColors.primary,
   },
@@ -592,6 +604,7 @@ const ProfileScreen = (): React.JSX.Element => {
   const {t} = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
+  const [interestsText, setInterestsText] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -602,6 +615,8 @@ const ProfileScreen = (): React.JSX.Element => {
         interests: user.interests,
         profileImage: user.profileImage,
       });
+      // Initialize interests text from user interests
+      setInterestsText(user.interests?.join(', ') || '');
     }
   }, [user]);
 
@@ -690,7 +705,22 @@ const ProfileScreen = (): React.JSX.Element => {
         <Text style={styles.profileTitle}>{t('Profile') || 'Profile'}</Text>
 
         <Pressable
-          onPress={() => setIsEditing(!isEditing)}
+          onPress={() => {
+            if (isEditing) {
+              // Cancel editing - reset to original user data
+              if (user) {
+                setEditedUser({
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: user.email,
+                  interests: user.interests,
+                  profileImage: user.profileImage,
+                });
+                setInterestsText(user.interests?.join(', ') || '');
+              }
+            }
+            setIsEditing(!isEditing);
+          }}
           style={styles.headerButton}>
           <Text style={styles.headerButtonText}>
             {isEditing ? t('Cancel') || 'Cancel' : t('Edit') || 'Edit'}
@@ -814,18 +844,29 @@ const ProfileScreen = (): React.JSX.Element => {
             {isEditing ? (
               <TextInput
                 style={[styles.input, styles.textArea]}
-                value={editedUser.interests?.join(', ') || ''}
-                onChangeText={(text: any) =>
+                value={interestsText}
+                onChangeText={(text: string) => {
+                  // Store the raw text to preserve spaces and current typing
+                  setInterestsText(text);
+                  
+                  // Update interests array by splitting by comma, trimming, and filtering empty
+                  const interestsArray = text
+                    .split(',')
+                    .map((item: string) => item.trim())
+                    .filter((item: string) => item.length > 0);
+                  
                   setEditedUser({
                     ...editedUser,
-                    interests: text.split(',').map((item: any) => item.trim()),
-                  })
-                }
+                    interests: interestsArray,
+                  });
+                }}
                 placeholder={
                   t('Enter interests separated by commas') ||
                   'Enter interests separated by commas'
                 }
                 multiline
+                autoCapitalize="none"
+                autoCorrect={false}
               />
             ) : (
               <View style={styles.interestsContainer}>

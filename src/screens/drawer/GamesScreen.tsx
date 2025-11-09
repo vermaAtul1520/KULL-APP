@@ -1,15 +1,28 @@
-import ComingSoon from '@app/components/ComingSoon';
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
+  ScrollView,
   TouchableOpacity,
+  Text,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Svg, {Path} from 'react-native-svg';
+import ComingSoon from '@app/components/ComingSoon';
+import {useLanguage} from '@app/hooks/LanguageContext';
+
+// Back Icon Component
+const BackIcon = ({size = 24, color = '#fff'}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 // App Colors
 const AppColors = {
@@ -27,26 +40,12 @@ const AppColors = {
   danger: '#ef4444',
 };
 
-// Custom Back Icon
-const BackIcon = ({size = 24, color = '#fff'}) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 12H5M12 19L5 12L12 5"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
 const GamesScreen = (): React.JSX.Element => {
+  const {t} = useLanguage();
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
-
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -54,17 +53,25 @@ const GamesScreen = (): React.JSX.Element => {
           style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Games</Text>
-          <Text style={styles.headerSubtitle}>Fun games and activities</Text>
-        </View>
+        <Text style={styles.headerTitle}>Games</Text>
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        <ComingSoon />
-      </View>
-    </SafeAreaView>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}>
+        <ComingSoon
+          title={t('Games') || 'Games'}
+          subtitle={t("We're working on exciting games") || "We're working on exciting games"}
+          message={
+            t(
+              'Fun and engaging games are currently under development. Stay tuned for exciting updates and challenges!',
+            ) ||
+            'Fun and engaging games are currently under development. Stay tuned for exciting updates and challenges!'
+          }
+        />
+      </ScrollView>
+    </View>
   );
 };
 
@@ -85,32 +92,15 @@ const styles = StyleSheet.create({
     marginRight: 15,
     padding: 5,
   },
-  headerContent: {
-    flex: 1,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: AppColors.white,
-    marginBottom: 2,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: AppColors.white,
-    opacity: 0.9,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
 });
 

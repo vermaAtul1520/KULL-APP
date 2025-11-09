@@ -648,24 +648,27 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
 
       {/* Logout Section */}
       <View style={styles.logoutSection}>
-        <TouchableOpacity
+        <View
           style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-          pressRetentionOffset={{top: 10, bottom: 10, left: 10, right: 10}}
-          delayPressIn={0}
-          delayPressOut={0}>
+          onTouchEnd={event => {
+            console.log('🔥 Direct touch on logout button');
+            event.preventDefault();
+            event.stopPropagation();
+            handleLogout();
+          }}>
           <LogoutIcon size={24} color="#ef4444" />
           <Text style={styles.logoutText}>{t('logout')}</Text>
-        </TouchableOpacity>
+        </View>
       </View>
 
       {/* Settings Section */}
       <View style={styles.donationSection}>
-        <TouchableOpacity
+        <View
           style={styles.donationButton}
-          onPress={() => {
+          onTouchEnd={event => {
+            console.log('🔥 Direct touch on settings button');
+            event.preventDefault();
+            event.stopPropagation();
             // Navigate to HomeTab first, then to the Home stack, then to Settings screen
             props?.navigation?.navigate('HomeTab', {
               screen: 'Home',
@@ -673,15 +676,10 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
                 screen: 'Settings',
               },
             });
-          }}
-          activeOpacity={0.7}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-          pressRetentionOffset={{top: 10, bottom: 10, left: 10, right: 10}}
-          delayPressIn={0}
-          delayPressOut={0}>
+          }}>
           <SettingsIcon size={24} color="#7dd3c0" />
           <Text style={styles.donationText}>{t('settings')} </Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </DrawerContentScrollView>
   );

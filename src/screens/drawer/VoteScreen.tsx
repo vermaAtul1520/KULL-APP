@@ -7,8 +7,22 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import Svg, {Path} from 'react-native-svg';
 import {AppColors} from '@app/screens/Occasions/constants';
+
+// Back Icon Component
+const BackIcon = ({size = 24, color = '#fff'}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 // Dummy candidate data
 const candidatesData = [
@@ -83,6 +97,7 @@ const LotusIcon = ({size = 24, color = AppColors.white}) => (
 );
 
 const VoteScreen = (): React.JSX.Element => {
+  const navigation = useNavigation();
   const [candidates, setCandidates] = useState(candidatesData);
 
   const handleVote = (candidateId: string) => {
@@ -103,7 +118,7 @@ const VoteScreen = (): React.JSX.Element => {
         return <LotusIcon size={20} color={AppColors.white} />;
       case 'vote':
       default:
-        return <Text style={styles.voteButtonText}>VOTE</Text>;
+        return <Text style={styles.voteButtonText}>Vote</Text>;
     }
   };
 
@@ -124,6 +139,16 @@ const VoteScreen = (): React.JSX.Element => {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <BackIcon size={24} color={AppColors.white} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Vote</Text>
+      </View>
+
       <FlatList
         data={candidates}
         renderItem={renderCandidate}
@@ -141,13 +166,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.lightGray,
   },
+  header: {
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.white,
+  },
   flatList: {
     flex: 1,
-    paddingHorizontal: 20,
   },
   listContainer: {
     paddingTop: 20,
     paddingBottom: 20,
+    paddingHorizontal: 20,
   },
   candidateCard: {
     backgroundColor: AppColors.white,

@@ -24,7 +24,7 @@ import {useConfiguration} from '@app/hooks/ConfigContext';
 import {moderateScale} from '@app/constants/scaleUtils';
 import {useLanguage} from '@app/hooks/LanguageContext';
 
-const {width} = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -39,6 +39,7 @@ const AppColors = {
   orange: '#ff8c00',
   red: '#dc143c',
   green: '#228b22',
+  border: '#e5e7eb',
 };
 
 // API Types
@@ -47,10 +48,12 @@ interface CommunityUser {
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
   role: string;
   status: boolean;
   communityStatus: string;
   roleInCommunity: string;
+  positionInCommunity?: string;
   gender: string;
   occupation: string;
   religion: string;
@@ -322,9 +325,9 @@ const MyPeopleScreen = () => {
         const query = debouncedSearchQuery.toLowerCase();
         return (
           fullName.includes(query) ||
-          user?.email?.toLowerCase().includes(query) ||
-          user?.occupation?.toLowerCase().includes(query) ||
-          user?.cGotNo?.toLowerCase().includes(query)
+          email.includes(query) ||
+          occupation.includes(query) ||
+          cGotNo.includes(query)
         );
       });
       console.log('After search filter:', filtered.length);
@@ -376,17 +379,17 @@ const MyPeopleScreen = () => {
     setSelectedUser(null);
   };
 
-  const openFilterModal = () => {
+  const openFilterModal = useCallback(() => {
     setTempFilters({...filters});
     setFilterModalVisible(true);
-  };
+  }, [filters]);
 
   const applyFilters = () => {
     console.log('=== Applying Filters ===');
     console.log('Filters:', tempFilters);
     setFilters({...tempFilters});
     setFilterModalVisible(false);
-  };
+  }, [tempFilters]);
 
   const clearFilters = () => {
     console.log('=== Clearing Filters ===');
@@ -404,11 +407,11 @@ const MyPeopleScreen = () => {
     setTempFilters(emptyFilters);
     setFilters(emptyFilters);
     setFilterModalVisible(false);
-  };
+  }, []);
 
-  const getActiveFilterCount = () => {
+  const getActiveFilterCount = useCallback(() => {
     return Object.values(filters).filter(value => value !== '').length;
-  };
+  }, [filters]);
 
   const getInitials = (firstName: string, lastName: string) => {
     const firstInitial = firstName?.charAt(0)?.toUpperCase() || '';
@@ -629,6 +632,8 @@ const MyPeopleScreen = () => {
   const renderUserDetailsModal = () => {
     if (!selectedUser) return null;
 
+    const phoneNumber = selectedUser.phone || selectedUser.alternativePhone;
+
     return (
       <Modal
         animationType="slide"
@@ -637,145 +642,203 @@ const MyPeopleScreen = () => {
         onRequestClose={closeUserModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.userModalContent}>
+            {/* Header with Close Button */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>User Details</Text>
-              <TouchableOpacity onPress={closeUserModal}>
-                <CloseIcon size={24} color="#666" />
+              <Text style={styles.modalTitle}>Profile Details</Text>
+              <TouchableOpacity onPress={closeUserModal} style={styles.closeButton}>
+                <CloseIcon size={24} color={AppColors.white} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.userDetailsScrollView}>
-              <View style={styles.userProfileSection}>
-                <Text style={styles.userFullName}>
-                  {selectedUser.firstName} {selectedUser.lastName}
-                </Text>
-                <Text style={styles.userOccupation}>
-                  {selectedUser.occupation}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor:
-                        selectedUser.communityStatus === 'pending'
-                          ? AppColors.orange
-                          : AppColors.green,
-                    },
-                  ]}>
-                  <Text style={styles.statusText}>
-                    {selectedUser.communityStatus}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.detailsSection}>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Father's Name:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.fatherName}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Gender:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.gender}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Marital Status:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.maritalStatus}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Religion:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.religion}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Cast:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.cast}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Gotra:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.gotra}</Text>
-                </View>
-                {selectedUser.subGotra && (
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Subgotra:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedUser.subGotra}
+            <ScrollView 
+              style={styles.userDetailsScrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              nestedScrollEnabled={true}>
+              
+              {/* Profile Header Section */}
+              <View style={styles.profileHeaderSection}>
+                {selectedUser.profileImage ? (
+                  <Image
+                    source={{uri: selectedUser.profileImage}}
+                    style={styles.modalProfileImage}
+                  />
+                ) : (
+                  <View style={styles.modalProfileInitials}>
+                    <Text style={styles.modalInitialsText}>
+                      {getInitials(selectedUser.firstName, selectedUser.lastName)}
                     </Text>
                   </View>
                 )}
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Mother Tongue:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.motherTongue}
+                <Text style={styles.modalUserName}>
+                  {selectedUser.firstName} {selectedUser.lastName}
+                </Text>
+                {selectedUser.occupation && (
+                  <Text style={styles.modalUserOccupation}>
+                    {selectedUser.occupation}
                   </Text>
+                )}
+                <View style={styles.modalBadgeRow}>
+                  <View
+                    style={[
+                      styles.modalStatusBadge,
+                      {
+                        backgroundColor:
+                          selectedUser.communityStatus === 'pending'
+                            ? AppColors.orange
+                            : AppColors.green,
+                      },
+                    ]}>
+                    <Text style={styles.modalStatusText}>
+                      {selectedUser.communityStatus.toUpperCase()}
+                    </Text>
+                  </View>
+                  {selectedUser.positionInCommunity && (
+                    <View style={[styles.modalStatusBadge, {backgroundColor: AppColors.primary}]}>
+                      <Text style={styles.modalStatusText}>
+                        {selectedUser.positionInCommunity.toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
-              <View style={styles.detailsSection}>
-                <Text style={styles.sectionTitle}>Contact Information</Text>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Email:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.email}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Phone:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.alternativePhone}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Address:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.address}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Pin Code:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.pinCode}</Text>
-                </View>
-              </View>
-
-              <View style={styles.detailsSection}>
-                <Text style={styles.sectionTitle}>Community Information</Text>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>CGOT Number:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.cGotNo}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Role in Community:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.roleInCommunity}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Estimated Members:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.estimatedMembers}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Thought of Making:</Text>
-                  <Text style={styles.detailValue}>
-                    {selectedUser.thoughtOfMaking}
-                  </Text>
-                </View>
-              </View>
-
-              {selectedUser.interests && selectedUser.interests.length > 0 && (
-                <View style={styles.detailsSection}>
-                  <Text style={styles.sectionTitle}>Interests</Text>
-                  <View style={styles.interestsContainer}>
-                    {selectedUser.interests.map((interest, index) => (
-                      <View key={index} style={styles.interestTag}>
-                        <Text style={styles.interestText}>{interest}</Text>
+              {/* Personal Information Cards */}
+              <View style={styles.infoCardsContainer}>
+                {/* Basic Info Card */}
+                <View style={styles.infoCard}>
+                  <Text style={styles.cardTitle}>Personal Information</Text>
+                  <View style={styles.cardContent}>
+                    {selectedUser.fatherName && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Father's Name</Text>
+                        <Text style={styles.infoValue}>{selectedUser.fatherName}</Text>
                       </View>
-                    ))}
+                    )}
+                    {selectedUser.gender && selectedUser.gender !== 'not specified' && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Gender</Text>
+                        <Text style={styles.infoValue}>{selectedUser.gender}</Text>
+                      </View>
+                    )}
+                    {selectedUser.maritalStatus && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Marital Status</Text>
+                        <Text style={styles.infoValue}>{selectedUser.maritalStatus}</Text>
+                      </View>
+                    )}
+                    {selectedUser.religion && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Religion</Text>
+                        <Text style={styles.infoValue}>{selectedUser.religion}</Text>
+                      </View>
+                    )}
+                    {selectedUser.motherTongue && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Mother Tongue</Text>
+                        <Text style={styles.infoValue}>{selectedUser.motherTongue}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
-              )}
+
+                {/* Heritage Info Card */}
+                {(selectedUser.cast || selectedUser.gotra || selectedUser.subgotra || selectedUser.subGotra) && (
+                  <View style={styles.infoCard}>
+                    <Text style={styles.cardTitle}>Heritage Information</Text>
+                    <View style={styles.cardContent}>
+                      {selectedUser.cast && (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Cast</Text>
+                          <Text style={styles.infoValue}>{selectedUser.cast}</Text>
+                        </View>
+                      )}
+                      {selectedUser.gotra && (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Gotra</Text>
+                          <Text style={styles.infoValue}>{selectedUser.gotra}</Text>
+                        </View>
+                      )}
+                      {(selectedUser.subgotra || selectedUser.subGotra) && (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Subgotra</Text>
+                          <Text style={styles.infoValue}>{selectedUser.subgotra || selectedUser.subGotra}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                {/* Contact Info Card */}
+                <View style={styles.infoCard}>
+                  <Text style={styles.cardTitle}>Contact Information</Text>
+                  <View style={styles.cardContent}>
+                    {selectedUser.email && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Email</Text>
+                        <Text style={styles.infoValue}>{selectedUser.email}</Text>
+                      </View>
+                    )}
+                    {phoneNumber && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Phone</Text>
+                        <Text style={styles.infoValue}>{phoneNumber}</Text>
+                      </View>
+                    )}
+                    {selectedUser.address && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Address</Text>
+                        <Text style={styles.infoValue}>{selectedUser.address}</Text>
+                      </View>
+                    )}
+                    {selectedUser.pinCode && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Pin Code</Text>
+                        <Text style={styles.infoValue}>{selectedUser.pinCode}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Community Info Card */}
+                <View style={styles.infoCard}>
+                  <Text style={styles.cardTitle}>Community Information</Text>
+                  <View style={styles.cardContent}>
+                    {selectedUser.code && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Code</Text>
+                        <Text style={styles.infoValue}>{selectedUser.code}</Text>
+                      </View>
+                    )}
+                    {selectedUser.cGotNo && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>CGOT Number</Text>
+                        <Text style={styles.infoValue}>{selectedUser.cGotNo}</Text>
+                      </View>
+                    )}
+                    {selectedUser.roleInCommunity && (
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Role</Text>
+                        <Text style={styles.infoValue}>{selectedUser.roleInCommunity}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Interests Card */}
+                {selectedUser.interests && selectedUser.interests.length > 0 && (
+                  <View style={styles.infoCard}>
+                    <Text style={styles.cardTitle}>Interests</Text>
+                    <View style={styles.interestsContainer}>
+                      {selectedUser.interests.map((interest, index) => (
+                        <View key={index} style={styles.interestTag}>
+                          <Text style={styles.interestText}>{interest}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
             </ScrollView>
           </View>
         </View>
@@ -826,7 +889,7 @@ const MyPeopleScreen = () => {
     );
   };
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>My People</Text>
       <Text style={styles.headerSubtitle}>
@@ -1171,24 +1234,148 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   userModalContent: {
-    backgroundColor: AppColors.dark,
+    backgroundColor: AppColors.white,
     borderRadius: 20,
-    width: width * 0.9,
-    maxHeight: '80%',
+    width: width * 0.95,
+    height: height * 0.85,
     overflow: 'hidden',
+    flexDirection: 'column',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
+    paddingTop: 30,
+    backgroundColor: AppColors.primary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: AppColors.white,
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  profileHeaderSection: {
+    alignItems: 'center',
+    padding: 24,
+    paddingTop: 20,
+    backgroundColor: AppColors.lightGray,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+  },
+  modalProfileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 16,
+    borderWidth: 4,
+    borderColor: AppColors.white,
+    backgroundColor: AppColors.lightGray,
+  },
+  modalProfileInitials: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 4,
+    borderColor: AppColors.white,
+  },
+  modalInitialsText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: AppColors.white,
+  },
+  modalUserName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: AppColors.dark,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalUserOccupation: {
+    fontSize: 16,
+    color: AppColors.primary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  modalStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  modalStatusText: {
+    color: AppColors.white,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  infoCardsContainer: {
+    padding: 16,
+  },
+  infoCard: {
+    backgroundColor: AppColors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    shadowColor: AppColors.black,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: AppColors.dark,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: AppColors.primary,
+  },
+  cardContent: {
+    marginTop: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.lightGray,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: AppColors.gray,
+    fontWeight: '500',
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: AppColors.dark,
+    fontWeight: '600',
+    flex: 1.5,
+    textAlign: 'right',
   },
   filterScrollView: {
     maxHeight: '70%',
@@ -1260,66 +1447,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   userDetailsScrollView: {
-    maxHeight: '85%',
-  },
-  userProfileSection: {
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
-  },
-  userFullName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: AppColors.white,
-    marginBottom: 8,
-  },
-  userOccupation: {
-    fontSize: 16,
-    color: AppColors.primary,
-    marginBottom: 12,
-  },
-  detailsSection: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: AppColors.primary,
-    marginBottom: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: AppColors.gray,
-    width: 120,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: AppColors.white,
+    backgroundColor: AppColors.white,
     flex: 1,
   },
   interestsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: 4,
   },
   interestTag: {
-    backgroundColor: '#3a3a3a',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    margin: 4,
+    backgroundColor: AppColors.primary + '20',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: AppColors.primary,
   },
   interestText: {
-    color: AppColors.white,
-    fontSize: 12,
+    color: AppColors.dark,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 

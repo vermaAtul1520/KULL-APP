@@ -419,20 +419,64 @@ const HomeScreen = () => {
     <TouchableOpacity
       key={profile.id}
       style={styles.profileCard}
-      onPress={() => handleProfileClick(profile)}>
+      onPress={() => handleProfileClick(profile)}
+      activeOpacity={0.8}>
+      {/* Profile Image */}
       <View style={styles.profileImageContainer}>
         <Image source={{uri: profile.avatar}} style={styles.profileImage} />
-        <View style={styles.profileBadge}>
-          <Text style={styles.profileBadgeText}>{profile.id}</Text>
-        </View>
       </View>
-      <Text style={styles.profileName}>{profile.name}</Text>
-      <Text style={styles.profileRole}>
-        {profile.role || profile.designation}
-      </Text>
-      <Text style={styles.profileAge}>
-        {t('Age')}: {profile.age}
-      </Text>
+
+      {/* Profile Info */}
+      <View style={styles.profileInfoContainer}>
+        <Text style={styles.profileName} numberOfLines={2}>
+          {profile.name}
+        </Text>
+        
+        {(profile.role || profile.designation) && (
+          <Text style={styles.profileRole} numberOfLines={1}>
+            {profile.role || profile.designation}
+          </Text>
+        )}
+
+        {/* Location */}
+        {profile.location && (
+          <View style={styles.profileInfoRow}>
+            <MapMarkerIcon size={14} color="#7dd3c0" />
+            <Text style={styles.profileInfoText} numberOfLines={1}>
+              {profile.location}
+            </Text>
+          </View>
+        )}
+
+        {/* Organization */}
+        {profile.organization && (
+          <View style={styles.profileInfoRow}>
+            <OfficeBuildingIcon size={14} color="#7dd3c0" />
+            <Text style={styles.profileInfoText} numberOfLines={1}>
+              {profile.organization}
+            </Text>
+          </View>
+        )}
+
+        {/* Contact & Age Row */}
+        {(profile.contact || profile.age) && (
+          <View style={styles.profileFooterRow}>
+            {profile.contact && (
+              <View style={styles.profileFooterInfoRow}>
+                <PhoneIcon size={12} color="#aaa" />
+                <Text style={styles.profileFooterText} numberOfLines={1}>
+                  {profile.contact}
+                </Text>
+              </View>
+            )}
+            {profile.age && (
+              <Text style={styles.profileAge}>
+                {profile.age} {t('Years') || 'Years'}
+              </Text>
+            )}
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -456,7 +500,7 @@ const HomeScreen = () => {
                 <TouchableOpacity
                   onPress={closeModal}
                   style={styles.closeButton}>
-                  <CloseIcon size={24} color="#666" />
+                  <CloseIcon size={24} color="#2a2a2a" />
                 </TouchableOpacity>
               </View>
 
@@ -466,39 +510,46 @@ const HomeScreen = () => {
                   source={{uri: selectedProfile.avatar}}
                   style={styles.modalProfileImage}
                 />
-                <View style={styles.modalProfileBadge}>
-                  <Text style={styles.modalProfileBadgeText}>
-                    {selectedProfile.id}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Basic Information */}
-              <View style={styles.modalInfoSection}>
                 <Text style={styles.modalProfileName}>
                   {selectedProfile.name}
                 </Text>
-                <Text style={styles.modalProfileName}>{gotraData[0].name}</Text>
                 {(selectedProfile.role || selectedProfile.designation) && (
                   <Text style={styles.modalProfileRole}>
                     {selectedProfile.role || selectedProfile.designation}
                   </Text>
                 )}
-                <Text style={styles.modalProfileAge}>
-                  {t('Age')}: {selectedProfile.age}
-                </Text>
+              </View>
 
-                {selectedProfile.fatherName &&
-                  selectedProfile.fatherName.trim() !== '' && (
-                    <Text style={styles.modalProfileDetail}>
-                      {t('Father')}: {selectedProfile.fatherName}
-                    </Text>
+              {/* Basic Information */}
+              <View style={styles.modalInfoSection}>
+                <View style={styles.modalInfoGrid}>
+                  {selectedProfile.age && (
+                    <View style={styles.modalInfoCard}>
+                      <Text style={styles.modalInfoLabel}>
+                        {t('Age') || 'Age'}
+                      </Text>
+                      <Text style={styles.modalInfoValue}>
+                        {selectedProfile.age} {t('Years') || 'Years'}
+                      </Text>
+                    </View>
                   )}
+                  {selectedProfile.fatherName &&
+                    selectedProfile.fatherName.trim() !== '' && (
+                      <View style={styles.modalInfoCard}>
+                        <Text style={styles.modalInfoLabel}>
+                          {t('Father') || 'Father'}
+                        </Text>
+                        <Text style={styles.modalInfoValue} numberOfLines={1}>
+                          {selectedProfile.fatherName}
+                        </Text>
+                      </View>
+                    )}
+                </View>
 
                 {selectedProfile.organization &&
                   selectedProfile.organization.trim() !== '' && (
                     <View style={styles.modalDetailRow}>
-                      <OfficeBuildingIcon size={16} color="#7dd3c0" />
+                      <OfficeBuildingIcon size={18} color="#7dd3c0" />
                       <Text style={styles.modalDetailText}>
                         {selectedProfile.organization}
                       </Text>
@@ -508,7 +559,7 @@ const HomeScreen = () => {
                 {selectedProfile.location &&
                   selectedProfile.location.trim() !== '' && (
                     <View style={styles.modalDetailRow}>
-                      <MapMarkerIcon size={16} color="#7dd3c0" />
+                      <MapMarkerIcon size={18} color="#7dd3c0" />
                       <Text style={styles.modalDetailText}>
                         {selectedProfile.location}
                       </Text>
@@ -950,60 +1001,87 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     width: '48%',
-    backgroundColor: '#3a3a3a',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 16,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   profileImageContainer: {
-    position: 'relative',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: '#7dd3c0',
   },
-  profileBadge: {
-    position: 'absolute',
-    bottom: -5,
-    right: -5,
-    backgroundColor: '#7dd3c0',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileBadgeText: {
-    color: '#000',
-    fontSize: 12,
-    fontWeight: 'bold',
+  profileInfoContainer: {
+    width: '100%',
   },
   profileName: {
-    color: '#fff',
+    color: '#2a2a2a',
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 20,
   },
   profileRole: {
-    color: '#aaa',
-    fontSize: 14,
+    color: '#7dd3c0',
+    fontSize: 13,
+    fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
-  profileDetails: {
-    color: '#aaa',
+  profileInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  profileInfoText: {
+    color: '#666',
     fontSize: 12,
-    textAlign: 'center',
+    marginLeft: 6,
+    flex: 1,
+  },
+  profileFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  profileFooterInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  profileFooterText: {
+    color: '#999',
+    fontSize: 11,
+    marginLeft: 4,
+    flex: 1,
   },
   profileAge: {
-    color: '#aaa',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
+    color: '#999',
+    fontSize: 11,
+    fontWeight: '500',
   },
   menuSection: {
     paddingHorizontal: 16,
@@ -1108,19 +1186,19 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 20,
-    width: width * 0.9,
-    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    width: '100%',
+    maxHeight: '90%',
     padding: 0,
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: -2},
     shadowOpacity: 0.25,
     shadowRadius: 10,
   },
@@ -1129,142 +1207,167 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#444',
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#7dd3c0',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#2a2a2a',
   },
   closeButton: {
     padding: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 16,
   },
   modalProfileSection: {
     alignItems: 'center',
-    paddingVertical: 20,
-    position: 'relative',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    backgroundColor: '#f8f9fa',
   },
   modalProfileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  modalProfileBadge: {
-    position: 'absolute',
-    bottom: 15,
-    right: width * 0.5 - 70,
-    backgroundColor: '#7dd3c0',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalProfileBadgeText: {
-    color: '#000',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  modalInfoSection: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#7dd3c0',
+    marginBottom: 16,
   },
   modalProfileName: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#2a2a2a',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalProfileRole: {
     fontSize: 18,
     color: '#7dd3c0',
+    fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 0,
   },
-  modalProfileAge: {
-    fontSize: 16,
-    color: '#aaa',
-    textAlign: 'center',
-    marginBottom: 8,
+  modalInfoSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
-  modalProfileDetail: {
-    fontSize: 16,
-    color: '#aaa',
-    textAlign: 'center',
+  modalInfoGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalInfoCard: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    marginHorizontal: 6,
+  },
+  modalInfoLabel: {
+    fontSize: 12,
+    color: '#666',
     marginBottom: 4,
+    fontWeight: '500',
+  },
+  modalInfoValue: {
+    fontSize: 16,
+    color: '#2a2a2a',
+    fontWeight: '600',
   },
   modalSection: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   modalSectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#7dd3c0',
-    marginBottom: 12,
+    color: '#2a2a2a',
+    marginBottom: 16,
   },
   modalSubTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2a2a2a',
     marginBottom: 8,
+    marginTop: 4,
   },
   modalTextSection: {
     marginBottom: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 12,
   },
   modalDescriptionText: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#666',
     lineHeight: 20,
-    textAlign: 'justify',
+    textAlign: 'left',
   },
   modalDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
   },
   modalDetailText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: 15,
+    color: '#2a2a2a',
     marginLeft: 12,
+    flex: 1,
+    fontWeight: '500',
   },
   modalTagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: 8,
   },
   modalTag: {
-    backgroundColor: '#3a3a3a',
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     margin: 4,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#7dd3c0',
   },
   modalHobbyTag: {
     borderColor: '#ff8c00',
   },
   modalTagText: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#2a2a2a',
+    fontSize: 13,
+    fontWeight: '500',
   },
   modalLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#3a3a3a',
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   modalLinkText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: 15,
+    color: '#2a2a2a',
     marginLeft: 12,
     flex: 1,
+    fontWeight: '500',
   },
   // Ad Popup Styles
   adPopupOverlay: {

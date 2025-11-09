@@ -5,7 +5,7 @@ import {useLanguage} from '@app/hooks/LanguageContext'; // Add this import
 import BannerComponent from '@app/navigators/BannerComponent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -102,6 +102,7 @@ const PostScreen = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(true);
@@ -135,33 +136,42 @@ const PostScreen = () => {
 
   const navigation = useNavigation();
 
-  // Search functionality
+  // Debounce search query
   useEffect(() => {
-    filterPosts();
-  }, [searchQuery, posts]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-  // Debug log for searchQuery
-  useEffect(() => {
-    console.log('searchQuery', searchQuery);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const filterPosts = () => {
-    if (searchQuery.trim() === '') {
+  // Search functionality
+  useEffect(() => {
+    if (!posts || posts.length === 0) {
+      setFilteredPosts([]);
+      return;
+    }
+
+    if (debouncedSearchQuery.trim() === '') {
       setFilteredPosts(posts);
     } else {
-      const query = searchQuery.toLowerCase().trim();
-      const filtered = posts.filter(
-        post =>
-          post.title.toLowerCase().includes(query) ||
-          post.content.toLowerCase().includes(query) ||
-          `${post.author.firstName} ${post.author.lastName}`
-            .toLowerCase()
-            .includes(query) ||
-          post.community.name.toLowerCase().includes(query),
-      );
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      const filtered = posts.filter(post => {
+        const title = post.title?.toLowerCase() || '';
+        const content = post.content?.toLowerCase() || '';
+        const authorName = `${post.author?.firstName || ''} ${post.author?.lastName || ''}`.toLowerCase().trim();
+        const communityName = post.community?.name?.toLowerCase() || '';
+        
+        return (
+          title.includes(query) ||
+          content.includes(query) ||
+          authorName.includes(query) ||
+          communityName.includes(query)
+        );
+      });
       setFilteredPosts(filtered);
     }
-  };
+  }, [debouncedSearchQuery, posts]);
 
   // SVG Icon Components
   const PlusIcon = ({size = 24, color = '#fff'}) => (
@@ -752,7 +762,7 @@ const PostScreen = () => {
       setLoading(true);
       const fetchedPosts = await fetchPosts();
       setPosts(fetchedPosts);
-      setFilteredPosts(fetchedPosts);
+      // Don't set filteredPosts here - let useEffect handle filtering
     } catch (error) {
       Alert.alert(
         t('Error') || 'Error',
@@ -1657,16 +1667,9 @@ const PostScreen = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2a2a2a" />
-        <Text style={styles.loadingText}>
-          {t('Loading posts...') || 'Loading posts...'}
-        </Text>
-      </View>
-    );
-  }
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>

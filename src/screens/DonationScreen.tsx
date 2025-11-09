@@ -150,7 +150,7 @@ const DonationScreen = () => {
 
       if (data.success && data.data) {
         setDonations(data.data);
-        setFilteredDonations(data.data);
+        // Don't set filteredDonations here - let useEffect handle filtering
         console.log('Fetched donations:', data.data.length);
       } else {
         throw new Error('Invalid API response structure');
@@ -218,8 +218,8 @@ const DonationScreen = () => {
     if (activeFilters.category && activeFilters.category !== 'All') {
       filtered = filtered.filter(
         donation =>
-          donation.category.toLowerCase() ===
-          activeFilters.category.toLowerCase(),
+          donation.category?.toLowerCase().trim() ===
+          activeFilters.category.toLowerCase().trim(),
       );
     }
 
@@ -227,8 +227,8 @@ const DonationScreen = () => {
     if (activeFilters.urgency && activeFilters.urgency !== 'All') {
       filtered = filtered.filter(
         donation =>
-          donation.urgency.toLowerCase() ===
-          activeFilters.urgency.toLowerCase(),
+          donation.urgency?.toLowerCase().trim() ===
+          activeFilters.urgency.toLowerCase().trim(),
       );
     }
 
@@ -239,8 +239,8 @@ const DonationScreen = () => {
     ) {
       filtered = filtered.filter(
         donation =>
-          donation.organizationType.toLowerCase() ===
-          activeFilters.organizationType.toLowerCase(),
+          donation.organizationType?.toLowerCase().trim() ===
+          activeFilters.organizationType.toLowerCase().trim(),
       );
     }
 
@@ -257,7 +257,7 @@ const DonationScreen = () => {
     setDebouncedSearchQuery('');
   }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setActiveFilters({
       category: '',
       urgency: '',
@@ -267,7 +267,7 @@ const DonationScreen = () => {
     setDebouncedSearchQuery('');
   };
 
-  const hasActiveFilters = () => {
+  const hasActiveFilters = useCallback(() => {
     return (
       searchQuery.trim() !== '' ||
       (activeFilters.category && activeFilters.category !== 'All') ||
@@ -275,7 +275,7 @@ const DonationScreen = () => {
       (activeFilters.organizationType &&
         activeFilters.organizationType !== 'All')
     );
-  };
+  }, [searchQuery, activeFilters]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -489,10 +489,10 @@ const DonationScreen = () => {
     setSelectedDonation(null);
   };
 
-  const openFilterModal = () => {
+  const openFilterModal = useCallback(() => {
     setTempFilters(activeFilters);
     setFilterModalVisible(true);
-  };
+  }, [activeFilters]);
 
   const closeFilterModal = () => {
     setFilterModalVisible(false);
@@ -801,7 +801,7 @@ const DonationScreen = () => {
       </Modal>
     );
   };
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View style={styles.headerStyle}>
       <Text style={styles.headerTitle}>Donations</Text>
       <Text style={styles.headerSubtitle}>

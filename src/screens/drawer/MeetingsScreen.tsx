@@ -611,10 +611,18 @@ const MeetingScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={AppColors.primary} />
-        <Text style={styles.loadingText}>Loading meeting documents...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
+        <View style={styles.initialLoadingContainer}>
+          <ActivityIndicator size="large" color={AppColors.primary} />
+          <Text style={styles.initialLoadingText}>
+            Loading meeting documents...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -933,15 +941,38 @@ const styles = StyleSheet.create({
   },
 
   // Loading & Empty states
-  loadingContainer: {
+  initialLoadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingText: {
+  initialLoadingText: {
     marginTop: 12,
     fontSize: 16,
     color: AppColors.gray,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.lightGray,
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: AppColors.dark,
+    marginTop: 10,
+    fontWeight: '600',
+  },
+  loadingSubtext: {
+    color: AppColors.gray,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
   emptyState: {
     alignItems: 'center',

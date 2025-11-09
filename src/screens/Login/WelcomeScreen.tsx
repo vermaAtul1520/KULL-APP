@@ -56,11 +56,7 @@ const WelcomeScreen: React.FC = () => {
         {/* Welcome Message */}
         <View style={styles.messageContainer}>
           <Text style={styles.welcomeTitle}>Welcome !</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Samaj Ekta. Your village, now in your hands!{'\n'}
-            Stay informed, access services, and connect{'\n'}
-            with your community — all in one place!
-          </Text>
+          
         </View>
 
         {/* Phone Image */}

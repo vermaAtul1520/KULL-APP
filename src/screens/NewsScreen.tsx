@@ -88,6 +88,7 @@ const NewsScreen = () => {
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -327,7 +328,7 @@ const NewsScreen = () => {
     </View>
   );
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View style={styles.headerContainer}>
       <Text style={styles.headerTitle}>
         {t('Community News') || 'Community News'}
@@ -337,7 +338,7 @@ const NewsScreen = () => {
           'Stay updated with latest happenings'}
       </Text>
     </View>
-  );
+  ), [t]);
 
   const renderSearchBar = () => (
     <View style={styles.searchContainer}>
@@ -367,22 +368,23 @@ const NewsScreen = () => {
         )}
       </View>
 
-      {/* Results Count */}
-      {searchQuery.trim() !== '' && (
-        <View style={styles.resultsContainer}>
-          <Text style={styles.resultsText}>
-            {filteredNews.length}{' '}
-            {filteredNews.length !== 1
-              ? t('articles') || 'articles'
-              : t('article') || 'article'}{' '}
-            {t('found') || 'found'}
-            {filteredNews.length !== newsData.length &&
-              ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
+        {/* Results Count */}
+        {searchQuery.trim() !== '' && (
+          <View style={styles.resultsContainer}>
+            <Text style={styles.resultsText}>
+              {filteredNews.length}{' '}
+              {filteredNews.length !== 1
+                ? t('articles') || 'articles'
+                : t('article') || 'article'}{' '}
+              {t('found') || 'found'}
+              {filteredNews.length !== newsData.length &&
+                ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
+            </Text>
+          </View>
+        )}
+      </View>
+    </>
+  ), [searchQuery, filteredNews.length, newsData.length, renderHeader, t]);
 
   if (loading) {
     return (

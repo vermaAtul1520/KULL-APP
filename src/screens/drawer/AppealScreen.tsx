@@ -483,6 +483,9 @@ const AppealScreen = () => {
 
   // Category mapping for API - Maps 6 UI categories to 4 backend values
   const getCategoryApiValue = (displayCategory: string) => {
+    if (!displayCategory || displayCategory.trim() === '') {
+      return 'general'; // Default to general if category is not selected
+    }
     const categoryMap = {
       'General Suggestion': 'general',
       'Technical Issue': 'technical',
@@ -718,7 +721,7 @@ const AppealScreen = () => {
   const handleSubmitAppeal = async () => {
     console.log('🎯 Starting appeal submission process...');
 
-    if (!subject.trim() || !description.trim() || !category) {
+    if (!subject.trim() || !description.trim()) {
       console.log('❌ Validation failed: Missing required fields');
       Alert.alert('Missing Information', 'Please fill in all required fields.');
       return;
@@ -858,7 +861,7 @@ const AppealScreen = () => {
 
         {/* Category Selection */}
         <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>Category *</Text>
+          <Text style={styles.sectionLabel}>Category</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1033,7 +1036,6 @@ const AppealScreen = () => {
               styles.submitButton,
               (!subject.trim() ||
                 !description.trim() ||
-                !category ||
                 isSubmitting) &&
                 styles.submitButtonDisabled,
             ]}
@@ -1041,7 +1043,6 @@ const AppealScreen = () => {
             disabled={
               !subject.trim() ||
               !description.trim() ||
-              !category ||
               isSubmitting
             }>
             {isSubmitting ? (
