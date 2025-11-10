@@ -14,8 +14,8 @@ import {
   StatusBar,
   TextInput,
 } from 'react-native';
-import {WebView} from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import {BASE_URL} from '@app/constants/constant';
 import {useAuth} from '@app/navigators';
 import {useLanguage} from '@app/hooks/LanguageContext';
@@ -143,7 +143,6 @@ const BhajanScreen = () => {
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<BhajanVideo | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [webViewLoading, setWebViewLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
 
   // API Functions
@@ -279,13 +278,11 @@ const BhajanScreen = () => {
   const openVideoInModal = (video: BhajanVideo) => {
     setSelectedVideo(video);
     setModalVisible(true);
-    setWebViewLoading(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
     setSelectedVideo(null);
-    setWebViewLoading(true);
   };
 
   const handleVideoPress = (video: BhajanVideo) => {
@@ -361,7 +358,6 @@ const BhajanScreen = () => {
     if (!selectedVideo) return null;
 
     const youtubeId = extractYouTubeId(selectedVideo.youtubeUrl);
-    const embedUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&playsinline=1`;
 
     return (
       <Modal
@@ -386,23 +382,17 @@ const BhajanScreen = () => {
           </View>
 
           <View style={styles.videoContainer}>
-            {webViewLoading && (
-              <View style={styles.webViewLoading}>
-                <ActivityIndicator size="large" color={AppColors.primary} />
-                <Text style={styles.loadingText}>
-                  {t('Loading video...') || 'Loading video...'}
-                </Text>
-              </View>
-            )}
-            <WebView
-              source={{uri: embedUrl}}
-              style={styles.webView}
-              allowsFullscreenVideo={true}
-              mediaPlaybackRequiresUserAction={false}
-              onLoadStart={() => setWebViewLoading(true)}
-              onLoad={() => setWebViewLoading(false)}
-              onError={() => {
-                setWebViewLoading(false);
+            <YoutubePlayer
+              height={220}
+              play={true}
+              videoId={youtubeId}
+              onChangeState={(state: string) => {
+                if (state === 'ended') {
+                  // Video ended
+                }
+              }}
+              onError={(error: string) => {
+                console.error('YouTube Player Error:', error);
                 Alert.alert(
                   t('Error') || 'Error',
                   t(
