@@ -16,7 +16,7 @@ import {
   Modal,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {WebView} from 'react-native-webview';
+import Pdf from 'react-native-pdf';
 import {AppColors} from './constants';
 import {
   BackIcon,
@@ -43,6 +43,11 @@ export const ContentScreen = () => {
   const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(
     null,
   );
+
+  // PDF viewer states
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     // Fetch occasions when component mounts - use filters from context
@@ -299,14 +304,52 @@ export const ContentScreen = () => {
           </View>
 
           {modalType === 'pdf' && selectedContent && (
-            <WebView
-              source={{
-                uri: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
-                  selectedContent.url,
-                )}`,
-              }}
-              style={styles.webView}
-            />
+            <View style={styles.pdfContainer}>
+              {pdfLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={AppColors.primary} />
+                  <Text style={styles.loadingText}>Loading PDF...</Text>
+                </View>
+              )}
+              <Pdf
+                trustAllCerts={false}
+                source={{
+                  uri: selectedContent.url,
+                  cache: true,
+                }}
+                style={styles.pdf}
+                onLoadComplete={(numberOfPages, filePath) => {
+                  console.log('✅ PDF loaded successfully');
+                  console.log(`Number of pages: ${numberOfPages}`);
+                  setTotalPages(numberOfPages);
+                  setPdfLoading(false);
+                }}
+                onPageChanged={(page, numberOfPages) => {
+                  console.log(`Current page: ${page}/${numberOfPages}`);
+                  setCurrentPage(page);
+                }}
+                onError={error => {
+                  console.error('❌ PDF Error:', error);
+                  setPdfLoading(false);
+                  Alert.alert(
+                    'Error',
+                    'Could not load PDF. Please check your internet connection and try again.',
+                  );
+                }}
+                enablePaging={true}
+                horizontal={false}
+                fitPolicy={0}
+                spacing={10}
+                enableAntialiasing={true}
+              />
+              {!pdfLoading && totalPages > 0 && (
+                <View style={styles.pdfPageIndicator}>
+                  <Text style={styles.pdfPageText}>
+                    📖 Page {currentPage} / {totalPages}
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
 
           {modalType === 'image' && selectedContent && (
@@ -519,5 +562,44 @@ const styles = StyleSheet.create({
   fullImage: {
     width: '100%',
     height: '100%',
+  },
+  pdfContainer: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+  },
+  pdf: {
+    flex: 1,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.white,
+    zIndex: 10,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: AppColors.gray,
+  },
+  pdfPageIndicator: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  pdfPageText: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: AppColors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

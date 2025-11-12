@@ -17,7 +17,7 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
-import {WebView} from 'react-native-webview';
+import Pdf from 'react-native-pdf';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {useNavigation} from '@react-navigation/native';
 
@@ -244,6 +244,11 @@ const MeetingScreen = () => {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
+  // PDF viewer states
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+
   // Fetch meeting documents from API
   const fetchMeetingDocuments = async () => {
     try {
@@ -361,12 +366,6 @@ const MeetingScreen = () => {
 
   // PDF Modal Component
   const PdfModal = () => {
-    const getPdfViewerUrl = (pdfUrl: string) => {
-      return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
-        pdfUrl,
-      )}`;
-    };
-
     return (
       <Modal
         visible={pdfModalVisible}
@@ -384,7 +383,10 @@ const MeetingScreen = () => {
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
                   {selectedDocument?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>Meeting Document</Text>
+                <Text style={styles.viewerLabel}>
+                  📖 View-only • No downloads
+                  {!pdfLoading && totalPages > 0 && ` • Page ${currentPage}/${totalPages}`}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={closeModals}
@@ -396,13 +398,8 @@ const MeetingScreen = () => {
 
           <View style={styles.pdfContent}>
             {selectedDocument?.url && (
-              <WebView
-                source={{uri: getPdfViewerUrl(selectedDocument.url)}}
-                style={styles.webView}
-                startInLoadingState={true}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                renderLoading={() => (
+              <>
+                {pdfLoading && (
                   <View style={styles.loadingContainer}>
                     <View style={styles.loadingSpinner}>
                       <Text style={styles.loadingEmoji}>📋</Text>
@@ -412,10 +409,38 @@ const MeetingScreen = () => {
                     </Text>
                   </View>
                 )}
-                onError={() => {
-                  Alert.alert('Error', 'Unable to load meeting document');
-                }}
-              />
+                <Pdf
+                  trustAllCerts={false}
+                  source={{
+                    uri: selectedDocument.url,
+                    cache: true,
+                  }}
+                  style={styles.pdf}
+                  onLoadComplete={(numberOfPages, filePath) => {
+                    console.log('✅ PDF loaded successfully');
+                    console.log(`Number of pages: ${numberOfPages}`);
+                    setTotalPages(numberOfPages);
+                    setPdfLoading(false);
+                  }}
+                  onPageChanged={(page, numberOfPages) => {
+                    console.log(`Current page: ${page}/${numberOfPages}`);
+                    setCurrentPage(page);
+                  }}
+                  onError={error => {
+                    console.error('❌ PDF Error:', error);
+                    setPdfLoading(false);
+                    Alert.alert(
+                      'Error',
+                      'Could not load PDF. Please check your internet connection and try again.',
+                    );
+                  }}
+                  enablePaging={true}
+                  horizontal={false}
+                  fitPolicy={0}
+                  spacing={10}
+                  enableAntialiasing={true}
+                />
+              </>
             )}
           </View>
         </View>
@@ -989,6 +1014,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   pdfContent: {
+    flex: 1,
+  },
+  pdf: {
     flex: 1,
   },
   webView: {

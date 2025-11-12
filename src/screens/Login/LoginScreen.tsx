@@ -85,25 +85,44 @@ const LoginScreen: React.FC = () => {
     emailOrPhone: string,
     password: string,
   ): Promise<LoginResponse> => {
-    const response = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        emailOrPhone,
-        password,
-      }),
-    });
-    console.log('Login API Response:', response);
+    try {
+      console.log('🔍 Attempting login to:', `${BASE_URL}/api/auth/login`);
 
-    const data = await response.json();
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailOrPhone,
+          password,
+        }),
+        // Add timeout
+      });
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+      console.log('✅ Login API Response status:', response.status);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('❌ Login API Error:', error);
+
+      // Better error messages
+      if (error.message === 'Network request failed') {
+        throw new Error(
+          'Cannot connect to server. Please check:\n' +
+          '1. Your internet connection\n' +
+          '2. Server is running at: ' + BASE_URL
+        );
+      }
+
+      throw error;
     }
-
-    return data;
   };
 
   const handleLogin = async () => {

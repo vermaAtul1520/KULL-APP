@@ -2,7 +2,7 @@
  * Unified KartavyaScreen Component - Handles both main category selection and detail views
  *
  * Required Dependencies:
- * npm install react-native-svg react-native-webview
+ * npm install react-native-svg react-native-pdf react-native-blob-util
  */
 
 import {useNavigation} from '@react-navigation/native';
@@ -25,7 +25,7 @@ import {
   FlatList,
 } from 'react-native';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
-import {WebView} from 'react-native-webview';
+import Pdf from 'react-native-pdf';
 import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 import {BASE_URL} from '@app/constants/constant';
 
@@ -540,6 +540,8 @@ export default function KartavyaScreen() {
   // PDF Modal Component
   const PdfModal = () => {
     const [pdfLoading, setPdfLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
 
     console.log('selectedItem : ', selectedItem);
     console.log('pdfUrl: ', selectedItem?.attachment);
@@ -563,6 +565,7 @@ export default function KartavyaScreen() {
                 </Text>
                 <Text style={styles.viewerLabel}>
                   📖 View-only • No downloads
+                  {totalPages > 0 && ` • Page ${currentPage}/${totalPages}`}
                 </Text>
               </View>
               <TouchableOpacity
@@ -576,68 +579,51 @@ export default function KartavyaScreen() {
           <View style={styles.pdfContent}>
             {selectedItem && selectedItem.attachment ? (
               <>
-                <WebView
+                <Pdf
+                  trustAllCerts={false}
                   source={{
-                    uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-                      selectedItem.attachment,
-                    )}`,
+                    uri: selectedItem.attachment,
+                    cache: true,
                   }}
                   style={styles.pdf}
-                  startInLoadingState={true}
-                  onLoadStart={() => {
-                    console.log('📄 PDF loading started');
-                    console.log('URL:', selectedItem.attachment);
-                    console.log(
-                      'Viewer URL:',
-                      `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-                        selectedItem.attachment,
-                      )}`,
-                    );
-                    setPdfLoading(true);
-                  }}
-                  onLoadEnd={() => {
+                  onLoadComplete={(numberOfPages, filePath) => {
                     console.log('✅ PDF loaded successfully');
-                    setTimeout(() => setPdfLoading(false), 1000);
+                    console.log(`Number of pages: ${numberOfPages}`);
+                    console.log(`File path: ${filePath}`);
+                    setTotalPages(numberOfPages);
+                    setPdfLoading(false);
                   }}
-                  onError={syntheticEvent => {
-                    const {nativeEvent} = syntheticEvent;
-                    console.error('❌ PDF Error:', nativeEvent);
+                  onPageChanged={(page, numberOfPages) => {
+                    console.log(`Current page: ${page}/${numberOfPages}`);
+                    setCurrentPage(page);
+                  }}
+                  onError={error => {
+                    console.error('❌ PDF Error:', error);
                     setPdfLoading(false);
                     Alert.alert(
                       'Error',
-                      'Could not load PDF. Please check your internet connection.',
+                      'Could not load PDF. Please check your internet connection and try again.',
                     );
                   }}
-                  javaScriptEnabled={true}
-                  domStorageEnabled={true}
-                  scalesPageToFit={true}
-                  originWhitelist={['*']}
-                  setSupportMultipleWindows={false}
-                  onShouldStartLoadWithRequest={request => {
-                    // Prevent download requests
-                    if (
-                      request.url.includes('.pdf') &&
-                      !request.url.includes('docs.google.com')
-                    ) {
-                      console.log('Blocked direct PDF download:', request.url);
-                      return false;
-                    }
-                    return true;
+                  onLoadProgress={percent => {
+                    console.log(`PDF loading: ${Math.round(percent * 100)}%`);
                   }}
-                  renderLoading={() => (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="large" color={AppColors.teal} />
-                      <Text style={styles.loadingText}>Loading PDF...</Text>
-                      <Text style={styles.loadingSubtext}>
-                        {selectedItem.title}
-                      </Text>
-                    </View>
-                  )}
+                  // Read-only settings - prevents downloads and sharing
+                  enablePaging={true}
+                  horizontal={false}
+                  spacing={10}
+                  // Performance settings
+                  enableAntialiasing={true}
+                  enableAnnotationRendering={false}
+                  fitPolicy={0} // 0 = fit width, 1 = fit height, 2 = fit both
                 />
                 {pdfLoading && (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={AppColors.teal} />
                     <Text style={styles.loadingText}>Loading PDF...</Text>
+                    <Text style={styles.loadingSubtext}>
+                      {selectedItem.title}
+                    </Text>
                   </View>
                 )}
               </>

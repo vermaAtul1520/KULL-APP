@@ -18,7 +18,7 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
-import {WebView} from 'react-native-webview';
+import Pdf from 'react-native-pdf';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {useNavigation} from '@react-navigation/native';
 
@@ -128,6 +128,11 @@ const EmploymentScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
   const [jobDetailModalVisible, setJobDetailModalVisible] = useState(false);
+
+  // PDF viewer states
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Fetch job posts from API
   const fetchJobPosts = async () => {
@@ -258,22 +263,55 @@ const EmploymentScreen = () => {
 
                 {selectedJob.fileType === 'pdf' && selectedJob.thumbnailUrl && (
                   <View style={styles.pdfContainer}>
-                    <WebView
-                      source={{uri: getFullImageUrl(selectedJob.thumbnailUrl)}}
+                    {pdfLoading && (
+                      <View style={styles.pdfLoadingContainer}>
+                        <ActivityIndicator
+                          size="large"
+                          color={AppColors.primary}
+                        />
+                        <Text style={styles.pdfLoadingText}>
+                          Loading PDF...
+                        </Text>
+                      </View>
+                    )}
+                    <Pdf
+                      trustAllCerts={false}
+                      source={{
+                        uri: selectedJob.thumbnailUrl,
+                        cache: true,
+                      }}
                       style={styles.pdfWebView}
-                      startInLoadingState={true}
-                      renderLoading={() => (
-                        <View style={styles.pdfLoadingContainer}>
-                          <ActivityIndicator
-                            size="large"
-                            color={AppColors.primary}
-                          />
-                          <Text style={styles.pdfLoadingText}>
-                            Loading PDF...
-                          </Text>
-                        </View>
-                      )}
+                      onLoadComplete={(numberOfPages, filePath) => {
+                        console.log('✅ PDF loaded successfully');
+                        console.log(`Number of pages: ${numberOfPages}`);
+                        setTotalPages(numberOfPages);
+                        setPdfLoading(false);
+                      }}
+                      onPageChanged={(page, numberOfPages) => {
+                        console.log(`Current page: ${page}/${numberOfPages}`);
+                        setCurrentPage(page);
+                      }}
+                      onError={error => {
+                        console.error('❌ PDF Error:', error);
+                        setPdfLoading(false);
+                        Alert.alert(
+                          'Error',
+                          'Could not load PDF. Please check your internet connection and try again.',
+                        );
+                      }}
+                      enablePaging={true}
+                      horizontal={false}
+                      fitPolicy={0}
+                      spacing={10}
+                      enableAntialiasing={true}
                     />
+                    {!pdfLoading && totalPages > 0 && (
+                      <View style={styles.pdfPageIndicator}>
+                        <Text style={styles.pdfPageText}>
+                          📖 Page {currentPage} / {totalPages}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 )}
 
@@ -998,6 +1036,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2a2a2a',
     lineHeight: 20,
+  },
+  pdfPageIndicator: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  pdfPageText: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: AppColors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
