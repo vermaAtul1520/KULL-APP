@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
@@ -88,17 +88,39 @@ const NewsScreen = () => {
   const {t} = useLanguage(); // Add this line
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
   // Search functionality - Use useMemo to prevent re-renders and focus loss
   const filteredNews = React.useMemo(() => {
-    if (!searchQuery || searchQuery.trim() === '') {
+    if (!debouncedSearchQuery || debouncedSearchQuery.trim() === '') {
       return newsData;
     }
-    const query = searchQuery.toLowerCase().trim();
+    const query = debouncedSearchQuery.toLowerCase().trim();
     return newsData.filter(
       news =>
         news.title.toLowerCase().includes(query) ||
@@ -109,7 +131,17 @@ const NewsScreen = () => {
           .includes(query) ||
         news.tags.some(tag => tag.toLowerCase().includes(query)),
     );
-  }, [searchQuery, newsData]);
+  }, [debouncedSearchQuery, newsData]);
+
+  // Search handlers
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+  }, []);
 
   const fetchNews = async (isRefresh = false) => {
     try {
@@ -313,20 +345,23 @@ const NewsScreen = () => {
       <View style={styles.searchInputContainer}>
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
+          ref={searchInputRef}
           style={styles.searchInput}
           placeholder={
             t('Search news by title, content, author, category...') ||
             'Search news by title, content, author, category...'
           }
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={handleSearchChange}
           placeholderTextColor={AppColors.gray}
-          blurOnSubmit={false}
-          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoComplete="off"
+          underlineColorAndroid="transparent"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
-            onPress={() => setSearchQuery('')}
+            onPress={handleClearSearch}
             style={styles.clearButton}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>
@@ -366,6 +401,9 @@ const NewsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BannerComponent />
+      {renderHeader()}
+      {renderSearchBar()}
       <FlatList
         data={filteredNews}
         renderItem={renderNewsItem}
@@ -380,13 +418,6 @@ const NewsScreen = () => {
             tintColor={AppColors.teal}
           />
         }
-        ListHeaderComponent={() => (
-          <>
-            <BannerComponent />
-            {renderHeader()}
-            {renderSearchBar()}
-          </>
-        )}
         ListEmptyComponent={renderEmptyComponent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />

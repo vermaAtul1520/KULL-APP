@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect, useMemo, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -101,6 +101,11 @@ const MyPeopleScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // Modal states
   const [selectedUser, setSelectedUser] = useState<CommunityUser | null>(null);
@@ -190,6 +195,11 @@ const MyPeopleScreen = () => {
       setLoading(true);
       const headers = await getAuthHeaders();
       const COMMUNITY_ID = await getCommunityId();
+
+      if (!COMMUNITY_ID) {
+        throw new Error('Community ID not found. Please login again.');
+      }
+
       console.log('Fetching community users for:', COMMUNITY_ID);
       const response = await fetch(
         `${BASE_URL}/api/communities/${COMMUNITY_ID}/users`,
@@ -202,28 +212,43 @@ const MyPeopleScreen = () => {
       console.log('Users API response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Unauthorized. Please login again.');
+        } else if (response.status === 404) {
+          throw new Error('Community not found.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later.');
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
       }
 
       const data: UsersAPIResponse = await response.json();
       console.log('Loaded users count:', data.count);
 
-      if (data.success && data.data) {
+      if (data.success && data.data && Array.isArray(data.data)) {
         setUsers(data.data);
-        setFilteredUsers(data.data);
       } else {
+        console.warn('Invalid data format received:', data);
         setUsers([]);
-        setFilteredUsers([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching community users:', error);
+
+      let errorMessage = 'Failed to load community users. Please try again.';
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.toString().includes('Network request failed')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
       Alert.alert(
         'Error',
-        'Failed to load community users. Please try again.',
+        errorMessage,
         [{text: 'OK', style: 'default'}],
       );
       setUsers([]);
-      setFilteredUsers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -234,15 +259,35 @@ const MyPeopleScreen = () => {
     fetchCommunityUsers();
   }, []);
 
+  // Debounce search query to prevent re-renders while typing
+  useEffect(() => {
+    // Clear previous timer
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    // Set new timer
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms debounce delay
+
+    // Cleanup on unmount or when searchQuery changes
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
   // Search and filter logic - Use useMemo to prevent re-renders and focus loss
   const filteredUsers = React.useMemo(() => {
     let filtered = users;
 
-    // Apply search filter
-    if (searchQuery && searchQuery.trim()) {
+    // Apply search filter using debounced query
+    if (debouncedSearchQuery && debouncedSearchQuery.trim()) {
       filtered = filtered?.filter(user => {
         const fullName = `${user?.firstName} ${user?.lastName}`?.toLowerCase();
-        const query = searchQuery.toLowerCase();
+        const query = debouncedSearchQuery.toLowerCase();
         return (
           fullName.includes(query) ||
           user?.email?.toLowerCase().includes(query) ||
@@ -264,13 +309,24 @@ const MyPeopleScreen = () => {
     });
 
     return filtered;
-  }, [searchQuery, filters, users]);
+  }, [debouncedSearchQuery, filters, users]);
 
   // Handlers
   const onRefresh = () => {
     setRefreshing(true);
     fetchCommunityUsers();
   };
+
+  // Handle search input change - wrapped in useCallback to prevent re-creation
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  // Handle clear search
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+  }, []);
 
   const handleUserPress = (user: CommunityUser) => {
     setSelectedUser(user);
@@ -320,64 +376,78 @@ const MyPeopleScreen = () => {
   };
 
   // Render functions
-  const renderUserCard = ({item}: {item: CommunityUser}) => (
-    <TouchableOpacity
-      style={styles.userCard}
-      onPress={() => handleUserPress(item)}>
-      <View style={styles.userCardHeader}>
-        <View style={styles.userCardLeft}>
-          {item.profileImage ? (
-            <Image
-              source={{uri: item.profileImage}}
-              style={styles.profileImage}
-            />
-          ) : (
-            <View style={styles.profileInitials}>
-              <Text style={styles.initialsText}>
-                {getInitials(item.firstName, item.lastName)}
-              </Text>
-            </View>
-          )}
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>
-              {item.firstName} {item.lastName}
-            </Text>
-            <Text style={styles.userRole}>{item.occupation}</Text>
-            <Text style={styles.userCode}>{item.cGotNo}</Text>
-          </View>
-        </View>
-        <View style={styles.statusContainer}>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor:
-                  item.communityStatus === 'pending'
-                    ? AppColors.orange
-                    : AppColors.green,
-              },
-            ]}>
-            <Text style={styles.statusText}>{item.communityStatus}</Text>
-          </View>
-        </View>
-      </View>
+  const renderUserCard = ({item}: {item: CommunityUser}) => {
+    // Check if profileImage is valid (not null, undefined, or empty string)
+    const hasValidProfileImage = item.profileImage && item.profileImage.trim() !== '';
 
-      <View style={styles.userDetails}>
-        <View style={styles.detailRow}>
-          <EmailIcon size={14} color={AppColors.gray} />
-          <Text style={styles.detailText}>{item.email}</Text>
+    return (
+      <TouchableOpacity
+        style={styles.userCard}
+        onPress={() => handleUserPress(item)}>
+        <View style={styles.userCardHeader}>
+          <View style={styles.userCardLeft}>
+            {hasValidProfileImage ? (
+              <Image
+                source={{uri: item.profileImage}}
+                style={styles.profileImage}
+                onError={(error) => {
+                  console.warn('Failed to load profile image:', error.nativeEvent.error);
+                }}
+              />
+            ) : (
+              <View style={styles.profileInitials}>
+                <Text style={styles.initialsText}>
+                  {getInitials(item.firstName, item.lastName)}
+                </Text>
+              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>
+                {item.firstName} {item.lastName}
+              </Text>
+              <Text style={styles.userRole}>{item.occupation || 'N/A'}</Text>
+              <Text style={styles.userCode}>{item.cGotNo || 'N/A'}</Text>
+            </View>
+          </View>
+          <View style={styles.statusContainer}>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor:
+                    item.communityStatus === 'pending'
+                      ? AppColors.orange
+                      : AppColors.green,
+                },
+              ]}>
+              <Text style={styles.statusText}>{item.communityStatus || 'Unknown'}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.detailRow}>
-          <MapMarkerIcon size={14} color={AppColors.gray} />
-          <Text style={styles.detailText}>{item.address}</Text>
+
+        <View style={styles.userDetails}>
+          <View style={styles.detailRow}>
+            <EmailIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText} numberOfLines={1}>
+              {item.email || 'No email'}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <MapMarkerIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText} numberOfLines={1}>
+              {item.address || 'No address'}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <AccountGroupIcon size={14} color={AppColors.gray} />
+            <Text style={styles.detailText} numberOfLines={1}>
+              {item.roleInCommunity || 'Member'}
+            </Text>
+          </View>
         </View>
-        <View style={styles.detailRow}>
-          <AccountGroupIcon size={14} color={AppColors.gray} />
-          <Text style={styles.detailText}>{item.roleInCommunity}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderFilterModal = () => {
     const filterOptions: {[key: string]: string[]} = {
@@ -665,24 +735,48 @@ const MyPeopleScreen = () => {
     );
   };
 
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        {searchQuery.trim() !== ''
-          ? t('No news matches your search') || 'No news matches your search'
-          : t('No news available') || 'No news available'}
-      </Text>
-      {searchQuery.trim() !== '' && (
-        <TouchableOpacity
-          style={styles.clearSearchButton}
-          onPress={() => setSearchQuery('')}>
-          <Text style={styles.clearSearchText}>
-            {t('Clear Search') || 'Clear Search'}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const renderEmptyComponent = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={AppColors.teal} />
+          <Text style={styles.emptyText}>Loading members...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Icon name="account-group-outline" size={64} color={AppColors.gray} />
+        <Text style={styles.emptyText}>
+          {searchQuery.trim() !== ''
+            ? 'No members match your search'
+            : getActiveFilterCount() > 0
+            ? 'No members match your filters'
+            : 'No members found'}
+        </Text>
+        <Text style={styles.emptySubText}>
+          {searchQuery.trim() !== ''
+            ? 'Try searching with different keywords'
+            : getActiveFilterCount() > 0
+            ? 'Try adjusting your filters'
+            : 'Members will appear here once they join the community'}
+        </Text>
+        {(searchQuery.trim() !== '' || getActiveFilterCount() > 0) && (
+          <TouchableOpacity
+            style={styles.clearSearchButton}
+            onPress={() => {
+              handleClearSearch();
+              clearFilters();
+            }}>
+            <Text style={styles.clearSearchText}>
+              Clear Search & Filters
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -695,64 +789,77 @@ const MyPeopleScreen = () => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={filteredUsers}
-        renderItem={renderUserCard}
-        keyExtractor={(item: any) => item._id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[AppColors.teal]}
-            tintColor={AppColors.teal}
-          />
-        }
-        ListHeaderComponent={() => (
-          <>
-            <BannerComponent />
-            {renderHeader()}
-            {/* Search and Filter */}
-            <View style={styles.searchFilterContainer}>
-              <View style={styles.searchContainer}>
-                <SearchIcon size={24} color="#2a2a2a" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search by name, email, occupation..."
-                  placeholderTextColor={AppColors.gray}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  blurOnSubmit={false}
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setSearchQuery('')}
-                    style={styles.clearSearchIcon}>
-                    <Icon name="close" size={20} color={AppColors.gray} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={openFilterModal}>
-                <FilterIcon size={24} color="#2a2a2a" />
-                {getActiveFilterCount() > 0 && (
-                  <View style={styles.filterBadge}>
-                    <Text style={styles.filterBadgeText}>
-                      {getActiveFilterCount()}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <BannerComponent />
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color={AppColors.teal} />
+            <Text style={styles.loadingText}>Loading members...</Text>
+          </View>
+        </View>
+      ) : (
+        <>
+          <BannerComponent />
+          {renderHeader()}
+          {/* Search and Filter - MOVED OUTSIDE FlatList */}
+          <View style={styles.searchFilterContainer}>
+            <View style={styles.searchContainer}>
+              <SearchIcon size={24} color="#2a2a2a" />
+              <TextInput
+                ref={searchInputRef}
+                style={styles.searchInput}
+                placeholder="Search by name, email, occupation..."
+                placeholderTextColor={AppColors.gray}
+                value={searchQuery}
+                onChangeText={handleSearchChange}
+                autoCorrect={false}
+                autoCapitalize="none"
+                autoComplete="off"
+                underlineColorAndroid="transparent"
+                keyboardType="default"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={handleClearSearch}
+                  style={styles.clearSearchIcon}>
+                  <CloseIcon size={20} color={AppColors.gray} />
+                </TouchableOpacity>
+              )}
             </View>
-          </>
-        )}
-        ListEmptyComponent={renderEmptyComponent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={openFilterModal}>
+              <FilterIcon size={24} color="#2a2a2a" />
+              {getActiveFilterCount() > 0 && (
+                <View style={styles.filterBadge}>
+                  <Text style={styles.filterBadgeText}>
+                    {getActiveFilterCount()}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={filteredUsers}
+            renderItem={renderUserCard}
+            keyExtractor={(item: any) => item._id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[AppColors.teal]}
+                tintColor={AppColors.teal}
+              />
+            }
+            ListEmptyComponent={renderEmptyComponent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        </>
+      )}
 
       {/* Modals */}
       {renderFilterModal()}
@@ -869,8 +976,13 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
+    backgroundColor: AppColors.cream,
+  },
+  loadingContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 100,
   },
   loadingText: {
     marginTop: 12,

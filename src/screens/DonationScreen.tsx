@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -82,6 +82,7 @@ const DonationScreen = () => {
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
     category: '',
@@ -93,6 +94,10 @@ const DonationScreen = () => {
     urgency: '',
     organizationType: '',
   });
+
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // Filter options
   const categories = [
@@ -171,17 +176,34 @@ const DonationScreen = () => {
     fetchDonations();
   }, []);
 
+  // Debounce search query
+  useEffect(() => {
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
   // Search and Filter Logic
   useEffect(() => {
     applyFiltersAndSearch();
-  }, [searchQuery, activeFilters, donations]);
+  }, [debouncedSearchQuery, activeFilters, donations]);
 
   const applyFiltersAndSearch = () => {
     let filtered = [...donations];
 
     // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
       filtered = filtered.filter(
         donation =>
           donation.title.toLowerCase().includes(query) ||
@@ -226,6 +248,16 @@ const DonationScreen = () => {
     setFilteredDonations(filtered);
   };
 
+  // Search handlers
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+  }, []);
+
   const clearFilters = () => {
     setActiveFilters({
       category: '',
@@ -233,6 +265,7 @@ const DonationScreen = () => {
       organizationType: '',
     });
     setSearchQuery('');
+    setDebouncedSearchQuery('');
   };
 
   const hasActiveFilters = () => {
@@ -789,6 +822,108 @@ const DonationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BannerComponent />
+      {renderHeader()}
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <SearchIcon size={20} color="#666" />
+          <TextInput
+            ref={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Search by title, organization, category..."
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            placeholderTextColor="#999"
+            autoCorrect={false}
+            autoCapitalize="none"
+            autoComplete="off"
+            underlineColorAndroid="transparent"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              style={styles.clearSearchButton}>
+             <CloseIcon size={20} color={AppColors.gray} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={openFilterModal}>
+          <FilterIcon size={24} color="#2a2a2a" />
+          {hasActiveFilters() && <View style={styles.filterIndicator} />}
+        </TouchableOpacity>
+      </View>
+
+      {/* Active Filters Display */}
+      {/* {hasActiveFilters() && (
+        <View style={styles.activeFiltersContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {searchQuery.trim() !== '' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  Search: "{searchQuery}"
+                </Text>
+                <TouchableOpacity onPress={handleClearSearch}>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeFilters.category &&
+              activeFilters.category !== 'All' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>
+                    {activeFilters.category}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setActiveFilters(prev => ({...prev, category: ''}))
+                    }>
+                    <CloseIcon size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            {activeFilters.urgency && activeFilters.urgency !== 'All' && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  {activeFilters.urgency} urgency
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    setActiveFilters(prev => ({...prev, urgency: ''}))
+                  }>
+                  <CloseIcon size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeFilters.organizationType &&
+              activeFilters.organizationType !== 'All' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>
+                    {activeFilters.organizationType}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setActiveFilters(prev => ({
+                        ...prev,
+                        organizationType: '',
+                      }))
+                    }>
+                    <CloseIcon size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            <TouchableOpacity
+              style={styles.clearAllFiltersChip}
+              onPress={clearFilters}>
+              <Text style={styles.clearAllFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )} */}
+
       <FlatList
         data={filteredDonations}
         renderItem={renderDonationCard}
@@ -803,107 +938,6 @@ const DonationScreen = () => {
             tintColor={AppColors.teal}
           />
         }
-        ListHeaderComponent={() => (
-          <>
-            <BannerComponent />
-            {renderHeader()}
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchInputContainer}>
-                <SearchIcon size={20} color="#666" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search by title, organization, category..."
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholderTextColor="#999"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setSearchQuery('')}
-                    style={styles.clearSearchButton}>
-                    <CloseIcon size={20} color="#666" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              {/* <View> */}
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={openFilterModal}>
-                <FilterIcon size={24} color="#2a2a2a" />
-                {hasActiveFilters() && <View style={styles.filterIndicator} />}
-              </TouchableOpacity>
-              {/* </View> */}
-            </View>
-            {/* Active Filters Display */}
-            {hasActiveFilters() && (
-              <View style={styles.activeFiltersContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {searchQuery.trim() !== '' && (
-                    <View style={styles.activeFilterChip}>
-                      <Text style={styles.activeFilterText}>
-                        Search: "{searchQuery}"
-                      </Text>
-                      <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <CloseIcon size={16} color="#666" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  {activeFilters.category &&
-                    activeFilters.category !== 'All' && (
-                      <View style={styles.activeFilterChip}>
-                        <Text style={styles.activeFilterText}>
-                          {activeFilters.category}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() =>
-                            setActiveFilters(prev => ({...prev, category: ''}))
-                          }>
-                          <CloseIcon size={16} color="#666" />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  {activeFilters.urgency && activeFilters.urgency !== 'All' && (
-                    <View style={styles.activeFilterChip}>
-                      <Text style={styles.activeFilterText}>
-                        {activeFilters.urgency} urgency
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          setActiveFilters(prev => ({...prev, urgency: ''}))
-                        }>
-                        <CloseIcon size={16} color="#666" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  {activeFilters.organizationType &&
-                    activeFilters.organizationType !== 'All' && (
-                      <View style={styles.activeFilterChip}>
-                        <Text style={styles.activeFilterText}>
-                          {activeFilters.organizationType}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() =>
-                            setActiveFilters(prev => ({
-                              ...prev,
-                              organizationType: '',
-                            }))
-                          }>
-                          <CloseIcon size={16} color="#666" />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  <TouchableOpacity
-                    style={styles.clearAllFiltersChip}
-                    onPress={clearFilters}>
-                    <Text style={styles.clearAllFiltersText}>Clear All</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </View>
-            )}
-          </>
-        )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <HeartIcon size={64} color="#ccc" />
@@ -988,11 +1022,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   clearSearchButton: {
-    backgroundColor: AppColors.teal,
+    // backgroundColor: AppColors.teal,
     paddingHorizontal: moderateScale(20),
     paddingVertical: moderateScale(10),
-    borderRadius: moderateScale(20),
-    marginTop: moderateScale(15),
+    // borderRadius: moderateScale(20),
+    // marginTop: moderateScale(15),
   },
   clearSearchText: {
     color: AppColors.white,

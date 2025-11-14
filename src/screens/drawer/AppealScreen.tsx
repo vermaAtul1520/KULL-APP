@@ -517,7 +517,7 @@ const AppealScreen = () => {
       community: payload.community,
     });
 
-    // Add uploaded file if present
+    // Add uploaded file if present - ONLY SEND CLOUDINARY URL
     if (uploadedFile) {
       console.log('📎 Processing uploaded file:', {
         id: uploadedFile.id,
@@ -525,30 +525,34 @@ const AppealScreen = () => {
         type: uploadedFile.type,
         size: uploadedFile.size,
         mimeType: uploadedFile.mimeType,
-        uri: uploadedFile.uri,
-        hasCloudinaryUrl: !!cloudinaryUrl,
         cloudinaryUrl: cloudinaryUrl,
-        hasBase64: !!uploadedFile.base64,
-        base64Length: uploadedFile.base64?.length || 0,
       });
 
-      // Send attachment as a JSON string to match API expectations
-      const attachmentData = {
-        id: uploadedFile.id,
-        name: uploadedFile.name,
-        type: uploadedFile.type,
-        size: uploadedFile.size,
-        mimeType: uploadedFile.mimeType,
-        // Use Cloudinary URL if available, otherwise use base64
-        url: cloudinaryUrl || undefined,
-        base64Data: cloudinaryUrl ? undefined : uploadedFile.base64 || '',
-        uri: uploadedFile.uri,
-      };
-
-      // Convert attachment object to JSON string
-      payload.attachment = JSON.stringify(attachmentData);
-
-      console.log('✅ Attachment added to payload as JSON string');
+      // For images and videos, require Cloudinary URL
+      if (uploadedFile.type === 'image' || uploadedFile.type === 'video') {
+        if (cloudinaryUrl) {
+          // Only send the Cloudinary URL - no blob data
+          payload.attachment = cloudinaryUrl;
+          console.log('✅ Attachment added to payload (Cloudinary URL only):', cloudinaryUrl);
+        } else {
+          // If image/video is uploaded but no Cloudinary URL, show error
+          console.log('❌ Image/Video uploaded but no Cloudinary URL available');
+          throw new Error('File upload failed. Please try uploading the file again.');
+        }
+      } else if (uploadedFile.type === 'text') {
+        // For text notes, send the base64 data directly (small size, no need for Cloudinary)
+        payload.attachment = uploadedFile.base64 || '';
+        console.log('✅ Text note added to payload (base64)');
+      } else {
+        // For other file types, require Cloudinary URL
+        if (cloudinaryUrl) {
+          payload.attachment = cloudinaryUrl;
+          console.log('✅ Attachment added to payload (Cloudinary URL only):', cloudinaryUrl);
+        } else {
+          console.log('❌ File uploaded but no Cloudinary URL available');
+          throw new Error('File upload failed. Please try uploading the file again.');
+        }
+      }
     } else {
       // Set attachment to empty string when no file is uploaded
       payload.attachment = '';
@@ -557,11 +561,7 @@ const AppealScreen = () => {
 
     console.log('🎯 Final payload structure:', {
       ...payload,
-      attachment: payload.attachment
-        ? typeof payload.attachment === 'string'
-          ? `[JSON STRING - ${payload.attachment.length} chars]`
-          : payload.attachment
-        : payload.attachment,
+      attachment: payload.attachment || '(empty)',
     });
 
     return payload;
@@ -576,11 +576,7 @@ const AppealScreen = () => {
       // Log payload with attachment details
       const logPayload = {
         ...payload,
-        attachment: payload.attachment
-          ? typeof payload.attachment === 'string'
-            ? `[JSON STRING - ${payload.attachment.length} chars]`
-            : payload.attachment
-          : payload.attachment,
+        attachment: payload.attachment || '(empty)',
       };
       console.log('📦 Full Payload:', JSON.stringify(logPayload, null, 2));
 

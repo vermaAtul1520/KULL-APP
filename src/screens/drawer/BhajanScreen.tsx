@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -144,6 +144,11 @@ const BhajanScreen = () => {
   const [selectedVideo, setSelectedVideo] = useState<BhajanVideo | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // API Functions
   // const getAuthHeaders = async () => {
@@ -166,14 +171,31 @@ const BhajanScreen = () => {
     return '';
   };
 
-  // Search functionality
-  const filterVideos = (text: string) => {
-    if (!text.trim()) {
+  // Debounce search text
+  useEffect(() => {
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchText]);
+
+  // Filter videos based on debounced search
+  useEffect(() => {
+    if (!debouncedSearchText.trim()) {
       setFilteredVideos(videos);
       return;
     }
 
-    const searchLower = text.toLowerCase().trim();
+    const searchLower = debouncedSearchText.toLowerCase().trim();
     const filtered = videos.filter(
       video =>
         video.title.toLowerCase().includes(searchLower) ||
@@ -183,17 +205,17 @@ const BhajanScreen = () => {
     );
 
     setFilteredVideos(filtered);
-  };
+  }, [debouncedSearchText, videos]);
 
-  const handleSearchChange = (text: string) => {
+  // Search handlers
+  const handleSearchChange = useCallback((text: string) => {
     setSearchText(text);
-    filterVideos(text);
-  };
+  }, []);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchText('');
-    setFilteredVideos(videos);
-  };
+    setDebouncedSearchText('');
+  }, []);
 
   const fetchBhajanVideos = async () => {
     try {
@@ -246,10 +268,6 @@ const BhajanScreen = () => {
     fetchBhajanVideos();
   }, []);
 
-  useEffect(() => {
-    filterVideos(searchText);
-  }, [videos, searchText]);
-
   const onRefresh = () => {
     fetchBhajanVideos();
   };
@@ -295,6 +313,7 @@ const BhajanScreen = () => {
       <View style={styles.searchInputContainer}>
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
+          ref={searchInputRef}
           style={styles.searchInput}
           placeholder={
             t('Search bhajans by title, artist, category...') ||
@@ -303,8 +322,10 @@ const BhajanScreen = () => {
           placeholderTextColor={AppColors.gray}
           value={searchText}
           onChangeText={handleSearchChange}
-          returnKeyType="search"
-          blurOnSubmit={false}
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoComplete="off"
+          underlineColorAndroid="transparent"
         />
         {searchText.length > 0 && (
           <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>

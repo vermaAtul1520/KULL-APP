@@ -1,6 +1,6 @@
 import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 import {BASE_URL} from '@app/constants/constant';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -239,6 +239,7 @@ const MeetingScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedDocument, setSelectedDocument] =
     useState<MeetingDocument | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -248,6 +249,10 @@ const MeetingScreen = () => {
   const [pdfLoading, setPdfLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // Fetch meeting documents from API
   const fetchMeetingDocuments = async () => {
@@ -298,17 +303,30 @@ const MeetingScreen = () => {
     fetchMeetingDocuments();
   }, []);
 
-  // Filter documents based on search
+  // Debounce search query
   useEffect(() => {
-    filterDocuments();
-  }, [searchQuery, meetingDocuments]);
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
 
-  const filterDocuments = () => {
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Filter documents based on debounced search
+  useEffect(() => {
     let filtered = meetingDocuments;
 
-    if (searchQuery.trim()) {
+    if (debouncedSearchQuery.trim()) {
       filtered = filtered.filter(doc => {
-        const query = searchQuery.toLowerCase();
+        const query = debouncedSearchQuery.toLowerCase();
         return (
           doc.title?.toLowerCase().includes(query) ||
           doc.description?.toLowerCase().includes(query) ||
@@ -319,7 +337,17 @@ const MeetingScreen = () => {
     }
 
     setFilteredDocuments(filtered);
-  };
+  }, [debouncedSearchQuery, meetingDocuments]);
+
+  // Search handlers
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -638,17 +666,20 @@ const MeetingScreen = () => {
       <View style={styles.searchContainer}>
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
+          ref={searchInputRef}
           style={styles.searchInput}
           placeholder="Search meeting documents, agendas, minutes..."
           placeholderTextColor={AppColors.gray}
           value={searchQuery}
-          onChangeText={setSearchQuery}
-          blurOnSubmit={false}
-          returnKeyType="search"
+          onChangeText={handleSearchChange}
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoComplete="off"
+          underlineColorAndroid="transparent"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
-            onPress={() => setSearchQuery('')}
+            onPress={handleClearSearch}
             style={styles.clearSearchIcon}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>

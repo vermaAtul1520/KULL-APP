@@ -1,5 +1,5 @@
 // Screen 2: Categories List (API-driven)
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,29 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, NavigationProp} from '@react-navigation/native';
 import {AppColors} from './constants';
 import {BackIcon} from './components/OccasionIcons';
 import {OccasionApiService, OccasionCategory} from '@app/services/occasionApi';
 import {useOccasion} from '@app/contexts/OccasionContext';
 
+type CategoriesScreenNavigationProp = NavigationProp<{
+  OccasionGenderSelection: {
+    occasionType: string;
+    categoryId: string | null;
+    categoryName: string | null;
+    filterId: string | null;
+    filterName: string | null;
+  };
+  OccasionFilters: {
+    occasionType: string;
+    categoryId: string;
+    categoryName: string;
+  };
+}>;
+
 export const CategoriesScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<CategoriesScreenNavigationProp>();
   const route = useRoute();
   const {occasionType} = route.params as {occasionType: string};
   const {setCategory} = useOccasion();
@@ -27,7 +42,6 @@ export const CategoriesScreen = () => {
   const [allCategories, setAllCategories] = useState<OccasionCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const hasNavigated = useRef(false); // Track if we've already navigated
 
   // Filter categories based on selected occasion type
   const categories = allCategories.filter(
@@ -37,20 +51,6 @@ export const CategoriesScreen = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
-
-  // Navigate to next screen based on category availability
-  useEffect(() => {
-    if (!loading && categories.length === 0 && !hasNavigated.current) {
-      // No categories found, set null and skip to Gotra selection
-      hasNavigated.current = true; // Mark as navigated to prevent infinite loop
-      setCategory(null, null);
-      navigation.navigate('OccasionFilters', {
-        occasionType,
-        categoryId: null,
-        categoryName: null,
-      });
-    }
-  }, [loading, categories.length, occasionType, navigation, setCategory]); // Use categories.length instead of categories
 
   const fetchCategories = async () => {
     try {
