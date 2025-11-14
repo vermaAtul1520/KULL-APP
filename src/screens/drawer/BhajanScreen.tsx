@@ -304,6 +304,7 @@ const BhajanScreen = () => {
           value={searchText}
           onChangeText={handleSearchChange}
           returnKeyType="search"
+          blurOnSubmit={false}
         />
         {searchText.length > 0 && (
           <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
   View,
   Text,
@@ -98,7 +98,6 @@ const MyPeopleScreen = () => {
   const {t} = useLanguage();
   // State management
   const [users, setUsers] = useState<CommunityUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<CommunityUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -235,12 +234,12 @@ const MyPeopleScreen = () => {
     fetchCommunityUsers();
   }, []);
 
-  // Search and filter logic
-  useEffect(() => {
+  // Search and filter logic - Use useMemo to prevent re-renders and focus loss
+  const filteredUsers = React.useMemo(() => {
     let filtered = users;
 
     // Apply search filter
-    if (searchQuery.trim()) {
+    if (searchQuery && searchQuery.trim()) {
       filtered = filtered?.filter(user => {
         const fullName = `${user?.firstName} ${user?.lastName}`?.toLowerCase();
         const query = searchQuery.toLowerCase();
@@ -264,7 +263,7 @@ const MyPeopleScreen = () => {
       }
     });
 
-    setFilteredUsers(filtered);
+    return filtered;
   }, [searchQuery, filters, users]);
 
   // Handlers
@@ -724,6 +723,8 @@ const MyPeopleScreen = () => {
                   placeholderTextColor={AppColors.gray}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
+                  blurOnSubmit={false}
+                  returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity

@@ -499,6 +499,8 @@ const EducationScreen = () => {
           placeholderTextColor={AppColors.gray}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          blurOnSubmit={false}
+          returnKeyType="search"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity

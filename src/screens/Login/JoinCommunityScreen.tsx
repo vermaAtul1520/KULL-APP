@@ -67,6 +67,7 @@ interface JoinFormData {
   religion: string;
   motherTongue: string;
   interests: string;
+  address: string;
 }
 
 const JoinCommunityScreen: React.FC = () => {
@@ -102,6 +103,7 @@ const JoinCommunityScreen: React.FC = () => {
     religion: '',
     motherTongue: '',
     interests: '',
+    address: '',
   });
 
   const updateFormData = (field: keyof JoinFormData, value: string) => {
@@ -175,6 +177,7 @@ const JoinCommunityScreen: React.FC = () => {
           'phoneNumber',
           'email',
           'profession',
+          'address',
           'password',
           'confirmPassword',
         ];
@@ -219,6 +222,12 @@ const JoinCommunityScreen: React.FC = () => {
 
       if (formData.phoneNumber.length !== 10) {
         Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+        return false;
+      }
+
+      // Address validation
+      if (formData.address.trim().length < 10) {
+        Alert.alert('Error', 'Please enter a complete address (minimum 10 characters)');
         return false;
       }
 
@@ -289,6 +298,7 @@ const JoinCommunityScreen: React.FC = () => {
         fatherName: formData.fatherName,
         maritalStatus: formData.maritalStatus,
         bloodGroup: formData.bloodGroup,
+        address: formData.address,
         age: ageOrDob === 'age' ? parseInt(formData.age) : undefined,
         dateOfBirth: ageOrDob === 'dob' ? formData.dob : undefined,
         referral: formData.referralCode,
@@ -554,6 +564,26 @@ const JoinCommunityScreen: React.FC = () => {
           placeholder="Enter your profession"
           placeholderTextColor={AppColors.gray}
         />
+      </View>
+
+      {/* Address */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Address *</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {height: moderateScale(80), textAlignVertical: 'top'},
+          ]}
+          value={formData.address}
+          onChangeText={value => updateFormData('address', value)}
+          placeholder="Enter your complete address"
+          placeholderTextColor={AppColors.gray}
+          multiline
+          numberOfLines={3}
+        />
+        <Text style={styles.helpText}>
+          Please provide your complete residential address
+        </Text>
       </View>
 
       {/* Password */}

@@ -459,6 +459,8 @@ export default function DukanScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={AppColors.gray}
+          blurOnSubmit={false}
+          returnKeyType="search"
         />
       </View>
     </View>

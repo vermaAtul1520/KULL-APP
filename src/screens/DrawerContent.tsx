@@ -519,9 +519,12 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
         text: t('Logout'),
         style: 'destructive',
         onPress: () => {
-          logout();
-          // Close the drawer after logout
+          // Close the drawer BEFORE logout to prevent view hierarchy issues
           props.navigation.closeDrawer();
+          // Small delay to ensure drawer is fully closed
+          setTimeout(() => {
+            logout();
+          }, 300);
         },
       },
     ]);

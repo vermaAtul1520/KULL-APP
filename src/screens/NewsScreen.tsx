@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -87,36 +87,29 @@ const NewsScreen = () => {
   const {user, token} = useAuth();
   const {t} = useLanguage(); // Add this line
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
-  const [filteredNews, setFilteredNews] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Search functionality
-  useEffect(() => {
-    filterNews();
-  }, [searchQuery, newsData]);
-
-  const filterNews = () => {
-    if (searchQuery.trim() === '') {
-      setFilteredNews(newsData);
-    } else {
-      const query = searchQuery.toLowerCase().trim();
-      const filtered = newsData.filter(
-        news =>
-          news.title.toLowerCase().includes(query) ||
-          news.content.toLowerCase().includes(query) ||
-          news.category.toLowerCase().includes(query) ||
-          `${news.author.firstName} ${news.author.lastName}`
-            .toLowerCase()
-            .includes(query) ||
-          news.tags.some(tag => tag.toLowerCase().includes(query)),
-      );
-      setFilteredNews(filtered);
+  // Search functionality - Use useMemo to prevent re-renders and focus loss
+  const filteredNews = React.useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return newsData;
     }
-  };
+    const query = searchQuery.toLowerCase().trim();
+    return newsData.filter(
+      news =>
+        news.title.toLowerCase().includes(query) ||
+        news.content.toLowerCase().includes(query) ||
+        news.category.toLowerCase().includes(query) ||
+        `${news.author.firstName} ${news.author.lastName}`
+          .toLowerCase()
+          .includes(query) ||
+        news.tags.some(tag => tag.toLowerCase().includes(query)),
+    );
+  }, [searchQuery, newsData]);
 
   const fetchNews = async (isRefresh = false) => {
     try {
@@ -141,7 +134,6 @@ const NewsScreen = () => {
 
       if (result.success) {
         setNewsData(result.data);
-        setFilteredNews(result.data);
       } else {
         Alert.alert(
           t('Error') || 'Error',
@@ -329,6 +321,8 @@ const NewsScreen = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={AppColors.gray}
+          blurOnSubmit={false}
+          returnKeyType="search"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity

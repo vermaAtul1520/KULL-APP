@@ -3,6 +3,10 @@ import {BASE_URL} from '@app/constants/constant';
 import {useNavigation} from '@react-navigation/native';
 import React, {useState, useEffect} from 'react';
 import {
+  uploadImageToCloudinary,
+  uploadVideoToCloudinary,
+} from '@app/utils/imageUpload';
+import {
   View,
   Text,
   StyleSheet,
@@ -197,6 +201,8 @@ const AppealScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [textNote, setTextNote] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [cloudinaryUrl, setCloudinaryUrl] = useState<string | null>(null);
 
   const categories = [
     'General Suggestion',
@@ -283,7 +289,7 @@ const AppealScreen = () => {
     });
   };
 
-  const processMediaFile = (asset: any, mediaType: MediaType) => {
+  const processMediaFile = async (asset: any, mediaType: MediaType) => {
     console.log('📸 Processing media file:', {
       mediaType,
       hasUri: !!asset.uri,
@@ -324,6 +330,44 @@ const AppealScreen = () => {
 
     setUploadedFile(file);
     setShowTextInput(false);
+
+    // Upload to Cloudinary
+    setIsUploading(true);
+    console.log('☁️ Uploading to Cloudinary...');
+
+    try {
+      let result;
+
+      if (file.type === 'image') {
+        result = await uploadImageToCloudinary(file.uri, file.name);
+      } else {
+        // For video, pass fileName and mimeType
+        result = await uploadVideoToCloudinary(file.uri, file.name, file.mimeType);
+      }
+
+      if (result.success && result.url) {
+        console.log('✅ Cloudinary upload successful:', result.url);
+        setCloudinaryUrl(result.url);
+        Alert.alert(
+          'Upload Successful',
+          `${file.type === 'image' ? 'Image' : 'Video'} uploaded to cloud storage successfully!`,
+        );
+      } else {
+        console.error('❌ Cloudinary upload failed:', result.error);
+        Alert.alert(
+          'Upload Warning',
+          `Failed to upload to cloud storage: ${result.error}. The file will be sent directly with your appeal.`,
+        );
+      }
+    } catch (error) {
+      console.error('💥 Error uploading to Cloudinary:', error);
+      Alert.alert(
+        'Upload Warning',
+        'Failed to upload to cloud storage. The file will be sent directly with your appeal.',
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Handle text note creation
@@ -433,6 +477,8 @@ const AppealScreen = () => {
   const removeFile = () => {
     setUploadedFile(null);
     setShowTextInput(false);
+    setCloudinaryUrl(null);
+    setIsUploading(false);
   };
 
   // Category mapping for API - Maps 6 UI categories to 4 backend values
@@ -480,6 +526,8 @@ const AppealScreen = () => {
         size: uploadedFile.size,
         mimeType: uploadedFile.mimeType,
         uri: uploadedFile.uri,
+        hasCloudinaryUrl: !!cloudinaryUrl,
+        cloudinaryUrl: cloudinaryUrl,
         hasBase64: !!uploadedFile.base64,
         base64Length: uploadedFile.base64?.length || 0,
       });
@@ -491,7 +539,9 @@ const AppealScreen = () => {
         type: uploadedFile.type,
         size: uploadedFile.size,
         mimeType: uploadedFile.mimeType,
-        base64Data: uploadedFile.base64 || '',
+        // Use Cloudinary URL if available, otherwise use base64
+        url: cloudinaryUrl || undefined,
+        base64Data: cloudinaryUrl ? undefined : uploadedFile.base64 || '',
         uri: uploadedFile.uri,
       };
 
@@ -943,6 +993,16 @@ const AppealScreen = () => {
                     <Text style={styles.fileSize}>
                       {getFileSize(uploadedFile.size)}
                     </Text>
+                    {isUploading && (
+                      <Text style={styles.uploadingText}>
+                        ☁️ Uploading to cloud...
+                      </Text>
+                    )}
+                    {cloudinaryUrl && !isUploading && (
+                      <Text style={styles.cloudinarySuccess}>
+                        ✅ Uploaded to cloud storage
+                      </Text>
+                    )}
                   </View>
                 </View>
                 <TouchableOpacity
@@ -1212,6 +1272,18 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 14,
     color: AppColors.white,
+    fontWeight: '500',
+  },
+  uploadingText: {
+    fontSize: 12,
+    color: AppColors.blue,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  cloudinarySuccess: {
+    fontSize: 12,
+    color: AppColors.green,
+    marginTop: 4,
     fontWeight: '500',
   },
 

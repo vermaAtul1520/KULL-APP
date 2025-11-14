@@ -1,5 +1,5 @@
 // Screen 2: Categories List (API-driven)
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ export const CategoriesScreen = () => {
   const [allCategories, setAllCategories] = useState<OccasionCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const hasNavigated = useRef(false); // Track if we've already navigated
 
   // Filter categories based on selected occasion type
   const categories = allCategories.filter(
@@ -39,8 +40,9 @@ export const CategoriesScreen = () => {
 
   // Navigate to next screen based on category availability
   useEffect(() => {
-    if (!loading && categories.length === 0) {
+    if (!loading && categories.length === 0 && !hasNavigated.current) {
       // No categories found, set null and skip to Gotra selection
+      hasNavigated.current = true; // Mark as navigated to prevent infinite loop
       setCategory(null, null);
       navigation.navigate('OccasionFilters', {
         occasionType,
@@ -48,7 +50,7 @@ export const CategoriesScreen = () => {
         categoryName: null,
       });
     }
-  }, [loading, categories]);
+  }, [loading, categories.length, occasionType, navigation, setCategory]); // Use categories.length instead of categories
 
   const fetchCategories = async () => {
     try {

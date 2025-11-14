@@ -5,6 +5,7 @@ import React, {
   useContext,
   useMemo,
   useCallback,
+  useRef,
 } from 'react';
 import {
   Image,
@@ -14,6 +15,7 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  InteractionManager,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -33,6 +35,7 @@ import {
   NavigationContainer,
   useNavigation,
   NavigatorScreenParams,
+  CommonActions,
 } from '@react-navigation/native';
 import {ConfigurationProvider} from '@app/hooks/ConfigContext';
 import HomeScreen from '@app/screens/Home/HomeScreen';
@@ -396,13 +399,26 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
 
   const logout = useCallback(async () => {
     try {
+      // Clear AsyncStorage first
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
+
+      // Wait for all interactions to complete before updating state
+      // This prevents the "child already has a parent" error
+      InteractionManager.runAfterInteractions(() => {
+        // Use setTimeout to ensure all views are properly unmounted
+        setTimeout(() => {
+          setUser(null);
+          setToken(null);
+          setIsLoggedIn(false);
+        }, 100);
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Even if there's an error, still try to logout
       setUser(null);
       setToken(null);
       setIsLoggedIn(false);
-    } catch (error) {
-      console.error('Error during logout:', error);
     }
   }, []);
 
@@ -617,7 +633,14 @@ const ProfileScreen = (): React.JSX.Element => {
         {
           text: t('Sign Out') || 'Sign Out',
           style: 'destructive',
-          onPress: logout,
+          onPress: () => {
+            // Navigate back before logout to prevent view hierarchy issues
+            navigation.goBack();
+            // Small delay to ensure navigation is complete
+            setTimeout(() => {
+              logout();
+            }, 300);
+          },
         },
       ],
     );

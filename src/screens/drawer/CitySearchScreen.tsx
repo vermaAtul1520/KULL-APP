@@ -479,12 +479,7 @@ export default function CitySearchScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
-            onSubmitEditing={() => {
-              Keyboard.dismiss();
-              if (searchQuery.trim().length >= 2) {
-                performSearch(searchQuery.trim());
-              }
-            }}
+            blurOnSubmit={false}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
