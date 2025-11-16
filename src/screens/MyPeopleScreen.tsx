@@ -248,25 +248,14 @@ const MyPeopleScreen = () => {
 
         // Log sample user data to verify gotra/subgotra fields
         if (data.data.length > 0) {
-          console.log('=== Sample User Data ===');
-          console.log('First user:', {
-            name: `${data.data[0].firstName} ${data.data[0].lastName}`,
-            gotra: data.data[0].gotra,
-            subGotra: data.data[0].subGotra,
-            gender: data.data[0].gender,
-            maritalStatus: data.data[0].maritalStatus,
-          });
 
           // Count unique gotras
           const uniqueGotras = [...new Set(data.data.map(u => u.gotra).filter(Boolean))];
-          console.log('Unique gotras in returned data:', uniqueGotras);
 
           // Count unique subgotras
           const uniqueSubgotras = [...new Set(data.data.map(u => u.subGotra).filter(Boolean))];
-          console.log('Unique subgotras in returned data:', uniqueSubgotras);
         }
       } else {
-        console.warn('Invalid data format received:', data);
         setUsers([]);
       }
     } catch (error: any) {

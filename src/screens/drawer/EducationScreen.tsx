@@ -100,7 +100,7 @@ const DocumentIcon = ({size = 24, color = '#2a2a2a'}) => (
   </Svg>
 );
 
-const ExternalIcon = ({size = 24, color = '#2a2a2a'}) => (
+export const ExternalIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3m-2 16H5V5h7V3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-7h-2v7Z"
@@ -203,7 +203,6 @@ const EducationScreen = () => {
       }
 
       const data: EducationResponse = await response.json();
-      console.log('Loaded education resources count:', data.data?.length || 0);
 
       if (data.success && data.data && Array.isArray(data.data)) {
         setResources(data.data);
@@ -277,7 +276,7 @@ const EducationScreen = () => {
   };
 
   const handleResourceAccess = (resource: EducationResource) => {
-    const url = resource.url || resource.fileUrl;
+    const url = resource.thumbnailUrl;
     if (!url) {
       Alert.alert('No Link', 'No access link available for this resource');
       return;

@@ -17,10 +17,12 @@ import {
   StatusBar,
   SafeAreaView,
   Image,
+  Linking,
 } from 'react-native';
 import Pdf from 'react-native-pdf';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {useNavigation} from '@react-navigation/native';
+import { ExternalIcon } from './EducationScreen';
 
 const {width, height} = Dimensions.get('window');
 
@@ -111,6 +113,7 @@ interface JobPost {
   category: string;
   fileType: 'pdf' | 'image';
   thumbnailUrl?: string;
+  attachment?: string; // External link/URL
   salary: string;
   experience: string;
   language: string;
@@ -227,6 +230,21 @@ const EmploymentScreen = () => {
       return 'https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvam9iNjgwLTE2Ni1wLWwxZGJ1cTN2LnBuZw.png';
     }
     return `${BASE_URL}/${thumbnailUrl}`;
+  };
+
+  // Handle opening external attachment link
+  const handleAttachmentAccess = (job: JobPost) => {
+    const url = job.attachment;
+    if (!url) {
+      Alert.alert('No Attachment', 'No attachment link available for this job');
+      return;
+    }
+
+    console.log('Opening attachment link:', url);
+
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'Unable to open the attachment link');
+    });
   };
 
   // Job Detail Modal Component
@@ -373,6 +391,20 @@ const EmploymentScreen = () => {
                     {selectedJob.description}
                   </Text>
                 </View>
+
+                {/* Attachment Section */}
+                {selectedJob.attachment && (
+                  <View style={styles.attachmentSection}>
+                    <Text style={styles.sectionTitle}>Attachment</Text>
+                    <TouchableOpacity
+                      style={styles.attachmentButton}
+                      onPress={() => handleAttachmentAccess(selectedJob)}>
+                      <Text style={styles.attachmentButtonText}>
+                        🔗 Open Attachment Link
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </>
             )}
           </ScrollView>
@@ -403,16 +435,6 @@ const EmploymentScreen = () => {
             )}
           </View>
         </View>
-        {/* 
-        {(item.fileType === 'image' || !item.thumbnailUrl) && (
-          <View style={styles.imagePreview}>
-            <Image
-              source={{uri: getFullImageUrl(item.thumbnailUrl)}}
-              style={styles.previewImage}
-              resizeMode="cover"
-            />
-          </View>
-        )} */}
         {item.thumbnailUrl && (
           <Image
             source={{uri: item.thumbnailUrl}}
@@ -455,8 +477,21 @@ const EmploymentScreen = () => {
                   <Text style={styles.languageBadgeText}>{item.language}</Text>
                 </View>
               )}
+
             </View>
           </View>
+
+          {/* Attachment Quick Access */}
+          {item?.attachment && (
+            <TouchableOpacity
+              style={styles.quickAttachmentButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleAttachmentAccess(item);
+              }}>
+              <Text style={styles.quickAttachmentText}>🔗 View Attachment</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -1054,6 +1089,57 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     fontSize: 12,
     fontWeight: '600',
+  },
+  attachmentSection: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  attachmentButton: {
+    backgroundColor: AppColors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  attachmentButtonText: {
+    color: AppColors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  quickAttachmentButton: {
+    backgroundColor: AppColors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickAttachmentText: {
+    color: AppColors.white,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  fullAccessButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  fullAccessButtonText: {
+    color: AppColors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
