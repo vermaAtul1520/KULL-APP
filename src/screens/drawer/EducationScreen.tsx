@@ -131,8 +131,7 @@ interface EducationResource {
   description: string;
   type: 'class_link' | 'course_material' | 'guidance';
   category: string;
-  url?: string;
-  fileUrl?: string;
+  attachment?: string;
   thumbnailUrl?: string;
   instructor: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
@@ -203,6 +202,8 @@ const EducationScreen = () => {
       }
 
       const data: EducationResponse = await response.json();
+
+      console.log('Education API response data:', data.data);
 
       if (data.success && data.data && Array.isArray(data.data)) {
         setResources(data.data);
@@ -276,9 +277,9 @@ const EducationScreen = () => {
   };
 
   const handleResourceAccess = (resource: EducationResource) => {
-    const url = resource.thumbnailUrl;
+    const url = resource?.attachment;
     if (!url) {
-      Alert.alert('No Link', 'No access link available for this resource');
+      Alert.alert('No Link', 'No attachment Link available for this resource');
       return;
     }
 
@@ -347,8 +348,17 @@ const EducationScreen = () => {
         <Text style={styles.resourceDescription} numberOfLines={2}>
           {item.description}
         </Text>
-
-        <View style={styles.resourceFooter}>
+        {
+          item.attachment !== '' && (
+            <TouchableOpacity
+              style={styles.accessButton}
+              onPress={() => handleResourceAccess(item)}>
+              <Text style={styles.accessButtonText}>Access</Text>
+              <ExternalIcon size={16} color={AppColors.white} />
+            </TouchableOpacity>
+          )
+        }
+        {/* <View style={styles.resourceFooter}>
           <Text style={styles.durationText}>{item.duration}</Text>
           <TouchableOpacity
             style={styles.accessButton}
@@ -356,7 +366,7 @@ const EducationScreen = () => {
             <Text style={styles.accessButtonText}>Access</Text>
             <ExternalIcon size={16} color={AppColors.white} />
           </TouchableOpacity>
-        </View>
+        </View> */}
       </TouchableOpacity>
     );
   };
