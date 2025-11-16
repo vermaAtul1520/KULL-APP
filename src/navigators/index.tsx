@@ -369,6 +369,9 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
         throw new Error('No user data available');
       }
 
+      console.log('🔧 UPDATE PROFILE - Starting...');
+      console.log('🔧 UPDATE PROFILE - Current user.community:', user.community);
+
       const headers = await getAuthHeaders();
 
       const response = await fetch(`${BASE_URL}/api/users/profile`, {
@@ -386,11 +389,24 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
       }
 
       const apiResponse = await response.json();
+      console.log('🔧 UPDATE PROFILE - API response.user.community:', apiResponse.user?.community);
 
       if (apiResponse.success && apiResponse.user) {
-        const updatedUser = {...user, ...apiResponse.user};
+        // CRITICAL FIX: Backend returns community as STRING, but we need it as OBJECT
+        // We must preserve the original community object structure
+        const updatedUser = {
+          ...user,
+          ...apiResponse.user,
+          // Force preserve the original community object (don't let API overwrite it)
+          community: user.community,
+        };
+
+        console.log('🔧 UPDATE PROFILE - Final user.community:', updatedUser.community);
+
         setUser(updatedUser);
         await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+
+        console.log('✅ UPDATE PROFILE - Saved to AsyncStorage with community preserved');
       } else {
         throw new Error(apiResponse.message || 'Failed to update profile');
       }
