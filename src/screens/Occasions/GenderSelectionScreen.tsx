@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import {
   useNavigation,
@@ -181,98 +182,107 @@ export const GenderSelectionScreen = () => {
         </View>
       </View>
 
-      <View style={styles.content}>
-        {/* Active Filters Display */}
-        <View style={styles.filtersContainer}>
-          <Text style={styles.filtersTitle}>Active Filters:</Text>
-          <View style={styles.filterTags}>
-            <View style={styles.filterTag}>
-              <Text style={styles.filterTagText}>Type: {occasionType}</Text>
-            </View>
-            {categoryName && (
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}>
+        <View style={styles.content}>
+          {/* Active Filters Display */}
+          <View style={styles.filtersContainer}>
+            <Text style={styles.filtersTitle}>Active Filters:</Text>
+            <View style={styles.filterTags}>
               <View style={styles.filterTag}>
-                <Text style={styles.filterTagText}>Category: {categoryName}</Text>
+                <Text style={styles.filterTagText}>Type: {occasionType}</Text>
               </View>
-            )}
-            {gotra && (
-              <View style={styles.filterTag}>
-                <Text style={styles.filterTagText}>Gotra: {gotra}</Text>
-              </View>
-            )}
-            {subGotra && (
-              <View style={styles.filterTag}>
-                <Text style={styles.filterTagText}>Sub-Gotra: {subGotra}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Select Gender</Text>
-        <Text style={styles.sectionDescription}>
-          Choose the gender to view relevant content
-        </Text>
-
-        <View style={styles.optionsContainer}>
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={AppColors.primary} />
-              <Text style={styles.loadingText}>Loading content counts...</Text>
-            </View>
-          ) : (
-            genderOptions.map(option => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.optionCard,
-                  selectedGender?.value === option.value &&
-                    styles.optionCardSelected,
-                ]}
-                onPress={() => setSelectedGender(option)}
-                activeOpacity={0.7}>
-                <Text style={styles.optionIcon}>{option.icon}</Text>
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      selectedGender?.value === option.value &&
-                        styles.optionLabelSelected,
-                    ]}>
-                    {option.label}
-                  </Text>
-                  <Text style={styles.optionCount}>
-                    {option.count} {option.count === 1 ? 'item' : 'items'}{' '}
-                    available
+              {categoryName && (
+                <View style={styles.filterTag}>
+                  <Text style={styles.filterTagText}>
+                    Category: {categoryName}
                   </Text>
                 </View>
-                {selectedGender?.value === option.value && (
-                  <View style={styles.checkmark}>
-                    <Text style={styles.checkmarkText}>✓</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+              )}
+              {gotra && (
+                <View style={styles.filterTag}>
+                  <Text style={styles.filterTagText}>Gotra: {gotra}</Text>
+                </View>
+              )}
+              {subGotra && (
+                <View style={styles.filterTag}>
+                  <Text style={styles.filterTagText}>Sub-Gotra: {subGotra}</Text>
+                </View>
+              )}
+            </View>
+          </View>
 
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            (!selectedGender?.count || loading) &&
-              styles.continueButtonDisabled,
-          ]}
-          onPress={handleContinue}
-          disabled={!selectedGender?.count || loading}
-          activeOpacity={0.8}>
-          <Text style={styles.continueButtonText}>View Content</Text>
-        </TouchableOpacity>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
-            💡 Tip: Content counts show available items for each gender option.
-            Select "All" to view content for both male and female.
+          <Text style={styles.sectionTitle}>Select Gender</Text>
+          <Text style={styles.sectionDescription}>
+            Choose the gender to view relevant content
           </Text>
+
+          <View style={styles.optionsContainer}>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={AppColors.primary} />
+                <Text style={styles.loadingText}>
+                  Loading content counts...
+                </Text>
+              </View>
+            ) : (
+              genderOptions.map(option => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.optionCard,
+                    selectedGender?.value === option.value &&
+                      styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedGender(option)}
+                  activeOpacity={0.7}>
+                  <Text style={styles.optionIcon}>{option.icon}</Text>
+                  <View style={styles.optionContent}>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        selectedGender?.value === option.value &&
+                          styles.optionLabelSelected,
+                      ]}>
+                      {option.label}
+                    </Text>
+                    <Text style={styles.optionCount}>
+                      {option.count} {option.count === 1 ? 'item' : 'items'}{' '}
+                      available
+                    </Text>
+                  </View>
+                  {selectedGender?.value === option.value && (
+                    <View style={styles.checkmark}>
+                      <Text style={styles.checkmarkText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              (!selectedGender?.count || loading) &&
+                styles.continueButtonDisabled,
+            ]}
+            onPress={handleContinue}
+            disabled={!selectedGender?.count || loading}
+            activeOpacity={0.8}>
+            <Text style={styles.continueButtonText}>View Content</Text>
+          </TouchableOpacity>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              💡 Tip: Content counts show available items for each gender
+              option. Select "All" to view content for both male and female.
+            </Text>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -308,8 +318,14 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     opacity: 0.9,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  content: {
     padding: 20,
   },
   sectionTitle: {
