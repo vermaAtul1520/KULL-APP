@@ -325,9 +325,9 @@ const MyPeopleScreen = () => {
         const query = debouncedSearchQuery.toLowerCase();
         return (
           fullName.includes(query) ||
-          email.includes(query) ||
-          occupation.includes(query) ||
-          cGotNo.includes(query)
+          user.email?.toLowerCase().includes(query) ||
+          user.occupation?.toLowerCase().includes(query) ||
+          user.cGotNo?.toLowerCase().includes(query)
         );
       });
       console.log('After search filter:', filtered.length);
@@ -389,7 +389,7 @@ const MyPeopleScreen = () => {
     console.log('Filters:', tempFilters);
     setFilters({...tempFilters});
     setFilterModalVisible(false);
-  }, [tempFilters]);
+  };
 
   const clearFilters = () => {
     console.log('=== Clearing Filters ===');
@@ -407,7 +407,7 @@ const MyPeopleScreen = () => {
     setTempFilters(emptyFilters);
     setFilters(emptyFilters);
     setFilterModalVisible(false);
-  }, []);
+  };
 
   const getActiveFilterCount = useCallback(() => {
     return Object.values(filters).filter(value => value !== '').length;
@@ -743,7 +743,7 @@ const MyPeopleScreen = () => {
                 </View>
 
                 {/* Heritage Info Card */}
-                {(selectedUser.cast || selectedUser.gotra || selectedUser.subgotra || selectedUser.subGotra) && (
+                {(selectedUser.cast || selectedUser.gotra || selectedUser.subGotra) && (
                   <View style={styles.infoCard}>
                     <Text style={styles.cardTitle}>Heritage Information</Text>
                     <View style={styles.cardContent}>
@@ -759,10 +759,10 @@ const MyPeopleScreen = () => {
                           <Text style={styles.infoValue}>{selectedUser.gotra}</Text>
                         </View>
                       )}
-                      {(selectedUser.subgotra || selectedUser.subGotra) && (
+                      {selectedUser.subGotra && (
                         <View style={styles.infoRow}>
                           <Text style={styles.infoLabel}>Subgotra</Text>
-                          <Text style={styles.infoValue}>{selectedUser.subgotra || selectedUser.subGotra}</Text>
+                          <Text style={styles.infoValue}>{selectedUser.subGotra}</Text>
                         </View>
                       )}
                     </View>
@@ -896,7 +896,7 @@ const MyPeopleScreen = () => {
         {filteredUsers.length} of {users.length} members
       </Text>
     </View>
-  );
+  ), [filteredUsers.length, users.length]);
 
   return (
     <View style={styles.container}>

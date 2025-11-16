@@ -265,7 +265,7 @@ const DonationScreen = () => {
     });
     setSearchQuery('');
     setDebouncedSearchQuery('');
-  };
+  }, []);
 
   const hasActiveFilters = useCallback(() => {
     return (
@@ -808,7 +808,7 @@ const DonationScreen = () => {
         {filteredDonations.length} of {donations.length} donations
       </Text>
     </View>
-  );
+  ), [filteredDonations.length, donations.length]);
 
   if (loading) {
     return (
