@@ -2,7 +2,6 @@ import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
-  FlatList,
   Image,
   TouchableOpacity,
   StyleSheet,
@@ -402,12 +401,7 @@ const NewsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <BannerComponent />
-      {renderHeader()}
-      {renderSearchBar()}
-      <FlatList
-        data={filteredNews}
-        renderItem={renderNewsItem}
-        keyExtractor={(item: any) => item._id}
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -417,10 +411,24 @@ const NewsScreen = () => {
             colors={[AppColors.teal]}
             tintColor={AppColors.teal}
           />
-        }
-        ListEmptyComponent={renderEmptyComponent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        }>
+        {renderHeader()}
+        {renderSearchBar()}
+
+        {/* News List */}
+        {filteredNews.length === 0 ? (
+          renderEmptyComponent()
+        ) : (
+          filteredNews.map((item, index) => (
+            <View key={item._id}>
+              {renderNewsItem({item})}
+              {index < filteredNews.length - 1 && (
+                <View style={styles.separator} />
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
 
       {/* News Detail Modal */}
       <Modal

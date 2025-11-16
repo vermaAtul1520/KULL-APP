@@ -9,7 +9,6 @@ import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -140,6 +139,11 @@ const PostScreen = () => {
   useEffect(() => {
     filterPosts();
   }, [searchQuery, posts]);
+
+  // Debug log for searchQuery
+  useEffect(() => {
+    console.log('searchQuery', searchQuery);
+  }, [searchQuery]);
 
   const filterPosts = () => {
     if (searchQuery.trim() === '') {
@@ -1694,10 +1698,8 @@ const PostScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={filteredPosts}
-        renderItem={renderPost}
-        keyExtractor={(item: any) => item._id}
+      <BannerComponent />
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -1707,46 +1709,46 @@ const PostScreen = () => {
             colors={[AppColors.teal]}
             tintColor={AppColors.teal}
           />
-        }
-        ListHeaderComponent={() => (
-          <>
-            <BannerComponent />
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}>
-                <ArrowLeftIcon size={24} color="#2a2a2a" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
-              <View style={styles.headerRight} />
-            </View>
+        }>
+        {/* Banner */}
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchInputContainer}>
-                <SearchIcon size={20} color="#666" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder={
-                    t('Search posts by title, content, author...') ||
-                    'Search posts by title, content, author...'
-                  }
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholderTextColor="#999"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setSearchQuery('')}
-                    style={styles.clearSearchButton}>
-                    <CloseIcon size={20} color="#666" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          </>
-        )}
-        ListEmptyComponent={
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
+            <ArrowLeftIcon size={24} color="#2a2a2a" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('Posts') || 'Posts'}</Text>
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <SearchIcon size={20} color="#666" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={
+                t('Search posts by title, content, author...') ||
+                'Search posts by title, content, author...'
+              }
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#999"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearSearchButton}>
+                <CloseIcon size={20} color="#666" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Posts List */}
+        {filteredPosts.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
               {searchQuery.trim() !== ''
@@ -1765,9 +1767,17 @@ const PostScreen = () => {
               </TouchableOpacity>
             )}
           </View>
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        ) : (
+          filteredPosts.map((item, index) => (
+            <View key={item._id}>
+              {renderPost({item})}
+              {index < filteredPosts.length - 1 && (
+                <View style={styles.separator} />
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
 
       {/* Results Count */}
       {searchQuery.trim() !== '' && (

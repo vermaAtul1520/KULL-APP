@@ -2,7 +2,6 @@ import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -823,6 +822,21 @@ const DonationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <BannerComponent />
+
+      {/* Active Filters Display */}
+      
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.teal]}
+            tintColor={AppColors.teal}
+          />
+        }>
       {renderHeader()}
 
       {/* Search Bar */}
@@ -856,89 +870,8 @@ const DonationScreen = () => {
           {hasActiveFilters() && <View style={styles.filterIndicator} />}
         </TouchableOpacity>
       </View>
-
-      {/* Active Filters Display */}
-      {/* {hasActiveFilters() && (
-        <View style={styles.activeFiltersContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {searchQuery.trim() !== '' && (
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  Search: "{searchQuery}"
-                </Text>
-                <TouchableOpacity onPress={handleClearSearch}>
-                  <CloseIcon size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {activeFilters.category &&
-              activeFilters.category !== 'All' && (
-                <View style={styles.activeFilterChip}>
-                  <Text style={styles.activeFilterText}>
-                    {activeFilters.category}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setActiveFilters(prev => ({...prev, category: ''}))
-                    }>
-                    <CloseIcon size={16} color="#666" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            {activeFilters.urgency && activeFilters.urgency !== 'All' && (
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  {activeFilters.urgency} urgency
-                </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    setActiveFilters(prev => ({...prev, urgency: ''}))
-                  }>
-                  <CloseIcon size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {activeFilters.organizationType &&
-              activeFilters.organizationType !== 'All' && (
-                <View style={styles.activeFilterChip}>
-                  <Text style={styles.activeFilterText}>
-                    {activeFilters.organizationType}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setActiveFilters(prev => ({
-                        ...prev,
-                        organizationType: '',
-                      }))
-                    }>
-                    <CloseIcon size={16} color="#666" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            <TouchableOpacity
-              style={styles.clearAllFiltersChip}
-              onPress={clearFilters}>
-              <Text style={styles.clearAllFiltersText}>Clear All</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      )} */}
-
-      <FlatList
-        data={filteredDonations}
-        renderItem={renderDonationCard}
-        keyExtractor={(item: any) => item._id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[AppColors.teal]}
-            tintColor={AppColors.teal}
-          />
-        }
-        ListEmptyComponent={
+        {/* Donations List */}
+        {filteredDonations.length === 0 ? (
           <View style={styles.emptyContainer}>
             <HeartIcon size={64} color="#ccc" />
             <Text style={styles.emptyText}>
@@ -960,9 +893,17 @@ const DonationScreen = () => {
               </TouchableOpacity>
             )}
           </View>
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        ) : (
+          filteredDonations.map((item, index) => (
+            <View key={item._id}>
+              {renderDonationCard({item})}
+              {index < filteredDonations.length - 1 && (
+                <View style={styles.separator} />
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
       {/* <BannerComponent /> */}
 
       {/* Results Count */}

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -799,7 +798,19 @@ const MyPeopleScreen = () => {
         </View>
       ) : (
         <>
-          <BannerComponent />
+
+<BannerComponent />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[AppColors.teal]}
+                tintColor={AppColors.teal}
+              />
+            }>
           {renderHeader()}
           {/* Search and Filter - MOVED OUTSIDE FlatList */}
           <View style={styles.searchFilterContainer}>
@@ -840,24 +851,20 @@ const MyPeopleScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-
-          <FlatList
-            data={filteredUsers}
-            renderItem={renderUserCard}
-            keyExtractor={(item: any) => item._id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[AppColors.teal]}
-                tintColor={AppColors.teal}
-              />
-            }
-            ListEmptyComponent={renderEmptyComponent}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
+            {/* Users List */}
+            {filteredUsers.length === 0 ? (
+              renderEmptyComponent()
+            ) : (
+              filteredUsers.map((item, index) => (
+                <View key={item._id}>
+                  {renderUserCard({item})}
+                  {index < filteredUsers.length - 1 && (
+                    <View style={styles.separator} />
+                  )}
+                </View>
+              ))
+            )}
+          </ScrollView>
         </>
       )}
 
