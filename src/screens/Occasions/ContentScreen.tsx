@@ -58,6 +58,16 @@ export const ContentScreen = () => {
     try {
       setLoading(true);
 
+      console.log('=== ContentScreen: Fetching Occasions ===');
+      console.log('Filters from context:', {
+        occasionType: filters.occasionType,
+        categoryId: filters.categoryId,
+        categoryName: filters.categoryName,
+        gotra: filters.gotra,
+        subGotra: filters.subGotra,
+        gender: filters.gender,
+      });
+
       // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
         filters.occasionType!, // Required - will always be set
@@ -67,8 +77,31 @@ export const ContentScreen = () => {
         filters.gender || undefined, // Convert null to undefined for optional param
       );
 
+      console.log('API Response:', {
+        success: response.success,
+        total: response.total,
+        count: response.count,
+        occasionsCount: response.data.length,
+      });
+
+      console.log('Occasions data:', JSON.stringify(response.data, null, 2));
+
+      // Log each occasion's details
+      response.data.forEach((occasion, index) => {
+        console.log(`Occasion ${index + 1}:`, {
+          id: occasion._id,
+          occasionType: occasion.occasionType,
+          category: occasion.category.name,
+          gotra: occasion.gotra,
+          subGotra: occasion.subGotra,
+          gender: occasion.gender,
+          contentsCount: occasion.contents.length,
+        });
+      });
+
       setOccasions(response.data);
     } catch (error) {
+      console.error('Error fetching occasions:', error);
       Alert.alert('Error', 'Failed to load content');
     } finally {
       setLoading(false);
@@ -91,7 +124,7 @@ export const ContentScreen = () => {
       });
     } else {
       // Open PDF or image in modal
-      setModalType(content.type);
+      setModalType(content?.type);
       setModalVisible(true);
     }
   };
@@ -199,6 +232,42 @@ export const ContentScreen = () => {
           </Text>
         </View>
       </View>
+
+      {/* Active Filters Display */}
+      {(filters.occasionType || filters.categoryName || filters.gotra || filters.gender) && (
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersTitle}>Active Filters:</Text>
+          <View style={styles.filterTags}>
+            {filters.occasionType && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Type: {filters.occasionType}</Text>
+              </View>
+            )}
+            {filters.categoryName && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Category: {filters.categoryName}</Text>
+              </View>
+            )}
+            {filters.gotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Gotra: {filters.gotra}</Text>
+              </View>
+            )}
+            {filters.subGotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Sub-Gotra: {filters.subGotra}</Text>
+              </View>
+            )}
+            {filters.gender && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>
+                  Gender: {filters.gender === 'male' ? 'Male' : filters.gender === 'female' ? 'Female' : 'All'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -601,5 +670,38 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     fontSize: 12,
     fontWeight: '600',
+  },
+  filtersContainer: {
+    backgroundColor: AppColors.white,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: AppColors.primary,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.dark,
+    marginBottom: 8,
+  },
+  filterTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterTag: {
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  filterTagText: {
+    fontSize: 12,
+    color: AppColors.dark,
+    fontWeight: '500',
   },
 });

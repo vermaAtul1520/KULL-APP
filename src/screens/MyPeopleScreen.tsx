@@ -66,7 +66,7 @@ interface CommunityUser {
   thoughtOfMaking: string;
   maritalStatus: string;
   gotra: string;
-  subgotra?: string;
+  subGotra?: string;
   profileImage?: string;
   code: string;
   createdAt: string;
@@ -88,7 +88,7 @@ interface FilterOptions {
   religion: string;
   cast: string;
   gotra: string;
-  subgotra: string;
+  subGotra: string;
 }
 
 const MyPeopleScreen = () => {
@@ -121,7 +121,7 @@ const MyPeopleScreen = () => {
     religion: '',
     cast: '',
     gotra: '',
-    subgotra: '',
+    subGotra: '',
   });
   const [tempFilters, setTempFilters] = useState<FilterOptions>({...filters});
 
@@ -189,7 +189,7 @@ const MyPeopleScreen = () => {
   //   };
   // };
 
-  const fetchCommunityUsers = async () => {
+  const fetchCommunityUsers = useCallback(async () => {
     try {
       setLoading(true);
       const headers = await getAuthHeaders();
@@ -199,26 +199,44 @@ const MyPeopleScreen = () => {
         throw new Error('Community ID not found. Please login again.');
       }
 
-      console.log('Fetching community users for:', COMMUNITY_ID);
-      const response = await fetch(
-        `${BASE_URL}/api/communities/${COMMUNITY_ID}/users`,
-        {
-          method: 'GET',
-          headers,
-        },
-      );
+      // Simple API call without query parameters
+      // Backend doesn't support server-side filtering, so we filter client-side
+      const url = `${BASE_URL}/api/communities/${COMMUNITY_ID}/users`;
+
+      console.log('=== Fetching Community Users ===');
+      console.log('Community ID:', COMMUNITY_ID);
+      console.log('API URL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
 
       console.log('Users API response status:', response.status);
 
       if (!response.ok) {
+        // Try to get error details from response
+        let errorDetails = '';
+        try {
+          const errorData = await response.json();
+          errorDetails = JSON.stringify(errorData);
+          console.log('API Error Response:', errorData);
+        } catch (e) {
+          const errorText = await response.text();
+          errorDetails = errorText;
+          console.log('API Error Text:', errorText);
+        }
+
         if (response.status === 401) {
           throw new Error('Unauthorized. Please login again.');
         } else if (response.status === 404) {
           throw new Error('Community not found.');
+        } else if (response.status === 400) {
+          throw new Error(`Bad Request: ${errorDetails}`);
         } else if (response.status === 500) {
           throw new Error('Server error. Please try again later.');
         } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status} - ${errorDetails}`);
         }
       }
 
@@ -227,6 +245,26 @@ const MyPeopleScreen = () => {
 
       if (data.success && data.data && Array.isArray(data.data)) {
         setUsers(data.data);
+
+        // Log sample user data to verify gotra/subgotra fields
+        if (data.data.length > 0) {
+          console.log('=== Sample User Data ===');
+          console.log('First user:', {
+            name: `${data.data[0].firstName} ${data.data[0].lastName}`,
+            gotra: data.data[0].gotra,
+            subGotra: data.data[0].subGotra,
+            gender: data.data[0].gender,
+            maritalStatus: data.data[0].maritalStatus,
+          });
+
+          // Count unique gotras
+          const uniqueGotras = [...new Set(data.data.map(u => u.gotra).filter(Boolean))];
+          console.log('Unique gotras in returned data:', uniqueGotras);
+
+          // Count unique subgotras
+          const uniqueSubgotras = [...new Set(data.data.map(u => u.subGotra).filter(Boolean))];
+          console.log('Unique subgotras in returned data:', uniqueSubgotras);
+        }
       } else {
         console.warn('Invalid data format received:', data);
         setUsers([]);
@@ -252,11 +290,11 @@ const MyPeopleScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []); // No dependencies - only fetch once on mount
 
   useEffect(() => {
     fetchCommunityUsers();
-  }, []);
+  }, [fetchCommunityUsers]);
 
   // Debounce search query to prevent re-renders while typing
   useEffect(() => {
@@ -279,7 +317,13 @@ const MyPeopleScreen = () => {
   }, [searchQuery]);
 
   // Search and filter logic - Use useMemo to prevent re-renders and focus loss
+  // Note: All filtering is done client-side since backend doesn't support filter params
   const filteredUsers = React.useMemo(() => {
+    console.log('=== Client-Side Filtering ===');
+    console.log('Total users:', users.length);
+    console.log('Active filters:', filters);
+    console.log('Search query:', debouncedSearchQuery);
+
     let filtered = users;
 
     // Apply search filter using debounced query
@@ -294,19 +338,25 @@ const MyPeopleScreen = () => {
           user?.cGotNo?.toLowerCase().includes(query)
         );
       });
+      console.log('After search filter:', filtered.length);
     }
 
-    // Apply filters
+    // Apply filters (client-side)
     Object.keys(filters).forEach(key => {
       const filterValue = filters[key as keyof FilterOptions];
-      if (filterValue) {
+      if (filterValue && filterValue.trim()) {
+        console.log(`Applying ${key} filter:`, filterValue);
+        const beforeCount = filtered.length;
         filtered = filtered.filter(user => {
           const userValue = user[key as keyof CommunityUser];
-          return String(userValue).toLowerCase() === filterValue.toLowerCase();
+          const match = String(userValue || '').toLowerCase() === filterValue.toLowerCase();
+          return match;
         });
+        console.log(`  ${key} filter: ${beforeCount} → ${filtered.length} users`);
       }
     });
 
+    console.log('Final filtered count:', filtered.length);
     return filtered;
   }, [debouncedSearchQuery, filters, users]);
 
@@ -343,11 +393,14 @@ const MyPeopleScreen = () => {
   };
 
   const applyFilters = () => {
+    console.log('=== Applying Filters ===');
+    console.log('Filters:', tempFilters);
     setFilters({...tempFilters});
     setFilterModalVisible(false);
   };
 
   const clearFilters = () => {
+    console.log('=== Clearing Filters ===');
     const emptyFilters: FilterOptions = {
       gender: '',
       maritalStatus: '',
@@ -357,7 +410,7 @@ const MyPeopleScreen = () => {
       religion: '',
       cast: '',
       gotra: '',
-      subgotra: '',
+      subGotra: '',
     };
     setTempFilters(emptyFilters);
     setFilters(emptyFilters);
@@ -454,9 +507,12 @@ const MyPeopleScreen = () => {
       maritalStatus: ['single', 'married', 'divorced', 'widowed'],
     };
 
+
     // Add gotra options from ConfigContext
     if (gotraData && gotraData.length > 0) {
       filterOptions.gotra = gotraData.map(g => g.name);
+    } else {
+      console.log('⚠️ No gotra data available');
     }
 
     // Add subgotra options based on selected gotra
@@ -469,9 +525,13 @@ const MyPeopleScreen = () => {
         selectedGotraData.subgotra &&
         selectedGotraData.subgotra.length > 0
       ) {
-        filterOptions.subgotra = selectedGotraData.subgotra;
+        filterOptions.subGotra = selectedGotraData.subgotra;  // Fixed: capital G
+      } else {
+        console.log('⚠️ No subgotra data for selected gotra');
       }
     }
+
+    console.log('Final filterOptions:', Object.keys(filterOptions));
 
     return (
       <Modal
@@ -509,7 +569,7 @@ const MyPeopleScreen = () => {
                         };
                         // Clear subgotra if gotra is cleared
                         if (filterKey === 'gotra') {
-                          updatedFilters.subgotra = '';
+                          updatedFilters.subGotra = '';
                         }
                         setTempFilters(updatedFilters);
                       }}>
@@ -540,7 +600,7 @@ const MyPeopleScreen = () => {
                             filterKey === 'gotra' &&
                             tempFilters.gotra !== option
                           ) {
-                            updatedFilters.subgotra = '';
+                            updatedFilters.subGotra = '';
                           }
                           setTempFilters(updatedFilters);
                         }}>
@@ -651,11 +711,11 @@ const MyPeopleScreen = () => {
                   <Text style={styles.detailLabel}>Gotra:</Text>
                   <Text style={styles.detailValue}>{selectedUser.gotra}</Text>
                 </View>
-                {selectedUser.subgotra && (
+                {selectedUser.subGotra && (
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Subgotra:</Text>
                     <Text style={styles.detailValue}>
-                      {selectedUser.subgotra}
+                      {selectedUser.subGotra}
                     </Text>
                   </View>
                 )}
@@ -799,7 +859,7 @@ const MyPeopleScreen = () => {
       ) : (
         <>
 
-<BannerComponent />
+        <BannerComponent />
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}

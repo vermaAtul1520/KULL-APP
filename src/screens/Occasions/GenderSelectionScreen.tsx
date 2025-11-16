@@ -84,12 +84,28 @@ export const GenderSelectionScreen = () => {
           'not specified',
         ),
       ]);
+
+      // Count total items (contents) not just occasions
+      const maleItemsCount = maleResponse.data.reduce(
+        (total, occasion) => total + occasion.contents.length,
+        0,
+      );
+      const femaleItemsCount = femaleResponse.data.reduce(
+        (total, occasion) => total + occasion.contents.length,
+        0,
+      );
+      const allItemsCount = allResponse.data.reduce(
+        (total, occasion) => total + occasion.contents.length,
+        0,
+      );
+
       setGenderCounts({
-        male: maleResponse.data.length,
-        female: femaleResponse.data.length,
-        all: allResponse.data.length,
+        male: maleItemsCount,
+        female: femaleItemsCount,
+        all: allItemsCount,
       });
     } catch (error) {
+      console.error('Error fetching gender counts:', error);
       Alert.alert('Error', 'Failed to load content counts');
     } finally {
       setLoading(false);
@@ -113,6 +129,16 @@ export const GenderSelectionScreen = () => {
 
   const fetchOccasions = async () => {
     try {
+      console.log('=== GenderSelectionScreen: Fetching Occasions ===');
+      console.log('Filters from context:', {
+        occasionType: filters.occasionType,
+        categoryId: filters.categoryId,
+        categoryName: filters.categoryName,
+        gotra: filters.gotra,
+        subGotra: filters.subGotra,
+        gender: filters.gender,
+      });
+
       // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
         filters.occasionType!, // Required - will always be set
@@ -122,8 +148,16 @@ export const GenderSelectionScreen = () => {
         filters.gender || undefined, // Convert null to undefined for optional param
       );
 
+      console.log('API Response:', {
+        success: response.success,
+        total: response.total,
+        count: response.count,
+        occasionsCount: response.data.length,
+      });
+
       setOccasions(response.data);
     } catch (error) {
+      console.error('Error fetching occasions:', error);
       Alert.alert('Error', 'Failed to load content');
     } finally {
     }
@@ -148,6 +182,31 @@ export const GenderSelectionScreen = () => {
       </View>
 
       <View style={styles.content}>
+        {/* Active Filters Display */}
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersTitle}>Active Filters:</Text>
+          <View style={styles.filterTags}>
+            <View style={styles.filterTag}>
+              <Text style={styles.filterTagText}>Type: {occasionType}</Text>
+            </View>
+            {categoryName && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Category: {categoryName}</Text>
+              </View>
+            )}
+            {gotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Gotra: {gotra}</Text>
+              </View>
+            )}
+            {subGotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Sub-Gotra: {subGotra}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>Select Gender</Text>
         <Text style={styles.sectionDescription}>
           Choose the gender to view relevant content
@@ -359,5 +418,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.dark,
     lineHeight: 20,
+  },
+  filtersContainer: {
+    backgroundColor: AppColors.white,
+    padding: 16,
+    marginBottom: 20,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: AppColors.primary,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.dark,
+    marginBottom: 8,
+  },
+  filterTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterTag: {
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  filterTagText: {
+    fontSize: 12,
+    color: AppColors.dark,
+    fontWeight: '500',
   },
 });

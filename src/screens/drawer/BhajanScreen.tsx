@@ -405,7 +405,7 @@ const BhajanScreen = () => {
 
           <View style={styles.videoContainer}>
             <YoutubePlayer
-              height={220}
+              height={(width * 9) / 16}
               play={true}
               videoId={youtubeId}
               onChangeState={(state: string) => {
@@ -736,6 +736,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   videoContainer: {
+    width: '100%',
     height: (width * 9) / 16, // 16:9 aspect ratio
     backgroundColor: AppColors.black,
     position: 'relative',

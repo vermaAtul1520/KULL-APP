@@ -138,6 +138,10 @@ static async fetchOccasions(
     // Build query parameters
     const params = new URLSearchParams({});
 
+    // Add required filters
+    if (occasionType) params.append('occasionType', occasionType);
+    if (categoryId) params.append('category', categoryId);
+
     // Add optional filters if provided
     if (gotra) params.append('gotra', gotra);
     if (subGotra) params.append('subGotra', subGotra);
@@ -145,12 +149,22 @@ static async fetchOccasions(
 
     const url = `${BASE_URL}/api/occasions?${params.toString()}`;
 
+    console.log('=== API Request ===');
+    console.log('URL:', url);
+    console.log('Filters:', {
+      occasionType,
+      categoryId,
+      gotra,
+      subGotra,
+      gender,
+    });
+
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
 
-    console.log('response', url, response);
+    console.log('Response status:', response.status);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -164,12 +178,36 @@ static async fetchOccasions(
 
     const data: OccasionsResponse = await response.json();
 
+    console.log('=== API Response ===');
+    console.log('Success:', data.success);
+    console.log('Total occasions:', data.total);
+    console.log('Returned occasions:', data.data.length);
+
+    // Log each occasion to verify filters are working
+    if (data.data.length > 0) {
+      console.log('First 3 occasions:');
+      data.data.slice(0, 3).forEach((occasion, index) => {
+        console.log(`  ${index + 1}.`, {
+          occasionType: occasion.occasionType,
+          category: occasion.category.name,
+          gotra: occasion.gotra,
+          subGotra: occasion.subGotra,
+          gender: occasion.gender,
+          contentsCount: occasion.contents.length,
+        });
+      });
+    } else {
+      console.log('⚠️ No occasions found matching the filters');
+    }
+
     if (!data.success) {
       throw new Error(data.message || 'Failed to fetch occasions');
     }
 
     return data;
   } catch (error) {
+    console.error('=== API Error ===');
+    console.error(error);
     throw error;
   }
 }

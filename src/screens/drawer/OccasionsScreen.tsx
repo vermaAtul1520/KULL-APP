@@ -72,12 +72,12 @@ const OccasionsScreen = () => {
       // Fetch categories first
       const categoriesResponse = await OccasionApiService.fetchCategories();
       setCategories(categoriesResponse.data);
-      
+      console.log('categoriesResponse', categoriesResponse);
       // Filter categories for the selected occasion type
       const relevantCategories = categoriesResponse.data.filter(
         (cat: OccasionCategory) => cat.occasionType === selectedType,
       );
-      
+      console.log('relevantCategories', relevantCategories);
       // Fetch occasions for each relevant category
       const allOccasions: Occasion[] = [];
       for (const category of relevantCategories) {
@@ -87,10 +87,12 @@ const OccasionsScreen = () => {
             category._id,
           );
           allOccasions.push(...occasionsResponse.data);
+          console.log('occasionsResponse', occasionsResponse);
         } catch (error) {
           // Continue with other categories if one fails
         }
       }
+      console.log('allOccasions', allOccasions);
       
       setOccasions(allOccasions);
     } catch (error) {
