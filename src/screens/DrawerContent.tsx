@@ -476,15 +476,15 @@ const DrawerContent = (props: DrawerContentComponentProps) => {
       }
     });
 
-    const familyTreeExists = items.some(item => item.key === 'familyTree');
-    if (!familyTreeExists) {
-      items.push({
-        key: 'familyTree',
-        name: 'FamilyTree',
-        displayName: currentLanguage === 'hi' ? 'वंश वृक्ष' : 'Family Tree',
-        icon: 'family-tree',
-      });
-    }
+    // const familyTreeExists = items.some(item => item.key === 'familyTree');
+    // if (!familyTreeExists) {
+    //   items.push({
+    //     key: 'familyTree',
+    //     name: 'FamilyTree',
+    //     displayName: currentLanguage === 'hi' ? 'वंश वृक्ष' : 'Family Tree',
+    //     icon: 'family-tree',
+    //   });
+    // }
 
     return items;
   }, [drorData, currentLanguage]);
