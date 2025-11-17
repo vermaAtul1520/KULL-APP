@@ -1,12 +1,14 @@
 import {useEffect, useRef} from 'react';
-import {useAuth} from '.';
+import {useConfiguration} from '@app/hooks/ConfigContext';
 import {Dimensions, FlatList, ImageBackground, Text, View} from 'react-native';
 import {StyleSheet} from 'react-native';
 
 const {width, height} = Dimensions.get('window');
 
 const BannerComponent = () => {
-  const {bannerData, bannerLoading} = useAuth();
+  // Use ConfigurationContext instead of AuthContext for better caching and refresh support
+  const {bannerData, loading: bannerLoading} = useConfiguration();
+  console.log('bannerData: ', bannerData);
   const flatListRef = useRef<FlatList>(null);
 
   // Auto-scroll banner effect

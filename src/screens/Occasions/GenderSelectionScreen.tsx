@@ -50,7 +50,7 @@ export const GenderSelectionScreen = () => {
   const genderOptions = [
     {value: 'male', label: 'Male', icon: '👨', count: genderCounts.male},
     {value: 'female', label: 'Female', icon: '👩', count: genderCounts.female},
-    {value: '', label: 'All', icon: '👥', count: genderCounts.all},
+    {value: '', label: 'Other', icon: '👥', count: genderCounts.all},
   ];
 
   useEffect(() => {
@@ -130,16 +130,6 @@ export const GenderSelectionScreen = () => {
 
   const fetchOccasions = async () => {
     try {
-      console.log('=== GenderSelectionScreen: Fetching Occasions ===');
-      console.log('Filters from context:', {
-        occasionType: filters.occasionType,
-        categoryId: filters.categoryId,
-        categoryName: filters.categoryName,
-        gotra: filters.gotra,
-        subGotra: filters.subGotra,
-        gender: filters.gender,
-      });
-
       // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
         filters.occasionType!, // Required - will always be set
@@ -148,13 +138,6 @@ export const GenderSelectionScreen = () => {
         filters.subGotra || undefined, // Convert null to undefined for optional param
         filters.gender || undefined, // Convert null to undefined for optional param
       );
-
-      console.log('API Response:', {
-        success: response.success,
-        total: response.total,
-        count: response.count,
-        occasionsCount: response.data.length,
-      });
 
       setOccasions(response.data);
     } catch (error) {

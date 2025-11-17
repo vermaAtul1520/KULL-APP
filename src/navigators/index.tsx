@@ -38,7 +38,7 @@ import {
   NavigatorScreenParams,
   CommonActions,
 } from '@react-navigation/native';
-import {ConfigurationProvider} from '@app/hooks/ConfigContext';
+import {ConfigurationProvider, useConfiguration} from '@app/hooks/ConfigContext';
 import HomeScreen from '@app/screens/Home/HomeScreen';
 import PostScreen from '@app/screens/PostScreen';
 import NewsScreen from '@app/screens/NewsScreen';
@@ -231,6 +231,7 @@ interface AuthContextType {
     banners: {id: number; image: string; textColor: string}[],
   ) => void;
   bannerLoading: boolean;
+  refreshBanners: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -244,6 +245,7 @@ const AuthContext = createContext<AuthContextType>({
   bannerData: [],
   setBannerData: () => {},
   bannerLoading: true,
+  refreshBanners: async () => {},
 });
 
 // Auth Provider
@@ -338,6 +340,11 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
     },
     [],
   );
+
+  const refreshBanners = useCallback(async () => {
+    console.log('🔄 REFRESH BANNERS - Manually refreshing banner data...');
+    await fetchBannerData();
+  }, [fetchBannerData]);
 
   const checkAuthState = async () => {
     try {
@@ -468,6 +475,7 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
       bannerData,
       setBannerData,
       bannerLoading,
+      refreshBanners,
     }),
     [
       isLoggedIn,
@@ -480,6 +488,7 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
       bannerData,
       setBannerData,
       bannerLoading,
+      refreshBanners,
     ],
   );
 
@@ -534,7 +543,8 @@ const DrawerButton = React.memo((): React.JSX.Element => {
 
 const CustomHeaderTitle = React.memo(() => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
-  const {user} = useAuth();
+
+  const {communityData} = useConfiguration();
   const {t} = useLanguage();
 
   // Use useNavigationState to get current route name reactively
@@ -547,11 +557,12 @@ const CustomHeaderTitle = React.memo(() => {
   }, [navigation]);
 
   const getCommunityName = useCallback(() => {
-    if (user?.community?.name) {
-      return user.community.name.toUpperCase();
+    console.log('getCommunityName', communityData);
+    if (communityData?.name) {
+      return communityData.name.toUpperCase();
     }
     return 'KULL-APP';
-  }, [user]);
+  }, [ communityData]);
 
   const displayTitle = useMemo(() => {
     if (currentRouteName === 'HomeTab') {

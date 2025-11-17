@@ -76,14 +76,16 @@ export interface DrorData {
   _id: string;
 }
 
+export interface CommunityData {
+  _id: string;
+  name: string;
+  description: string;
+  code: string;
+}
+
 export interface CommunityConfiguration {
   _id: string;
-  community: {
-    _id: string;
-    name: string;
-    description: string;
-    code: string;
-  };
+  community: CommunityData;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -98,6 +100,7 @@ export interface ConfigurationContextType {
   // Data
   profileData: SmaajKeTaajProfile[];
   bannerData: {id: number; image: string; textColor: string}[];
+  communityData: CommunityData | null;
   adPopupImage: string | null;
   gotraData: GotraData[];
   drorData: DrorData | null;
@@ -120,6 +123,7 @@ export interface ConfigurationContextType {
 const ConfigurationContext = createContext<ConfigurationContextType>({
   profileData: [],
   bannerData: [],
+  communityData: null,
   adPopupImage: null,
   gotraData: [],
   drorData: null,
@@ -145,6 +149,7 @@ export const ConfigurationProvider = ({
   const [bannerData, setBannerData] = useState<
     {id: number; image: string; textColor: string}[]
   >([]);
+  const [communityData, setCommunityData] = useState<CommunityData | null>(null);
   const [adPopupImage, setAdPopupImage] = useState<string | null>(null);
   const [gotraData, setGotraData] = useState<GotraData[]>([]);
   const [drorData, setDrorData] = useState<DrorData | null>(null);
@@ -194,6 +199,11 @@ export const ConfigurationProvider = ({
       const timestamp = parseInt(cachedTimestamp);
       const now = Date.now();
       const isExpired = now - timestamp > CACHE_DURATION;
+      const cacheAge = Math.floor((now - timestamp) / 1000 / 60); // minutes
+
+      console.log('📦 CACHE - Found cached data');
+      console.log('📦 CACHE - Age:', cacheAge, 'minutes');
+      console.log('📦 CACHE - Expired:', isExpired);
 
       if (isExpired) {
         setIsDataStale(true);
@@ -238,26 +248,30 @@ export const ConfigurationProvider = ({
   }) => {
     try {
       const timestamp = Date.now();
+      console.log('💾 SAVING TO CACHE - Banners count:', data.bannerData.length);
       await AsyncStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(data));
       await AsyncStorage.setItem(
         CONFIG_CACHE_TIMESTAMP_KEY,
         timestamp.toString(),
       );
       setLastUpdated(new Date(timestamp));
+      console.log('✅ CACHE SAVED - Timestamp:', new Date(timestamp).toLocaleString());
     } catch (error) {
-      console.error('Error saving configuration to cache:', error);
+      console.error('❌ Error saving configuration to cache:', error);
     }
   };
 
   // Clear cache - wrapped with useCallback to prevent recreation
   const clearCache = useCallback(async () => {
     try {
+      console.log('🗑️ CLEARING CACHE - Removing cached configuration data...');
       await AsyncStorage.removeItem(CONFIG_CACHE_KEY);
       await AsyncStorage.removeItem(CONFIG_CACHE_TIMESTAMP_KEY);
       setLastUpdated(null);
       setIsDataStale(false);
+      console.log('✅ CACHE CLEARED - Ready to fetch fresh data');
     } catch (error) {
-      console.error('Error clearing configuration cache:', error);
+      console.error('❌ Error clearing configuration cache:', error);
     }
   }, []);
 
@@ -345,6 +359,9 @@ export const ConfigurationProvider = ({
             image: imageUrl,
             textColor: index % 2 === 0 ? '#000' : '#FFF',
           }));
+          console.log('✅ BANNERS PROCESSED - Total banners:', banners.length);
+        } else {
+          console.log('⚠️ NO BANNERS - data.data.banner is not an array or is missing');
         }
 
         // Process ad popup - use actual API data
@@ -362,9 +379,12 @@ export const ConfigurationProvider = ({
             ? data.data.drorOption
             : null;
 
+        const community = data.data.community;
+
         const configData = {
           profileData: profiles,
           bannerData: banners,
+          community: community,
           adPopupImage: adUrl,
           gotraData: gotra,
           drorData: dror,
@@ -373,6 +393,7 @@ export const ConfigurationProvider = ({
         // Update state
         setProfileData(configData.profileData);
         setBannerData(configData.bannerData);
+        setCommunityData(configData.community);
         setAdPopupImage(configData.adPopupImage);
         setGotraData(configData.gotraData);
         setDrorData(configData.drorData);
@@ -407,8 +428,11 @@ export const ConfigurationProvider = ({
   }, []);
 
   const refreshConfiguration = useCallback(async () => {
+    console.log('🔄 REFRESH CONFIGURATION - Clearing cache and fetching fresh data...');
+    // Clear cache first to ensure fresh data is fetched
+    await clearCache();
     await fetchConfigurationFromAPI(true);
-  }, []);
+  }, [clearCache]);
 
   // Load configuration when user logs in, clear when logs out
   useEffect(() => {
@@ -417,6 +441,7 @@ export const ConfigurationProvider = ({
         // Clear all data when user logs out
         setProfileData([]);
         setBannerData([]);
+        setCommunityData(null);
         setAdPopupImage(null);
         setGotraData([]);
         setDrorData(null);
@@ -460,6 +485,7 @@ export const ConfigurationProvider = ({
       // Data
       profileData,
       bannerData,
+      communityData,
       adPopupImage,
       gotraData,
       drorData: memoizedDrorData,
@@ -469,6 +495,7 @@ export const ConfigurationProvider = ({
       refreshing,
 
       // Actions
+      setCommunityData,
       fetchConfiguration,
       refreshConfiguration,
       clearCache,
@@ -480,6 +507,7 @@ export const ConfigurationProvider = ({
     [
       profileData,
       bannerData,
+      communityData,
       adPopupImage,
       gotraData,
       memoizedDrorData,
