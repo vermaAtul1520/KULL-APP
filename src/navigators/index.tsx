@@ -388,9 +388,42 @@ const AuthProvider = ({children}: {children: React.ReactNode}) => {
       const apiResponse = await response.json();
 
       if (apiResponse.success && apiResponse.user) {
-        const updatedUser = {...user, ...apiResponse.user};
+        // CRITICAL FIX: Preserve the original community object structure
+        // Backend may return community as string, but we need it as object
+        let preservedCommunity = user.community;
+
+        // If API returned community data, handle both string and object formats
+        if (apiResponse.user.community) {
+          if (typeof apiResponse.user.community === 'string') {
+            // Backend returned community as string ID - convert to object format
+            console.log('🔧 UPDATE USER - Converting community string to object');
+            preservedCommunity = {
+              _id: apiResponse.user.community,
+              name: user.community?.name || '',
+            };
+          } else if (typeof apiResponse.user.community === 'object' && apiResponse.user.community._id) {
+            // Backend returned community as object - use it
+            console.log('🔧 UPDATE USER - Using community object from API');
+            preservedCommunity = apiResponse.user.community;
+          }
+        }
+
+        // Build updated user with preserved community
+        const updatedUser = {
+          ...user,
+          ...apiResponse.user,
+          community: preservedCommunity, // Always preserve community as object
+        };
+
+        console.log('🔧 UPDATE USER - Final user.community:', updatedUser.community);
+        console.log('🔧 UPDATE USER - Final community type:', typeof updatedUser.community);
+        console.log('🔧 UPDATE USER - Final community._id:', updatedUser.community?._id);
+
         setUser(updatedUser);
         await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+
+        console.log('✅ UPDATE USER - Profile updated and saved to AsyncStorage');
+        console.log('✅ UPDATE USER - Community preserved:', updatedUser.community);
       } else {
         throw new Error(apiResponse.message || 'Failed to update profile');
       }
