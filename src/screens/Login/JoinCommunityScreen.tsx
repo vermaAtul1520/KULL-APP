@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
-import { moderateScale } from '@app/constants/scaleUtils';
-import { BASE_URL } from '@app/constants/constant';
-import { getCommunityId } from '@app/constants/apiUtils';
+import {useNavigation} from '@react-navigation/native';
+import {Picker} from '@react-native-picker/picker';
+import {moderateScale} from '@app/constants/scaleUtils';
+import {BASE_URL} from '@app/constants/constant';
+import {getCommunityId} from '@app/constants/apiUtils';
 import ImagePickerComponent from '@app/components/ImagePicker';
+import PasswordHideIcon from '@app/assets/images/hideeye.svg';
+import PasswordShowIcon from '@app/assets/images/showeye.svg';
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -61,6 +63,11 @@ interface JoinFormData {
   profileImage: string;
   password: string;
   confirmPassword: string;
+  gender: string;
+  religion: string;
+  motherTongue: string;
+  interests: string;
+  address: string;
 }
 
 const JoinCommunityScreen: React.FC = () => {
@@ -72,7 +79,9 @@ const JoinCommunityScreen: React.FC = () => {
   const [gotraOptions, setGotraOptions] = useState<GotraOption[]>([]);
   const [loadingGotra, setLoadingGotra] = useState(false);
   const [referralCodeVerified, setReferralCodeVerified] = useState(false);
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [formData, setFormData] = useState<JoinFormData>({
     name: '',
     lastName: '',
@@ -90,10 +99,15 @@ const JoinCommunityScreen: React.FC = () => {
     profileImage: '',
     password: '',
     confirmPassword: '',
+    gender: '',
+    religion: '',
+    motherTongue: '',
+    interests: '',
+    address: '',
   });
 
   const updateFormData = (field: keyof JoinFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({...prev, [field]: value}));
   };
 
   const fetchGotraOptions = async (referralCode: string) => {
@@ -105,22 +119,30 @@ const JoinCommunityScreen: React.FC = () => {
     setLoadingGotra(true);
     try {
       const communityId = await getCommunityId();
-      const response = await fetch(`${BASE_URL}/api/communities/${communityId}/gotraDetail`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${BASE_URL}/api/communities/${referralCode}/gotraDetail`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
 
       const result: GotraResponse = await response.json();
-
 
       if (result.success && result.data.gotra) {
         setGotraOptions(result.data.gotra);
         setReferralCodeVerified(true);
-        Alert.alert('Success', 'Referral code verified! Please continue with your details.');
+        Alert.alert(
+          'Success',
+          'Referral code verified! Please continue with your details.',
+        );
       } else {
-        Alert.alert('Error', 'Invalid referral code or failed to fetch gotra details');
+        Alert.alert(
+          'Error',
+          'Invalid referral code or failed to fetch gotra details',
+        );
         setReferralCodeVerified(false);
         setGotraOptions([]);
       }
@@ -141,9 +163,24 @@ const JoinCommunityScreen: React.FC = () => {
         if (!referralCodeVerified) {
           return ['referralCode'];
         }
-        return ['referralCode', 'name', 'lastName', 'gotra', 'subGotra', 'fatherName'];
+        return [
+          'referralCode',
+          'name',
+          'lastName',
+          'gotra',
+          'subGotra',
+          'fatherName',
+        ];
       case 2:
-        return ['maritalStatus', 'phoneNumber', 'email', 'profession', 'password', 'confirmPassword'];
+        return [
+          'maritalStatus',
+          'phoneNumber',
+          'email',
+          'profession',
+          'address',
+          'password',
+          'confirmPassword',
+        ];
       case 3:
         return ageOrDob === 'age' ? ['age'] : ['dob'];
       default:
@@ -163,10 +200,15 @@ const JoinCommunityScreen: React.FC = () => {
     }
 
     const requiredFields = getRequiredFieldsForPage(currentPage);
-    const missingFields = requiredFields.filter(field => !formData[field as keyof JoinFormData]);
+    const missingFields = requiredFields.filter(
+      field => !formData[field as keyof JoinFormData],
+    );
 
     if (missingFields.length > 0) {
-      Alert.alert('Error', 'Please fill in all required fields before proceeding');
+      Alert.alert(
+        'Error',
+        'Please fill in all required fields before proceeding',
+      );
       return false;
     }
 
@@ -180,6 +222,12 @@ const JoinCommunityScreen: React.FC = () => {
 
       if (formData.phoneNumber.length !== 10) {
         Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+        return false;
+      }
+
+      // Address validation
+      if (formData.address.trim().length < 10) {
+        Alert.alert('Error', 'Please enter a complete address (minimum 10 characters)');
         return false;
       }
 
@@ -222,9 +270,9 @@ const JoinCommunityScreen: React.FC = () => {
 
     if (!termsAccepted) {
       Alert.alert(
-        'Terms & Conditions Required', 
+        'Terms & Conditions Required',
         'You must accept the Terms & Conditions before joining the community. Please tick the checkbox to proceed.',
-        [{ text: 'OK' }]
+        [{text: 'OK'}],
       );
       return;
     }
@@ -238,21 +286,24 @@ const JoinCommunityScreen: React.FC = () => {
         email: formData.email,
         phone: `+91${formData.phoneNumber}`,
         password: formData.password,
-        gender: 'not specified',
+        gender: formData.gender || 'not specified',
         occupation: formData.profession,
-        religion: 'Hindu',
-        motherTongue: 'Hindi',
-        interests: ['community participation'],
+        religion: formData.religion || 'Hindu',
+        motherTongue: formData.motherTongue || 'Hindi',
+        interests: formData.interests
+          ? formData.interests.split(',').map(i => i.trim())
+          : ['community participation'],
         gotra: formData.gotra,
         subGotra: formData.subGotra,
         fatherName: formData.fatherName,
         maritalStatus: formData.maritalStatus,
         bloodGroup: formData.bloodGroup,
+        address: formData.address,
         age: ageOrDob === 'age' ? parseInt(formData.age) : undefined,
         dateOfBirth: ageOrDob === 'dob' ? formData.dob : undefined,
         referral: formData.referralCode,
         requestType: 'join_community',
-        profileImage: formData.profileImage || undefined
+        profileImage: formData.profileImage || undefined,
       };
 
       const response = await fetch(`${BASE_URL}/api/auth/signup`, {
@@ -267,17 +318,21 @@ const JoinCommunityScreen: React.FC = () => {
 
       if (result.success) {
         Alert.alert(
-          'Success', 
+          'Success',
           result.message || 'Join community request submitted successfully!',
           [
             {
               text: 'OK',
               onPress: () => navigation.goBack(),
             },
-          ]
+          ],
         );
       } else {
-        Alert.alert('Error', result.message || 'Failed to submit request. Please check your referral code.');
+        Alert.alert(
+          'Error',
+          result.message ||
+            'Failed to submit request. Please check your referral code.',
+        );
       }
     } catch (error) {
       console.error('API Error:', error);
@@ -289,11 +344,11 @@ const JoinCommunityScreen: React.FC = () => {
 
   const renderProgressBar = () => {
     const progress = (currentPage / 3) * 100;
-    
+
     return (
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          <View style={[styles.progressFill, {width: `${progress}%`}]} />
         </View>
         <Text style={styles.progressText}>Step {currentPage} of 3</Text>
       </View>
@@ -301,15 +356,15 @@ const JoinCommunityScreen: React.FC = () => {
   };
 
   const bloodGroups = [
-    { label: 'Select Blood Group (Optional)', value: '' },
-    { label: 'A+', value: 'A+' },
-    { label: 'A-', value: 'A-' },
-    { label: 'B+', value: 'B+' },
-    { label: 'B-', value: 'B-' },
-    { label: 'AB+', value: 'AB+' },
-    { label: 'AB-', value: 'AB-' },
-    { label: 'O+', value: 'O+' },
-    { label: 'O-', value: 'O-' },
+    {label: 'Select Blood Group (Optional)', value: ''},
+    {label: 'A+', value: 'A+'},
+    {label: 'A-', value: 'A-'},
+    {label: 'B+', value: 'B+'},
+    {label: 'B-', value: 'B-'},
+    {label: 'AB+', value: 'AB+'},
+    {label: 'AB-', value: 'AB-'},
+    {label: 'O+', value: 'O+'},
+    {label: 'O-', value: 'O-'},
   ];
 
   const renderPage1 = () => (
@@ -321,9 +376,13 @@ const JoinCommunityScreen: React.FC = () => {
         <Text style={styles.label}>Referral Code *</Text>
         <View style={styles.referralContainer}>
           <TextInput
-            style={[styles.input, styles.referralInput, referralCodeVerified && styles.inputVerified]}
+            style={[
+              styles.input,
+              styles.referralInput,
+              referralCodeVerified && styles.inputVerified,
+            ]}
             value={formData.referralCode}
-            onChangeText={(value) => updateFormData('referralCode', value)}
+            onChangeText={value => updateFormData('referralCode', value)}
             placeholder="Enter referral code from community member"
             placeholderTextColor={AppColors.gray}
             editable={!referralCodeVerified}
@@ -337,8 +396,7 @@ const JoinCommunityScreen: React.FC = () => {
         <Text style={styles.helpText}>
           {referralCodeVerified
             ? 'Referral code verified successfully! Please fill in your details below.'
-            : 'Enter your referral code and click "Verify Code" below to continue'
-          }
+            : 'Enter your referral code and click "Verify Code" below to continue'}
         </Text>
         {loadingGotra && (
           <View style={styles.loadingContainer}>
@@ -355,7 +413,9 @@ const JoinCommunityScreen: React.FC = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Profile Photo (Optional)</Text>
             <ImagePickerComponent
-              onImageSelected={(imageUrl) => updateFormData('profileImage', imageUrl)}
+              onImageSelected={imageUrl =>
+                updateFormData('profileImage', imageUrl)
+              }
               currentImage={formData.profileImage}
               size={100}
             />
@@ -367,7 +427,7 @@ const JoinCommunityScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               value={formData.name}
-              onChangeText={(value) => updateFormData('name', value)}
+              onChangeText={value => updateFormData('name', value)}
               placeholder="Enter your first name"
               placeholderTextColor={AppColors.gray}
             />
@@ -379,7 +439,7 @@ const JoinCommunityScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               value={formData.lastName}
-              onChangeText={(value) => updateFormData('lastName', value)}
+              onChangeText={value => updateFormData('lastName', value)}
               placeholder="Enter your last name"
               placeholderTextColor={AppColors.gray}
             />
@@ -391,14 +451,13 @@ const JoinCommunityScreen: React.FC = () => {
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.gotra}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   updateFormData('gotra', value);
                   updateFormData('subGotra', ''); // Reset subgotra when gotra changes
                 }}
-                style={styles.picker}
-              >
+                style={styles.picker}>
                 <Picker.Item label="Select your gotra" value="" />
-                {gotraOptions.map((gotra) => (
+                {gotraOptions.map(gotra => (
                   <Picker.Item
                     key={gotra.name}
                     label={gotra.name}
@@ -415,15 +474,14 @@ const JoinCommunityScreen: React.FC = () => {
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.subGotra}
-                onValueChange={(value) => updateFormData('subGotra', value)}
+                onValueChange={value => updateFormData('subGotra', value)}
                 style={styles.picker}
-                enabled={!!formData.gotra}
-              >
+                enabled={!!formData.gotra}>
                 <Picker.Item label="Select your sub gotra" value="" />
                 {formData.gotra &&
                   gotraOptions
                     .find(gotra => gotra.name === formData.gotra)
-                    ?.subgotra.map((subGotra) => (
+                    ?.subgotra.map(subGotra => (
                       <Picker.Item
                         key={subGotra}
                         label={subGotra}
@@ -440,7 +498,7 @@ const JoinCommunityScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               value={formData.fatherName}
-              onChangeText={(value) => updateFormData('fatherName', value)}
+              onChangeText={value => updateFormData('fatherName', value)}
               placeholder="Enter father's name"
               placeholderTextColor={AppColors.gray}
             />
@@ -453,16 +511,15 @@ const JoinCommunityScreen: React.FC = () => {
   const renderPage2 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Contact & Professional Details</Text>
-      
+
       {/* Marital Status */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Marital Status *</Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.maritalStatus}
-            onValueChange={(value) => updateFormData('maritalStatus', value)}
-            style={styles.picker}
-          >
+            onValueChange={value => updateFormData('maritalStatus', value)}
+            style={styles.picker}>
             <Picker.Item label="Single" value="single" />
             <Picker.Item label="Married" value="married" />
           </Picker>
@@ -475,7 +532,7 @@ const JoinCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.phoneNumber}
-          onChangeText={(value) => updateFormData('phoneNumber', value)}
+          onChangeText={value => updateFormData('phoneNumber', value)}
           placeholder="Enter phone number"
           placeholderTextColor={AppColors.gray}
           keyboardType="phone-pad"
@@ -489,7 +546,7 @@ const JoinCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.email}
-          onChangeText={(value) => updateFormData('email', value)}
+          onChangeText={value => updateFormData('email', value)}
           placeholder="Enter email address"
           placeholderTextColor={AppColors.gray}
           keyboardType="email-address"
@@ -503,23 +560,55 @@ const JoinCommunityScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={formData.profession}
-          onChangeText={(value) => updateFormData('profession', value)}
+          onChangeText={value => updateFormData('profession', value)}
           placeholder="Enter your profession"
           placeholderTextColor={AppColors.gray}
         />
       </View>
 
+      {/* Address */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Address *</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {height: moderateScale(80), textAlignVertical: 'top'},
+          ]}
+          value={formData.address}
+          onChangeText={value => updateFormData('address', value)}
+          placeholder="Enter your complete address"
+          placeholderTextColor={AppColors.gray}
+          multiline
+          numberOfLines={3}
+        />
+        <Text style={styles.helpText}>
+          Please provide your complete residential address
+        </Text>
+      </View>
+
       {/* Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Password *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.password}
-          onChangeText={(value) => updateFormData('password', value)}
-          placeholder="Create a strong password"
-          placeholderTextColor={AppColors.gray}
-          secureTextEntry={true}
-        />
+        <View style={{position: 'relative'}}>
+          <TextInput
+            style={styles.input}
+            value={formData.password}
+            onChangeText={value => updateFormData('password', value)}
+            placeholder="Create a strong password"
+            placeholderTextColor={AppColors.gray}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            {showPassword ? (
+              <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
+            ) : (
+              <PasswordShowIcon width={20} height={20} fill={AppColors.gray} />
+            )}
+          </TouchableOpacity>
+        </View>
         <Text style={styles.helpText}>
           Password must be greater than 3 characters
         </Text>
@@ -528,17 +617,30 @@ const JoinCommunityScreen: React.FC = () => {
       {/* Confirm Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Confirm Password *</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.confirmPassword}
-          onChangeText={(value) => updateFormData('confirmPassword', value)}
-          placeholder="Confirm your password"
-          placeholderTextColor={AppColors.gray}
-          secureTextEntry={true}
-        />
-        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-          <Text style={styles.errorText}>Passwords do not match</Text>
-        )}
+        <View style={{position: 'relative'}}>
+          <TextInput
+            style={styles.input}
+            value={formData.confirmPassword}
+            onChangeText={value => updateFormData('confirmPassword', value)}
+            placeholder="Confirm your password"
+            placeholderTextColor={AppColors.gray}
+            secureTextEntry={!showConfirmPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            {showConfirmPassword ? (
+              <PasswordHideIcon width={20} height={20} fill={AppColors.gray} />
+            ) : (
+              <PasswordShowIcon width={20} height={20} fill={AppColors.gray} />
+            )}
+          </TouchableOpacity>
+        </View>
+        {formData.confirmPassword &&
+          formData.password !== formData.confirmPassword && (
+            <Text style={styles.errorText}>Passwords do not match</Text>
+          )}
       </View>
     </View>
   );
@@ -546,21 +648,104 @@ const JoinCommunityScreen: React.FC = () => {
   const renderPage3 = () => (
     <View style={styles.formContainer}>
       <Text style={styles.pageTitle}>Additional Information</Text>
-      
+
+      {/* Gender */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Gender</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.gender}
+            onValueChange={value => updateFormData('gender', value)}
+            style={styles.picker}>
+            <Picker.Item label="Select Gender" value="" />
+            <Picker.Item label="Male" value="male" />
+            <Picker.Item label="Female" value="female" />
+            <Picker.Item label="Other" value="other" />
+            <Picker.Item label="Prefer not to say" value="not specified" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Religion */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Religion</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.religion}
+            onValueChange={value => updateFormData('religion', value)}
+            style={styles.picker}>
+            <Picker.Item label="Select Religion" value="" />
+            <Picker.Item label="Hindu" value="Hindu" />
+            <Picker.Item label="Muslim" value="Muslim" />
+            <Picker.Item label="Christian" value="Christian" />
+            <Picker.Item label="Sikh" value="Sikh" />
+            <Picker.Item label="Buddhist" value="Buddhist" />
+            <Picker.Item label="Jain" value="Jain" />
+            <Picker.Item label="Other" value="Other" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Mother Tongue */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Mother Tongue</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.motherTongue}
+            onValueChange={value => updateFormData('motherTongue', value)}
+            style={styles.picker}>
+            <Picker.Item label="Select Language" value="" />
+            <Picker.Item label="Hindi" value="Hindi" />
+            <Picker.Item label="English" value="English" />
+            <Picker.Item label="Punjabi" value="Punjabi" />
+            <Picker.Item label="Bengali" value="Bengali" />
+            <Picker.Item label="Marathi" value="Marathi" />
+            <Picker.Item label="Telugu" value="Telugu" />
+            <Picker.Item label="Tamil" value="Tamil" />
+            <Picker.Item label="Gujarati" value="Gujarati" />
+            <Picker.Item label="Kannada" value="Kannada" />
+            <Picker.Item label="Malayalam" value="Malayalam" />
+            <Picker.Item label="Oriya" value="Oriya" />
+            <Picker.Item label="Urdu" value="Urdu" />
+            <Picker.Item label="Other" value="Other" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Interests */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Interests (comma separated)</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {height: moderateScale(80), textAlignVertical: 'top'},
+          ]}
+          value={formData.interests}
+          onChangeText={value => updateFormData('interests', value)}
+          placeholder="e.g., community service, music, sports"
+          placeholderTextColor={AppColors.gray}
+          multiline
+        />
+        <Text style={styles.helpText}>
+          Enter your interests separated by commas
+        </Text>
+      </View>
+
       {/* Blood Group */}
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Blood Group (Optional for Blood Donation)</Text>
+        <Text style={styles.label}>
+          Blood Group (Optional for Blood Donation)
+        </Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.bloodGroup}
-            onValueChange={(value) => updateFormData('bloodGroup', value)}
-            style={styles.picker}
-          >
-            {bloodGroups.map((group) => (
-              <Picker.Item 
-                key={group.value} 
-                label={group.label} 
-                value={group.value} 
+            onValueChange={value => updateFormData('bloodGroup', value)}
+            style={styles.picker}>
+            {bloodGroups.map(group => (
+              <Picker.Item
+                key={group.value}
+                label={group.label}
+                value={group.value}
               />
             ))}
           </Picker>
@@ -576,14 +761,12 @@ const JoinCommunityScreen: React.FC = () => {
               styles.toggleButton,
               ageOrDob === 'age' && styles.toggleButtonActive,
             ]}
-            onPress={() => setAgeOrDob('age')}
-          >
+            onPress={() => setAgeOrDob('age')}>
             <Text
               style={[
                 styles.toggleText,
                 ageOrDob === 'age' && styles.toggleTextActive,
-              ]}
-            >
+              ]}>
               Age
             </Text>
           </TouchableOpacity>
@@ -592,14 +775,12 @@ const JoinCommunityScreen: React.FC = () => {
               styles.toggleButton,
               ageOrDob === 'dob' && styles.toggleButtonActive,
             ]}
-            onPress={() => setAgeOrDob('dob')}
-          >
+            onPress={() => setAgeOrDob('dob')}>
             <Text
               style={[
                 styles.toggleText,
                 ageOrDob === 'dob' && styles.toggleTextActive,
-              ]}
-            >
+              ]}>
               Date of Birth
             </Text>
           </TouchableOpacity>
@@ -609,7 +790,7 @@ const JoinCommunityScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             value={formData.age}
-            onChangeText={(value) => updateFormData('age', value)}
+            onChangeText={value => updateFormData('age', value)}
             placeholder="Enter your age"
             placeholderTextColor={AppColors.gray}
             keyboardType="numeric"
@@ -619,7 +800,7 @@ const JoinCommunityScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             value={formData.dob}
-            onChangeText={(value) => updateFormData('dob', value)}
+            onChangeText={value => updateFormData('dob', value)}
             placeholder="Enter date of birth (DD/MM/YYYY)"
             placeholderTextColor={AppColors.gray}
           />
@@ -630,15 +811,14 @@ const JoinCommunityScreen: React.FC = () => {
       <View style={styles.termsContainer}>
         <TouchableOpacity
           style={styles.checkboxContainer}
-          onPress={() => setTermsAccepted(!termsAccepted)}
-        >
-          <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+          onPress={() => setTermsAccepted(!termsAccepted)}>
+          <View
+            style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
             {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <Text style={styles.termsText}>
             I agree to the{' '}
-            <Text style={styles.termsLink}>Terms & Conditions</Text>
-            {' '}and{' '}
+            <Text style={styles.termsLink}>Terms & Conditions</Text> and{' '}
             <Text style={styles.termsLink}>Privacy Policy</Text>
           </Text>
         </TouchableOpacity>
@@ -656,8 +836,7 @@ const JoinCommunityScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+          onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Join Community</Text>
@@ -666,7 +845,9 @@ const JoinCommunityScreen: React.FC = () => {
 
       {renderProgressBar()}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
         {currentPage === 1 && renderPage1()}
         {currentPage === 2 && renderPage2()}
         {currentPage === 3 && renderPage3()}
@@ -674,31 +855,35 @@ const JoinCommunityScreen: React.FC = () => {
         {/* Navigation Buttons */}
         <View style={styles.navigationContainer}>
           {currentPage > 1 && (
-            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+            <TouchableOpacity
+              style={styles.previousButton}
+              onPress={handlePrevious}>
               <Text style={styles.previousButtonText}>Previous</Text>
             </TouchableOpacity>
           )}
-          
+
           {currentPage < 3 ? (
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
               <Text style={styles.nextButtonText}>
-                {currentPage === 1 && !referralCodeVerified ? 'Verify Code' : 'Next'}
+                {currentPage === 1 && !referralCodeVerified
+                  ? 'Verify Code'
+                  : 'Next'}
               </Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.submitButton, 
+                styles.submitButton,
                 loading && styles.submitButtonDisabled,
-                !termsAccepted && styles.submitButtonDisabled
-              ]} 
+                !termsAccepted && styles.submitButtonDisabled,
+              ]}
               onPress={handleSubmit}
-              disabled={loading}
-            >
-              <Text style={[
-                styles.submitButtonText,
-                !termsAccepted && styles.submitButtonTextDisabled
-              ]}>
+              disabled={loading}>
+              <Text
+                style={[
+                  styles.submitButtonText,
+                  !termsAccepted && styles.submitButtonTextDisabled,
+                ]}>
                 {loading ? 'Submitting...' : 'Join Community'}
               </Text>
             </TouchableOpacity>
@@ -977,6 +1162,15 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: AppColors.teal,
     fontWeight: '500',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: moderateScale(15),
+    top: moderateScale(15),
+    width: moderateScale(24),
+    height: moderateScale(24),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

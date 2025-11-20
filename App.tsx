@@ -1,11 +1,9 @@
 // import {Colors, Typography} from 'react-native-ui-lib';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {LogBox} from 'react-native';
 import RootContainer from '@app/navigators';
-import {theme} from '@constants';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import { LanguageProvider } from '@app/hooks/LanguageContext';
-import { ConfigurationProvider } from '@app/hooks/ConfigContext';
+import {LanguageProvider} from '@app/hooks/LanguageContext';
 
 // For dark theme support
 // require('react-native-ui-lib/config').setConfig({appScheme: 'default'});
@@ -16,19 +14,11 @@ LogBox.ignoreLogs([
 ]);
 
 export default function App(): React.JSX.Element {
-  useEffect(() => {
-    // Colors.loadDesignTokens({primaryColor: theme?.primaryColor});
-    // Colors.loadColors(theme?.colors);
-    // Typography.loadTypographies(theme?.fonts);
-  }, []);
-
   return (
-    <ConfigurationProvider>
     <LanguageProvider>
-    <GestureHandlerRootView style={{flex: 1}}>
-      <RootContainer />
-    </GestureHandlerRootView>
+      <GestureHandlerRootView style={{flex: 1}}>
+        <RootContainer />
+      </GestureHandlerRootView>
     </LanguageProvider>
-    </ConfigurationProvider>
   );
 }

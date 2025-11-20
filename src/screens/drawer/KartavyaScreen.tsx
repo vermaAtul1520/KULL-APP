@@ -1,12 +1,12 @@
 /**
  * Unified KartavyaScreen Component - Handles both main category selection and detail views
- * 
+ *
  * Required Dependencies:
- * npm install react-native-svg react-native-webview
+ * npm install react-native-svg react-native-pdf react-native-blob-util
  */
 
-import { useNavigation } from '@react-navigation/native';
-import React, { useState, useEffect } from 'react';
+import {useNavigation} from '@react-navigation/native';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -24,12 +24,12 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
-import { WebView } from 'react-native-webview';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
-import { BASE_URL } from '@app/constants/constant';
+import Svg, {Path, Circle, Rect} from 'react-native-svg';
+import Pdf from 'react-native-pdf';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
+import {BASE_URL} from '@app/constants/constant';
 
-const { width, height } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const AppColors = {
   primary: '#7dd3c0',
@@ -51,108 +51,229 @@ const AppColors = {
 };
 
 // SVG Icons
-const VoteIcon = ({ size = 40, color = AppColors.white }) => (
+const VoteIcon = ({size = 40, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <Rect x="12" y="20" width="40" height="32" rx="4" fill={color} stroke={color} strokeWidth="2"/>
-    <Path d="M32 12L36 20H28L32 12Z" fill={AppColors.danger}/>
-    <Rect x="16" y="30" width="32" height="4" rx="2" fill={AppColors.dark} opacity="0.3"/>
-    <Rect x="16" y="38" width="24" height="3" rx="1.5" fill={AppColors.dark} opacity="0.3"/>
+    <Rect
+      x="12"
+      y="20"
+      width="40"
+      height="32"
+      rx="4"
+      fill={color}
+      stroke={color}
+      strokeWidth="2"
+    />
+    <Path d="M32 12L36 20H28L32 12Z" fill={AppColors.danger} />
+    <Rect
+      x="16"
+      y="30"
+      width="32"
+      height="4"
+      rx="2"
+      fill={AppColors.dark}
+      opacity="0.3"
+    />
+    <Rect
+      x="16"
+      y="38"
+      width="24"
+      height="3"
+      rx="1.5"
+      fill={AppColors.dark}
+      opacity="0.3"
+    />
   </Svg>
 );
 
-const OfficersIcon = ({ size = 40, color = AppColors.white }) => (
+const OfficersIcon = ({size = 40, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <Rect x="8" y="20" width="48" height="32" rx="4" fill={color} stroke={color} strokeWidth="2"/>
-    <Circle cx="20" cy="32" r="6" fill={AppColors.blue}/>
-    <Path d="M14 44C14 40 16 38 20 38S26 40 26 44" fill={AppColors.blue}/>
-    <Rect x="30" y="28" width="20" height="3" rx="1.5" fill={AppColors.dark} opacity="0.4"/>
-    <Rect x="30" y="34" width="16" height="3" rx="1.5" fill={AppColors.dark} opacity="0.4"/>
-    <Circle cx="12" cy="16" r="2" fill={AppColors.warning}/>
+    <Rect
+      x="8"
+      y="20"
+      width="48"
+      height="32"
+      rx="4"
+      fill={color}
+      stroke={color}
+      strokeWidth="2"
+    />
+    <Circle cx="20" cy="32" r="6" fill={AppColors.blue} />
+    <Path d="M14 44C14 40 16 38 20 38S26 40 26 44" fill={AppColors.blue} />
+    <Rect
+      x="30"
+      y="28"
+      width="20"
+      height="3"
+      rx="1.5"
+      fill={AppColors.dark}
+      opacity="0.4"
+    />
+    <Rect
+      x="30"
+      y="34"
+      width="16"
+      height="3"
+      rx="1.5"
+      fill={AppColors.dark}
+      opacity="0.4"
+    />
+    <Circle cx="12" cy="16" r="2" fill={AppColors.warning} />
   </Svg>
 );
 
-const MeetingIcon = ({ size = 40, color = AppColors.white }) => (
+const MeetingIcon = ({size = 40, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <Rect x="10" y="20" width="44" height="28" rx="4" fill={color} stroke={color} strokeWidth="2"/>
-    <Circle cx="32" cy="32" r="6" fill={AppColors.orange}/>
-    <Path d="M26 42C26 38 28 36 32 36S38 38 38 42" fill={AppColors.orange}/>
-    <Rect x="16" y="16" width="32" height="6" rx="3" fill={AppColors.orange} opacity="0.7"/>
+    <Rect
+      x="10"
+      y="20"
+      width="44"
+      height="28"
+      rx="4"
+      fill={color}
+      stroke={color}
+      strokeWidth="2"
+    />
+    <Circle cx="32" cy="32" r="6" fill={AppColors.orange} />
+    <Path d="M26 42C26 38 28 36 32 36S38 38 38 42" fill={AppColors.orange} />
+    <Rect
+      x="16"
+      y="16"
+      width="32"
+      height="6"
+      rx="3"
+      fill={AppColors.orange}
+      opacity="0.7"
+    />
   </Svg>
 );
 
-const ProgressIcon = ({ size = 40, color = AppColors.white }) => (
+const ProgressIcon = ({size = 40, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <Rect x="12" y="24" width="40" height="24" rx="4" fill={color} stroke={color} strokeWidth="2"/>
-    <Path d="M22 16L26 20H18L22 16Z" fill={AppColors.dark}/>
-    <Path d="M42 16L46 20H38L42 16Z" fill={AppColors.dark}/>
-    <Rect x="16" y="32" width="32" height="3" rx="1.5" fill={AppColors.warning}/>
-    <Rect x="16" y="38" width="24" height="3" rx="1.5" fill={AppColors.warning} opacity="0.7"/>
+    <Rect
+      x="12"
+      y="24"
+      width="40"
+      height="24"
+      rx="4"
+      fill={color}
+      stroke={color}
+      strokeWidth="2"
+    />
+    <Path d="M22 16L26 20H18L22 16Z" fill={AppColors.dark} />
+    <Path d="M42 16L46 20H38L42 16Z" fill={AppColors.dark} />
+    <Rect
+      x="16"
+      y="32"
+      width="32"
+      height="3"
+      rx="1.5"
+      fill={AppColors.warning}
+    />
+    <Rect
+      x="16"
+      y="38"
+      width="24"
+      height="3"
+      rx="1.5"
+      fill={AppColors.warning}
+      opacity="0.7"
+    />
   </Svg>
 );
 
-const CommunityIcon = ({ size = 40, color = AppColors.white }) => (
+const CommunityIcon = ({size = 40, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <Circle cx="32" cy="32" r="24" fill="none" stroke={color} strokeWidth="3"/>
-    <Circle cx="32" cy="24" r="4" fill={AppColors.blue}/>
-    <Circle cx="44" cy="30" r="3" fill={AppColors.purple}/>
-    <Circle cx="20" cy="30" r="3" fill={AppColors.success}/>
-    <Circle cx="38" cy="42" r="3" fill={AppColors.orange}/>
-    <Circle cx="26" cy="42" r="3" fill={AppColors.danger}/>
-    <Path d="M32 28L44 30M32 28L20 30M32 28L38 42M32 28L26 42" stroke={color} strokeWidth="1.5" opacity="0.6"/>
+    <Circle cx="32" cy="32" r="24" fill="none" stroke={color} strokeWidth="3" />
+    <Circle cx="32" cy="24" r="4" fill={AppColors.blue} />
+    <Circle cx="44" cy="30" r="3" fill={AppColors.purple} />
+    <Circle cx="20" cy="30" r="3" fill={AppColors.success} />
+    <Circle cx="38" cy="42" r="3" fill={AppColors.orange} />
+    <Circle cx="26" cy="42" r="3" fill={AppColors.danger} />
+    <Path
+      d="M32 28L44 30M32 28L20 30M32 28L38 42M32 28L26 42"
+      stroke={color}
+      strokeWidth="1.5"
+      opacity="0.6"
+    />
   </Svg>
 );
 
-const PdfIcon = ({ size = 24, color = AppColors.white }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill={color}/>
-  </Svg>
-);
-
-const ImageIcon = ({ size = 24, color = AppColors.white }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" fill={color}/>
-  </Svg>
-);
-
-const HeartIcon = ({ size = 20, color = AppColors.gray, filled = false }) => (
+const PdfIcon = ({size = 24, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d={filled 
-        ? "M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5 2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"
-        : "M12.1,18.55L12,18.65L11.89,18.55C7.14,14.24 4,11.39 4,8.5C4,6.5 5.5,5 7.5,5C9.04,5 10.54,6 11.07,7.36H12.93C13.46,6 14.96,5 16.5,5C18.5,5 20,6.5 20,8.5C20,11.39 16.86,14.24 12.1,18.55M16.5,3C14.76,3 13.09,3.81 12,5.08C10.91,3.81 9.24,3 7.5,3C4.42,3 2,5.41 2,8.5C2,12.27 5.4,15.36 10.55,20.03L12,21.35L13.45,20.03C18.6,15.36 22,12.27 22,8.5C22,5.41 19.58,3 16.5,3Z"
+      d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const ImageIcon = ({size = 24, color = AppColors.white}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const HeartIcon = ({size = 20, color = AppColors.gray, filled = false}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d={
+        filled
+          ? 'M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5 2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z'
+          : 'M12.1,18.55L12,18.65L11.89,18.55C7.14,14.24 4,11.39 4,8.5C4,6.5 5.5,5 7.5,5C9.04,5 10.54,6 11.07,7.36H12.93C13.46,6 14.96,5 16.5,5C18.5,5 20,6.5 20,8.5C20,11.39 16.86,14.24 12.1,18.55M16.5,3C14.76,3 13.09,3.81 12,5.08C10.91,3.81 9.24,3 7.5,3C4.42,3 2,5.41 2,8.5C2,12.27 5.4,15.36 10.55,20.03L12,21.35L13.45,20.03C18.6,15.36 22,12.27 22,8.5C22,5.41 19.58,3 16.5,3Z'
       }
       fill={color}
     />
   </Svg>
 );
 
-const BackIcon = ({ size = 24, color = AppColors.white }) => (
+const BackIcon = ({size = 24, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 24, color = AppColors.white }) => (
+const CloseIcon = ({size = 24, color = AppColors.white}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" fill={color}/>
+    <Path
+      d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+      fill={color}
+    />
   </Svg>
 );
 
-const BookIcon = ({ size = 20, color = AppColors.primary }) => (
+const BookIcon = ({size = 20, color = AppColors.primary}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19,2L14,6.5V17.5L19,13V2M6.5,5C4.55,5.05 2.45,5.4 1,6.5V21.16C1,21.41 1.25,21.66 1.5,21.66C1.6,21.66 1.65,21.59 1.75,21.59C3.1,20.94 5.05,20.68 6.5,20.68C8.45,20.68 10.55,21.1 12,22C13.35,21.15 15.8,20.68 17.5,20.68C19.15,20.68 20.85,20.9 22.25,21.56C22.35,21.61 22.4,21.66 22.5,21.66C22.75,21.66 23,21.41 23,21.16V6.5C22.4,6.05 21.75,5.75 21,5.5V7.5L21,13V19C19.9,18.65 18.7,18.5 17.5,18.5C15.8,18.5 13.35,18.97 12,19.82C10.65,18.97 8.2,18.5 6.5,18.5C5.3,18.5 4.1,18.65 3,19V13L3,7.5C4.1,6.65 5.3,5.95 6.5,5Z" fill={color}/>
+    <Path
+      d="M19,2L14,6.5V17.5L19,13V2M6.5,5C4.55,5.05 2.45,5.4 1,6.5V21.16C1,21.41 1.25,21.66 1.5,21.66C1.6,21.66 1.65,21.59 1.75,21.59C3.1,20.94 5.05,20.68 6.5,20.68C8.45,20.68 10.55,21.1 12,22C13.35,21.15 15.8,20.68 17.5,20.68C19.15,20.68 20.85,20.9 22.25,21.56C22.35,21.61 22.4,21.66 22.5,21.66C22.75,21.66 23,21.41 23,21.16V6.5C22.4,6.05 21.75,5.75 21,5.5V7.5L21,13V19C19.9,18.65 18.7,18.5 17.5,18.5C15.8,18.5 13.35,18.97 12,19.82C10.65,18.97 8.2,18.5 6.5,18.5C5.3,18.5 4.1,18.65 3,19V13L3,7.5C4.1,6.65 5.3,5.95 6.5,5Z"
+      fill={color}
+    />
   </Svg>
 );
 
-const GridIcon = ({ size = 16, color = AppColors.gray }) => (
+const GridIcon = ({size = 16, color = AppColors.gray}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z" fill={color}/>
+    <Path
+      d="M10,4V8H14V4H10M16,4V8H20V4H16M16,10V14H20V10H16M16,16V20H20V16H16M14,20V16H10V20H14M8,20V16H4V20H8M8,14V10H4V14H8M8,8V4H4V8H8M10,14H14V10H10V14Z"
+      fill={color}
+    />
   </Svg>
 );
 
-const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const SearchIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    <Path
+      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      fill={color}
+    />
   </Svg>
 );
 
@@ -172,6 +293,7 @@ interface KartyaItem {
   title: string;
   description: string;
   category: string;
+  author?: string;
   filetype: 'pdf' | 'image';
   attachment: string;
   thumbnailUrl?: string;
@@ -240,34 +362,47 @@ const kartavyaCategories: KartavyaCategory[] = [
   },
 ];
 
-
 const typeFilters = ['All', 'PDF', 'Image'];
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'Elections': return AppColors.orange;
-    case 'Officers': return AppColors.blue;
-    case 'Meetings': return AppColors.purple;
-    case 'Work Progress': return AppColors.warning;
-    case 'Community Duties': return AppColors.success;
-    default: return AppColors.gray;
+    case 'Elections':
+      return AppColors.orange;
+    case 'Officers':
+      return AppColors.blue;
+    case 'Meetings':
+      return AppColors.purple;
+    case 'Work Progress':
+      return AppColors.warning;
+    case 'Community Duties':
+      return AppColors.success;
+    default:
+      return AppColors.gray;
   }
 };
 
 const getCategoryFromId = (categoryId: string) => {
   switch (categoryId) {
-    case 'chunav': return 'Elections';
-    case 'adhikari': return 'Officers';
-    case 'baithak': return 'Meetings';
-    case 'karya-pragati': return 'Work Progress';
-    case 'samaj': return 'Community Duties';
-    default: return 'All';
+    case 'chunav':
+      return 'Elections';
+    case 'adhikari':
+      return 'Officers';
+    case 'baithak':
+      return 'Meetings';
+    case 'karya-pragati':
+      return 'Work Progress';
+    case 'samaj':
+      return 'Community Duties';
+    default:
+      return 'All';
   }
 };
 
 export default function KartavyaScreen() {
+  const navigation = useNavigation();
   const [currentView, setCurrentView] = useState<'main' | 'details'>('main');
-  const [selectedCategory, setSelectedCategory] = useState<KartavyaCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<KartavyaCategory | null>(null);
   const [selectedType, setSelectedType] = useState('All');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
@@ -279,27 +414,32 @@ export default function KartavyaScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const navigation = useNavigation();
-
   // Fetch kartavya data from API
   const fetchKartavyaData = async () => {
- 
     try {
       const headers = await getAuthHeaders();
       const communityId = await getCommunityId();
-      console.log("Fetching kartavya data...", communityId);
-      const response = await fetch(`${BASE_URL}/api/kartavya`, {
+      console.log('Fetching kartavya data...', communityId);
+
+      // Build query with community filter
+      const filter = JSON.stringify({community: communityId});
+      const url = `${BASE_URL}/api/kartavya?filter=${encodeURIComponent(
+        filter,
+      )}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers,
       });
-        
+
+      console.log('Kartavya Response:', url, headers, response);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result: KartavyaApiResponse = await response.json();
-        console.log('Fetched kartavya data:', result);
+      console.log('Fetched kartavya data:', result);
       if (result.success && result.data) {
         setKartyaItems(result.data);
         setFilteredItems(result.data);
@@ -322,13 +462,13 @@ export default function KartavyaScreen() {
   // Initial load
   useEffect(() => {
     fetchKartavyaData();
-    console.log("hello");
+    console.log('hello');
   }, []);
 
   // Filter items based on search, category and type
   useEffect(() => {
     filterItems();
-    console.log("hello")
+    console.log('hello');
   }, [searchQuery, selectedCategory, selectedType, kartyaItems]);
 
   const filterItems = () => {
@@ -341,9 +481,10 @@ export default function KartavyaScreen() {
 
     // Apply type filter
     if (selectedType !== 'All') {
-      filtered = filtered.filter(item =>
-        (selectedType === 'PDF' && item.filetype === 'pdf') ||
-        (selectedType === 'Image' && item.filetype === 'image')
+      filtered = filtered.filter(
+        item =>
+          (selectedType === 'PDF' && item.filetype === 'pdf') ||
+          (selectedType === 'Image' && item.filetype === 'image'),
       );
     }
 
@@ -396,131 +537,100 @@ export default function KartavyaScreen() {
     setSelectedItem(null);
   };
 
-
   // PDF Modal Component
   const PdfModal = () => {
-    const getPdfViewerUrl = (pdfUrl: string) => {
-      return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
-    };
+    const [pdfLoading, setPdfLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+
+    console.log('selectedItem : ', selectedItem);
+    console.log('pdfUrl: ', selectedItem?.attachment);
 
     return (
       <Modal
         visible={pdfModalVisible}
         transparent={false}
         animationType="slide"
-        onRequestClose={closeModals}
-      >
+        onRequestClose={closeModals}>
         <View style={styles.pdfModalContainer}>
-          <StatusBar backgroundColor={AppColors.teal} barStyle="light-content" />
+          <StatusBar
+            backgroundColor={AppColors.teal}
+            barStyle="light-content"
+          />
           <View style={styles.pdfModalHeader}>
             <View style={styles.pdfHeaderContent}>
               <View style={styles.titleContainer}>
                 <Text style={styles.pdfModalTitle} numberOfLines={1}>
                   {selectedItem?.title}
                 </Text>
-                <Text style={styles.viewerLabel}>📖 View-only • No downloads</Text>
+                <Text style={styles.viewerLabel}>
+                  📖 View-only • No downloads
+                  {totalPages > 0 && ` • Page ${currentPage}/${totalPages}`}
+                </Text>
               </View>
-              <TouchableOpacity onPress={closeModals} style={styles.pdfCloseButton}>
+              <TouchableOpacity
+                onPress={closeModals}
+                style={styles.pdfCloseButton}>
                 <CloseIcon size={24} color={AppColors.white} />
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.pdfContent}>
-            {selectedItem && (
-              <WebView
-                source={{ uri: getPdfViewerUrl(selectedItem.attachment) }}
-                style={styles.webView}
-                startInLoadingState={true}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                injectedJavaScript={`
-                  function hideUIElements() {
-                    const elementsToHide = [
-                      '#toolbarContainer',
-                      '#sidebarContainer', 
-                      '#secondaryToolbar',
-                      '.toolbar',
-                      '.findbar',
-                      '#errorWrapper',
-                      '#overlayContainer',
-                      '.doorHanger',
-                      '.dropdownToolbarButton',
-                      '#pageNumberLabel',
-                      '#scaleSelectContainer',
-                      '#loadingBar'
-                    ];
-                    
-                    const style = document.createElement('style');
-                    style.innerHTML = elementsToHide.join(', ') + \` { 
-                      display: none !important; 
-                      visibility: hidden !important;
-                      opacity: 0 !important;
-                    }\` + \`
-                    #viewerContainer { 
-                      top: 0 !important; 
-                      bottom: 0 !important; 
-                      left: 0 !important; 
-                      right: 0 !important;
-                      overflow-y: auto !important;
-                      background: #f0f0f0 !important;
-                    }
-                    #viewer {
-                      padding: 10px !important;
-                      background: #f0f0f0 !important;
-                    }
-                    .page {
-                      margin: 10px auto !important;
-                      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-                      border-radius: 8px !important;
-                    }
-                    html, body { 
-                      margin: 0 !important; 
-                      padding: 0 !important; 
-                      background: #f0f0f0 !important;
-                      overflow: hidden !important;
-                    }
-                    \`;
-                    document.head.appendChild(style);
-                    
-                    elementsToHide.forEach(selector => {
-                      const elements = document.querySelectorAll(selector);
-                      elements.forEach(el => {
-                        if (el) {
-                          el.style.display = 'none';
-                          el.remove();
-                        }
-                      });
-                    });
-                    
-                    document.addEventListener('contextmenu', function(e) {
-                      e.preventDefault();
-                      return false;
-                    }, true);
-                  }
-                  
-                  hideUIElements();
-                  setTimeout(hideUIElements, 500);
-                  setTimeout(hideUIElements, 1000);
-                  setTimeout(hideUIElements, 2000);
-                  
-                  document.addEventListener('DOMContentLoaded', hideUIElements);
-                  window.addEventListener('load', hideUIElements);
-                  
-                  true;
-                `}
-                renderLoading={() => (
+            {selectedItem && selectedItem.attachment ? (
+              <>
+                <Pdf
+                  trustAllCerts={false}
+                  source={{
+                    uri: selectedItem.attachment,
+                    cache: true,
+                  }}
+                  style={styles.pdf}
+                  onLoadComplete={(numberOfPages, filePath) => {
+                    console.log('✅ PDF loaded successfully');
+                    console.log(`Number of pages: ${numberOfPages}`);
+                    console.log(`File path: ${filePath}`);
+                    setTotalPages(numberOfPages);
+                    setPdfLoading(false);
+                  }}
+                  onPageChanged={(page, numberOfPages) => {
+                    console.log(`Current page: ${page}/${numberOfPages}`);
+                    setCurrentPage(page);
+                  }}
+                  onError={error => {
+                    console.error('❌ PDF Error:', error);
+                    setPdfLoading(false);
+                    Alert.alert(
+                      'Error',
+                      'Could not load PDF. Please check your internet connection and try again.',
+                    );
+                  }}
+                  onLoadProgress={percent => {
+                    console.log(`PDF loading: ${Math.round(percent * 100)}%`);
+                  }}
+                  // Read-only settings - prevents downloads and sharing
+                  enablePaging={true}
+                  horizontal={false}
+                  spacing={10}
+                  // Performance settings
+                  enableAntialiasing={true}
+                  enableAnnotationRendering={false}
+                  fitPolicy={0} // 0 = fit width, 1 = fit height, 2 = fit both
+                />
+                {pdfLoading && (
                   <View style={styles.loadingContainer}>
-                    <View style={styles.loadingSpinner}>
-                      <Text style={styles.loadingEmoji}>📖</Text>
-                    </View>
-                    <Text style={styles.loadingText}>Loading Document...</Text>
+                    <ActivityIndicator size="large" color={AppColors.teal} />
+                    <Text style={styles.loadingText}>Loading PDF...</Text>
+                    <Text style={styles.loadingSubtext}>
+                      {selectedItem.title}
+                    </Text>
                   </View>
                 )}
-                onError={() => {
-                  Alert.alert('Error', 'Unable to load document');
-                }}
-              />
+              </>
+            ) : (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>No PDF available</Text>
+              </View>
             )}
           </View>
         </View>
@@ -534,8 +644,7 @@ export default function KartavyaScreen() {
       visible={imageModalVisible}
       transparent={true}
       animationType="fade"
-      onRequestClose={closeModals}
-    >
+      onRequestClose={closeModals}>
       <View style={styles.modalOverlay}>
         <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
         <View style={styles.modalHeader}>
@@ -548,21 +657,19 @@ export default function KartavyaScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <View style={styles.imageModalContent}>
           {selectedItem && (
             <Image
-              source={{ uri: selectedItem.attachment }}
+              source={{uri: selectedItem.attachment}}
               style={styles.fullScreenImage}
               resizeMode="contain"
             />
           )}
         </View>
-        
+
         <View style={styles.modalFooter}>
-          <Text style={styles.modalFooterText}>
-            {selectedItem?.author}
-          </Text>
+          <Text style={styles.modalFooterText}>{selectedItem?.author}</Text>
         </View>
       </View>
     </Modal>
@@ -570,19 +677,19 @@ export default function KartavyaScreen() {
 
   // Main Category Selection View
   const MainView = () => {
-    const CategoryCard = ({ category }: { category: KartavyaCategory }) => {
+    const CategoryCard = ({category}: {category: KartavyaCategory}) => {
       const IconComponent = category.icon;
-      
+      console.log('category: ', category);
       return (
         <TouchableOpacity
-          style={[styles.categoryCard, { borderLeftColor: category.color }]}
+          style={[styles.categoryCard, {borderLeftColor: category.color}]}
           onPress={() => handleCategorySelect(category)}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
+          activeOpacity={0.8}>
+          <View
+            style={[styles.iconContainer, {backgroundColor: category.color}]}>
             <IconComponent size={40} color={AppColors.white} />
           </View>
-          
+
           <View style={styles.categoryContent}>
             <Text style={styles.categoryTitle}>{category.title}</Text>
             <Text style={styles.categoryTitleEn}>{category.titleEn}</Text>
@@ -591,14 +698,24 @@ export default function KartavyaScreen() {
             </Text>
             <View style={styles.itemCountContainer}>
               <Text style={styles.itemCountText}>
-                {kartyaItems.filter(item => item.category === category.id).length} items available
+                {
+                  kartyaItems.filter(item => item.category === category.id)
+                    .length
+                }{' '}
+                items available
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.chevronContainer}>
             <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path d="M9 18L15 12L9 6" stroke={AppColors.gray} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <Path
+                d="M9 18L15 12L9 6"
+                stroke={AppColors.gray}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </Svg>
           </View>
         </TouchableOpacity>
@@ -607,16 +724,23 @@ export default function KartavyaScreen() {
 
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
-        
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
+
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => { navigation?.goBack()}} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Kartavya</Text>
-            <Text style={styles.headerSubtitle}>Choose a category to explore</Text>
+            <Text style={styles.headerSubtitle}>
+              Choose a category to explore
+            </Text>
           </View>
         </View>
 
@@ -631,17 +755,21 @@ export default function KartavyaScreen() {
             <Text style={styles.statLabel}>Total Items</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{filteredItems.filter(i => i.type === 'pdf').length}</Text>
+            <Text style={styles.statNumber}>
+              {filteredItems.filter(i => i.filetype === 'pdf').length}
+            </Text>
             <Text style={styles.statLabel}>PDFs</Text>
           </View>
         </View>
 
         {/* Categories */}
-        <ScrollView style={styles.categoriesContainer} showsVerticalScrollIndicator={false}>
-          {kartavyaCategories.map((category) => (
+        <ScrollView
+          style={styles.categoriesContainer}
+          showsVerticalScrollIndicator={false}>
+          {kartavyaCategories.map(category => (
             <CategoryCard key={category.id} category={category} />
           ))}
-          
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               Select a category above to view related documents and information
@@ -654,41 +782,45 @@ export default function KartavyaScreen() {
 
   // Detail View Component
   const DetailView = () => {
-    const KartyaCard = ({ item }: { item: KartyaItem }) => (
-      <TouchableOpacity 
+    const KartyaCard = ({item}: {item: KartyaItem}) => (
+      <TouchableOpacity
         style={styles.kartyaCard}
         onPress={() => openKartyaItem(item)}
-        activeOpacity={0.8}
-      >
+        activeOpacity={0.8}>
         <View style={styles.cardHeader}>
-          <View style={[
-            styles.typeIndicator,
-            { backgroundColor: item.filetype === 'pdf' ? getCategoryColor(item.category) : AppColors.blue }
-          ]}>
+          <View
+            style={[
+              styles.typeIndicator,
+              {
+                backgroundColor:
+                  item.filetype === 'pdf'
+                    ? getCategoryColor(item.category)
+                    : AppColors.blue,
+              },
+            ]}>
             {item.filetype === 'pdf' ? (
               <PdfIcon size={24} color={AppColors.white} />
             ) : (
               <ImageIcon size={24} color={AppColors.white} />
             )}
           </View>
-
         </View>
 
-        {item.filetype === 'image' && item.thumbnailUrl && (
+        {item.thumbnailUrl && (
           <View style={styles.imagePreview}>
-            <Image 
-              source={{ uri: item.thumbnailUrl }} 
+            <Image
+              source={{uri: item.thumbnailUrl}}
               style={styles.previewImage}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           </View>
         )}
-        
+
         <View style={styles.kartyaInfo}>
           <Text style={styles.kartyaTitle} numberOfLines={2}>
             {item.title}
           </Text>
-          
+
           <Text style={styles.authorName}>{item.author}</Text>
           <Text style={styles.kartyaDescription} numberOfLines={3}>
             {item.description}
@@ -696,10 +828,11 @@ export default function KartavyaScreen() {
 
           <View style={styles.kartyaFooter}>
             <Text style={styles.languageText}>{item.language}</Text>
-            <View style={[
-              styles.categoryBadge, 
-              { backgroundColor: getCategoryColor(item.category) }
-            ]}>
+            <View
+              style={[
+                styles.categoryBadge,
+                {backgroundColor: getCategoryColor(item.category)},
+              ]}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
           </View>
@@ -708,30 +841,50 @@ export default function KartavyaScreen() {
     );
 
     const TypeFilter = () => (
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.typeFilterContainer}
-        contentContainerStyle={styles.filterContent}
-      >
-        {typeFilters.map((type) => (
+        contentContainerStyle={styles.filterContent}>
+        {typeFilters.map(type => (
           <TouchableOpacity
             key={type}
             style={[
               styles.typeButton,
-              selectedType === type && styles.typeButtonActive
+              selectedType === type && styles.typeButtonActive,
             ]}
-            onPress={() => setSelectedType(type)}
-          >
+            onPress={() => setSelectedType(type)}>
             <View style={styles.typeIcon}>
-              {type === 'PDF' && <PdfIcon size={16} color={selectedType === type ? AppColors.white : AppColors.gray} />}
-              {type === 'Image' && <ImageIcon size={16} color={selectedType === type ? AppColors.white : AppColors.gray} />}
-              {type === 'All' && <GridIcon size={16} color={selectedType === type ? AppColors.white : AppColors.gray} />}
+              {type === 'PDF' && (
+                <PdfIcon
+                  size={16}
+                  color={
+                    selectedType === type ? AppColors.white : AppColors.gray
+                  }
+                />
+              )}
+              {type === 'Image' && (
+                <ImageIcon
+                  size={16}
+                  color={
+                    selectedType === type ? AppColors.white : AppColors.gray
+                  }
+                />
+              )}
+              {type === 'All' && (
+                <GridIcon
+                  size={16}
+                  color={
+                    selectedType === type ? AppColors.white : AppColors.gray
+                  }
+                />
+              )}
             </View>
-            <Text style={[
-              styles.typeButtonText,
-              selectedType === type && styles.typeButtonTextActive
-            ]}>
+            <Text
+              style={[
+                styles.typeButtonText,
+                selectedType === type && styles.typeButtonTextActive,
+              ]}>
               {type}
             </Text>
           </TouchableOpacity>
@@ -743,12 +896,18 @@ export default function KartavyaScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.detailHeader}>
-          <TouchableOpacity onPress={handleBackToMain} style={styles.detailBackButton}>
+          <TouchableOpacity
+            onPress={handleBackToMain}
+            style={styles.detailBackButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.detailHeaderContent}>
-            <Text style={styles.detailHeaderTitle}>{selectedCategory?.titleEn}</Text>
-            <Text style={styles.detailHeaderSubtitle}>{selectedCategory?.title}</Text>
+            <Text style={styles.detailHeaderTitle}>
+              {selectedCategory?.titleEn}
+            </Text>
+            <Text style={styles.detailHeaderSubtitle}>
+              {selectedCategory?.title}
+            </Text>
           </View>
         </View>
 
@@ -759,11 +918,15 @@ export default function KartavyaScreen() {
             <Text style={styles.statLabel}>Items</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{filteredItems.filter(i => i.filetype === 'pdf').length}</Text>
+            <Text style={styles.statNumber}>
+              {filteredItems.filter(i => i.filetype === 'pdf').length}
+            </Text>
             <Text style={styles.statLabel}>PDFs</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{filteredItems.filter(i => i.filetype === 'image').length}</Text>
+            <Text style={styles.statNumber}>
+              {filteredItems.filter(i => i.filetype === 'image').length}
+            </Text>
             <Text style={styles.statLabel}>Images</Text>
           </View>
           <View style={styles.statCard}>
@@ -781,9 +944,13 @@ export default function KartavyaScreen() {
             placeholderTextColor={AppColors.gray}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            blurOnSubmit={false}
+            returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearSearchIcon}>
               <CloseIcon size={20} color={AppColors.gray} />
             </TouchableOpacity>
           )}
@@ -801,10 +968,9 @@ export default function KartavyaScreen() {
               onRefresh={onRefresh}
               colors={[AppColors.primary]}
             />
-          }
-        >
+          }>
           <View style={styles.kartyaGrid}>
-            {filteredItems.map((item) => (
+            {filteredItems.map(item => (
               <KartyaCard key={item._id} item={item} />
             ))}
           </View>
@@ -814,7 +980,8 @@ export default function KartavyaScreen() {
               <BookIcon size={60} color={AppColors.gray} />
               <Text style={styles.emptyTitle}>No Items Found</Text>
               <Text style={styles.emptyText}>
-                No documents or images available for this category and filter combination.
+                No documents or images available for this category and filter
+                combination.
               </Text>
             </View>
           )}
@@ -833,9 +1000,14 @@ export default function KartavyaScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -869,7 +1041,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.lightGray,
   },
-  
+
   // Main View Styles
   header: {
     backgroundColor: AppColors.primary,
@@ -932,7 +1104,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
@@ -1027,7 +1199,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     margin: 16,
     shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -1098,7 +1270,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -1131,7 +1303,11 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   kartyaInfo: {
     padding: 12,
@@ -1258,7 +1434,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.8,
   },
-  
+
   // PDF Modal Styles
   pdfModalContainer: {
     flex: 1,
@@ -1298,7 +1474,7 @@ const styles = StyleSheet.create({
   pdfContent: {
     flex: 1,
   },
-  webView: {
+  pdf: {
     flex: 1,
   },
   loadingContainer: {
@@ -1319,7 +1495,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -1328,9 +1504,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: 18,
     color: AppColors.dark,
     marginTop: 10,
     fontWeight: '600',
+  },
+  loadingSubtext: {
+    color: AppColors.gray,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

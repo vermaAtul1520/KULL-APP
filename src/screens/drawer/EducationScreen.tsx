@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,68 +13,99 @@ import {
   Dimensions,
   Linking,
   RefreshControl,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@app/constants/constant';
-import { useAuth } from '@app/navigators';
-import Svg, { Path } from 'react-native-svg';
-import { useNavigation } from '@react-navigation/native';
-import { getAuthHeaders, getCommunityId } from '@app/constants/apiUtils';
+import {BASE_URL} from '@app/constants/constant';
+import {useAuth} from '@app/navigators';
+import Svg, {Path} from 'react-native-svg';
+import {useNavigation} from '@react-navigation/native';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 // Custom SVG Icons
-const SearchIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const SearchIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    <Path
+      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      fill={color}
+    />
   </Svg>
 );
 
-const BackIcon = ({ size = 24, color = "#fff" }) => (
+const BackIcon = ({size = 24, color = '#fff'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M12 19L5 12L12 5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path
+      d="M19 12H5M12 19L5 12L12 5"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 24, color = "#666" }) => (
+const CloseIcon = ({size = 24, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    <Path
+      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      fill={color}
+    />
   </Svg>
 );
 
-const SchoolIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const SchoolIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z" fill={color}/>
+    <Path
+      d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z"
+      fill={color}
+    />
   </Svg>
 );
 
-const BookIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const BookIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill={color}/>
+    <Path
+      d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"
+      fill={color}
+    />
   </Svg>
 );
 
-const LinkIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const LinkIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9.1-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7z" fill={color}/>
+    <Path
+      d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.9C4.29 7 2.2 9.09 2.2 11.7s2.09 4.7 4.7 4.7H11v-1.9H6.9c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9.1-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1H13v1.9h4.1c2.61 0 4.7-2.09 4.7-4.7S19.71 7 17.1 7z"
+      fill={color}
+    />
   </Svg>
 );
 
-const VideoIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const VideoIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z" fill={color}/>
+    <Path
+      d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"
+      fill={color}
+    />
   </Svg>
 );
 
-const DocumentIcon = ({ size = 24, color = "#2a2a2a" }) => (
+const DocumentIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h8c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill={color}/>
+    <Path
+      d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h8c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+      fill={color}
+    />
   </Svg>
 );
 
-const ExternalIcon = ({ size = 24, color = "#2a2a2a" }) => (
+export const ExternalIcon = ({size = 24, color = '#2a2a2a'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3m-2 16H5V5h7V3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-7h-2v7Z" fill={color}/>
+    <Path
+      d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3m-2 16H5V5h7V3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-7h-2v7Z"
+      fill={color}
+    />
   </Svg>
 );
 
@@ -100,8 +131,8 @@ interface EducationResource {
   description: string;
   type: 'class_link' | 'course_material' | 'guidance';
   category: string;
-  url?: string;
-  fileUrl?: string;
+  attachment?: string;
+  thumbnailUrl?: string;
   instructor: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   duration: string;
@@ -117,28 +148,29 @@ interface EducationResponse {
 }
 
 const EducationScreen = () => {
-  const { user, token } = useAuth();
+  const {user, token} = useAuth();
   const navigation = useNavigation();
-  
   // State management
   const [resources, setResources] = useState<EducationResource[]>([]);
-  const [filteredResources, setFilteredResources] = useState<EducationResource[]>([]);
+  const [filteredResources, setFilteredResources] = useState<
+    EducationResource[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<string>('all');
-  
+
   // Modal states
-  const [selectedResource, setSelectedResource] = useState<EducationResource | null>(null);
+  const [selectedResource, setSelectedResource] =
+    useState<EducationResource | null>(null);
   const [resourceModalVisible, setResourceModalVisible] = useState(false);
 
   const tabs = [
-    { key: 'all', label: 'All', icon: SchoolIcon },
-    { key: 'class_link', label: 'Classes', icon: VideoIcon },
-    { key: 'course_material', label: 'Materials', icon: BookIcon },
-    { key: 'guidance', label: 'Guidance', icon: DocumentIcon },
+    {key: 'all', label: 'All', icon: SchoolIcon},
+    {key: 'class_link', label: 'Classes', icon: VideoIcon},
+    {key: 'course_material', label: 'Materials', icon: BookIcon},
+    {key: 'guidance', label: 'Guidance', icon: DocumentIcon},
   ];
-
 
   const fetchEducationResources = async () => {
     try {
@@ -146,10 +178,22 @@ const EducationScreen = () => {
       const communityId = await getCommunityId();
 
       const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/api/educationResources?filter={ "community": "${communityId}" }`, {
-        method: 'GET',
+      const response = await fetch(
+        `${BASE_URL}/api/educationResources?filter=${encodeURIComponent(
+          JSON.stringify({community: communityId}),
+        )}`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
+
+      console.log(
+        `${BASE_URL}/api/educationResources?filter=${encodeURIComponent(
+          JSON.stringify({community: communityId}),
+        )}`,
         headers,
-      });
+      );
 
       console.log('Education API response status:', response.status);
 
@@ -158,7 +202,8 @@ const EducationScreen = () => {
       }
 
       const data: EducationResponse = await response.json();
-      console.log('Loaded education resources count:', data.data?.length || 0);
+
+      console.log('Education API response data:', data.data);
 
       if (data.success && data.data && Array.isArray(data.data)) {
         setResources(data.data);
@@ -168,10 +213,12 @@ const EducationScreen = () => {
         setResources([]);
         setFilteredResources([]);
       }
-
     } catch (error) {
       console.error('Error fetching education resources:', error);
-      Alert.alert('Error', 'Failed to load education resources. Please try again.');
+      Alert.alert(
+        'Error',
+        'Failed to load education resources. Please try again.',
+      );
       setResources([]);
       setFilteredResources([]);
     } finally {
@@ -179,7 +226,6 @@ const EducationScreen = () => {
       setRefreshing(false);
     }
   };
-
 
   useEffect(() => {
     fetchEducationResources();
@@ -231,9 +277,9 @@ const EducationScreen = () => {
   };
 
   const handleResourceAccess = (resource: EducationResource) => {
-    const url = resource.url || resource.fileUrl;
+    const url = resource?.attachment;
     if (!url) {
-      Alert.alert('No Link', 'No access link available for this resource');
+      Alert.alert('No Link', 'No attachment Link available for this resource');
       return;
     }
 
@@ -268,22 +314,32 @@ const EducationScreen = () => {
     }
   };
 
-  const renderResourceCard = ({ item }: { item: EducationResource }) => {
+  const renderResourceCard = ({item}: {item: EducationResource}) => {
     const ResourceIcon = getResourceIcon(item.type);
-    
+    console.log('resource item: ', item);
     return (
-      <TouchableOpacity style={styles.resourceCard} onPress={() => handleResourcePress(item)}>
+      <TouchableOpacity
+        style={styles.resourceCard}
+        onPress={() => handleResourcePress(item)}>
+        {item?.thumbnailUrl && (
+          <Image
+            source={{uri: item.thumbnailUrl}}
+            style={styles.resourceImage}
+            resizeMode="contain"
+          />
+        )}
         <View style={styles.resourceCardHeader}>
-          <View style={styles.resourceIcon}>
-            <ResourceIcon size={24} color={AppColors.primary} />
-          </View>
           <View style={styles.resourceInfo}>
             <Text style={styles.resourceTitle}>{item.title}</Text>
             <Text style={styles.resourceInstructor}>by {item.instructor}</Text>
             <Text style={styles.resourceCategory}>{item.category}</Text>
           </View>
           <View style={styles.resourceMeta}>
-            <View style={[styles.levelBadge, { backgroundColor: getLevelColor(item.level) }]}>
+            <View
+              style={[
+                styles.levelBadge,
+                {backgroundColor: getLevelColor(item.level)},
+              ]}>
               <Text style={styles.levelText}>{item.level}</Text>
             </View>
           </View>
@@ -292,17 +348,25 @@ const EducationScreen = () => {
         <Text style={styles.resourceDescription} numberOfLines={2}>
           {item.description}
         </Text>
-
-        <View style={styles.resourceFooter}>
+        {
+          item.attachment !== '' && (
+            <TouchableOpacity
+              style={styles.accessButton}
+              onPress={() => handleResourceAccess(item)}>
+              <Text style={styles.accessButtonText}>Access</Text>
+              <ExternalIcon size={16} color={AppColors.white} />
+            </TouchableOpacity>
+          )
+        }
+        {/* <View style={styles.resourceFooter}>
           <Text style={styles.durationText}>{item.duration}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.accessButton}
-            onPress={() => handleResourceAccess(item)}
-          >
+            onPress={() => handleResourceAccess(item)}>
             <Text style={styles.accessButtonText}>Access</Text>
             <ExternalIcon size={16} color={AppColors.white} />
           </TouchableOpacity>
-        </View>
+        </View> */}
       </TouchableOpacity>
     );
   };
@@ -317,8 +381,7 @@ const EducationScreen = () => {
         animationType="slide"
         transparent={true}
         visible={resourceModalVisible}
-        onRequestClose={closeResourceModal}
-      >
+        onRequestClose={closeResourceModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.resourceModalContent}>
             <View style={styles.modalHeader}>
@@ -331,12 +394,22 @@ const EducationScreen = () => {
             <ScrollView style={styles.resourceDetailsScrollView}>
               {/* Resource Header */}
               <View style={styles.resourceDetailsHeader}>
-                <View style={styles.resourceDetailsIcon}>
-                  <ResourceIcon size={32} color={AppColors.primary} />
-                </View>
-                <Text style={styles.resourceDetailsTitle}>{selectedResource.title}</Text>
-                <Text style={styles.resourceDetailsInstructor}>by {selectedResource.instructor}</Text>
-                <Text style={styles.resourceDetailsCategory}>{selectedResource.category}</Text>
+                {selectedResource?.thumbnailUrl && (
+                  <Image
+                    source={{uri: selectedResource.thumbnailUrl}}
+                    style={styles.resourceImage}
+                    resizeMode="contain"
+                  />
+                )}
+                <Text style={styles.resourceDetailsTitle}>
+                  {selectedResource.title}
+                </Text>
+                <Text style={styles.resourceDetailsInstructor}>
+                  by {selectedResource.instructor}
+                </Text>
+                <Text style={styles.resourceDetailsCategory}>
+                  {selectedResource.category}
+                </Text>
               </View>
 
               {/* Resource Info */}
@@ -345,40 +418,53 @@ const EducationScreen = () => {
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Type:</Text>
                   <Text style={styles.detailValue}>
-                    {selectedResource.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {selectedResource.type
+                      .replace('_', ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase())}
                   </Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Level:</Text>
-                  <View style={[styles.levelBadge, { backgroundColor: getLevelColor(selectedResource.level) }]}>
-                    <Text style={styles.levelText}>{selectedResource.level}</Text>
+                  <View
+                    style={[
+                      styles.levelBadge,
+                      {backgroundColor: getLevelColor(selectedResource.level)},
+                    ]}>
+                    <Text style={styles.levelText}>
+                      {selectedResource.level}
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Duration:</Text>
-                  <Text style={styles.detailValue}>{selectedResource.duration}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedResource.duration}
+                  </Text>
                 </View>
               </View>
 
               {/* Description */}
               <View style={styles.detailsSection}>
                 <Text style={styles.sectionTitle}>Description</Text>
-                <Text style={styles.descriptionText}>{selectedResource.description}</Text>
+                <Text style={styles.descriptionText}>
+                  {selectedResource.description}
+                </Text>
               </View>
 
               {/* Access Button */}
               <View style={styles.detailsSection}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.fullAccessButton}
                   onPress={() => {
                     handleResourceAccess(selectedResource);
                     closeResourceModal();
-                  }}
-                >
+                  }}>
                   <Text style={styles.fullAccessButtonText}>
-                    {selectedResource.type === 'class_link' ? 'Join Class' : 
-                     selectedResource.type === 'course_material' ? 'Download Material' : 
-                     'View Guidance'}
+                    {selectedResource.type === 'class_link'
+                      ? 'Join Class'
+                      : selectedResource.type === 'course_material'
+                      ? 'Download Material'
+                      : 'View Guidance'}
                   </Text>
                   <ExternalIcon size={20} color={AppColors.white} />
                 </TouchableOpacity>
@@ -402,7 +488,9 @@ const EducationScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Education</Text>
@@ -420,9 +508,13 @@ const EducationScreen = () => {
           placeholderTextColor={AppColors.gray}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          blurOnSubmit={false}
+          returnKeyType="search"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchIcon}>
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            style={styles.clearSearchIcon}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>
         )}
@@ -431,25 +523,27 @@ const EducationScreen = () => {
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const TabIcon = tab.icon;
             return (
               <TouchableOpacity
                 key={tab.key}
                 style={[
                   styles.tab,
-                  selectedTab === tab.key && styles.tabActive
+                  selectedTab === tab.key && styles.tabActive,
                 ]}
-                onPress={() => setSelectedTab(tab.key)}
-              >
-                <TabIcon 
-                  size={20} 
-                  color={selectedTab === tab.key ? AppColors.white : AppColors.gray} 
+                onPress={() => setSelectedTab(tab.key)}>
+                <TabIcon
+                  size={20}
+                  color={
+                    selectedTab === tab.key ? AppColors.white : AppColors.gray
+                  }
                 />
-                <Text style={[
-                  styles.tabText,
-                  selectedTab === tab.key && styles.tabTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.tabText,
+                    selectedTab === tab.key && styles.tabTextActive,
+                  ]}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -462,7 +556,7 @@ const EducationScreen = () => {
       <FlatList
         data={filteredResources}
         renderItem={renderResourceCard}
-        keyExtractor={(item) => item._id}
+        keyExtractor={item => item._id}
         style={styles.resourceList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -527,7 +621,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     margin: 16,
     shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -591,7 +685,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     elevation: 2,
     shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
@@ -795,6 +889,14 @@ const styles = StyleSheet.create({
     color: AppColors.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  resourceImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
 });
 

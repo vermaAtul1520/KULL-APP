@@ -1,5 +1,5 @@
 // Screen 4: Content Display (API-driven)
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,30 +15,42 @@ import {
   Linking,
   Modal,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { WebView } from 'react-native-webview';
-import { AppColors } from './constants';
-import { BackIcon, PdfIcon, VideoIcon, ImageIcon } from './components/OccasionIcons';
-import { OccasionApiService, Occasion } from '@app/services/occasionApi';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import Pdf from 'react-native-pdf';
+import {AppColors} from './constants';
+import {
+  BackIcon,
+  PdfIcon,
+  VideoIcon,
+  ImageIcon,
+} from './components/OccasionIcons';
+import {OccasionApiService, Occasion} from '@app/services/occasionApi';
 import OccasionContent from '@app/services/occasionApi';
-import { useOccasion } from '@app/contexts/OccasionContext';
+import {useOccasion} from '@app/contexts/OccasionContext';
 
 export const ContentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
   // Get filters from context
-  const { filters, occasions, setOccasions } = useOccasion();
+  const {filters, occasions, setOccasions} = useOccasion();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<OccasionContent | null>(null);
+  const [selectedContent, setSelectedContent] =
+    useState<OccasionContent | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(null);
+  const [modalType, setModalType] = useState<'pdf' | 'image' | 'video' | null>(
+    null,
+  );
+
+  // PDF viewer states
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     // Fetch occasions when component mounts - use filters from context
-   console.log('Fetching occasions with filters:', filters);
     fetchOccasions();
   }, []);
 
@@ -46,20 +58,51 @@ export const ContentScreen = () => {
     try {
       setLoading(true);
 
+      console.log('=== ContentScreen: Fetching Occasions ===');
+      console.log('Filters from context:', {
+        occasionType: filters.occasionType,
+        categoryId: filters.categoryId,
+        categoryName: filters.categoryName,
+        gotra: filters.gotra,
+        subGotra: filters.subGotra,
+        gender: filters.gender,
+      });
+
       // Use filters from context - pass non-null values to API
       const response = await OccasionApiService.fetchOccasions(
-        filters.occasionType!,  // Required - will always be set
-        filters.categoryId,     // Can be null
-        filters.gotra || undefined,       // Convert null to undefined for optional param
-        filters.subGotra || undefined,    // Convert null to undefined for optional param
-        filters.gender || undefined       // Convert null to undefined for optional param
+        filters.occasionType!, // Required - will always be set
+        filters.categoryId, // Can be null
+        filters.gotra || undefined, // Convert null to undefined for optional param
+        filters.subGotra || undefined, // Convert null to undefined for optional param
+        filters.gender || undefined, // Convert null to undefined for optional param
       );
 
+      console.log('API Response:', {
+        success: response.success,
+        total: response.total,
+        count: response.count,
+        occasionsCount: response.data.length,
+      });
+
+      console.log('Occasions data:', JSON.stringify(response.data, null, 2));
+
+      // Log each occasion's details
+      response.data.forEach((occasion, index) => {
+        console.log(`Occasion ${index + 1}:`, {
+          id: occasion._id,
+          occasionType: occasion.occasionType,
+          category: occasion.category.name,
+          gotra: occasion.gotra,
+          subGotra: occasion.subGotra,
+          gender: occasion.gender,
+          contentsCount: occasion.contents.length,
+        });
+      });
+
       setOccasions(response.data);
-      console.log('Fetched occasions:', response.data);
     } catch (error) {
       console.error('Error fetching occasions:', error);
-      Alert.alert('Error', error.message || 'Failed to load content');
+      Alert.alert('Error', 'Failed to load content');
     } finally {
       setLoading(false);
     }
@@ -81,7 +124,7 @@ export const ContentScreen = () => {
       });
     } else {
       // Open PDF or image in modal
-      setModalType(content.type);
+      setModalType(content?.type);
       setModalVisible(true);
     }
   };
@@ -112,7 +155,11 @@ export const ContentScreen = () => {
       image: AppColors.success,
     };
     return (
-      <View style={[styles.typeBadge, { backgroundColor: colors[type] || AppColors.gray }]}>
+      <View
+        style={[
+          styles.typeBadge,
+          {backgroundColor: colors[type] || AppColors.gray},
+        ]}>
         <Text style={styles.typeBadgeText}>{type.toUpperCase()}</Text>
       </View>
     );
@@ -123,20 +170,27 @@ export const ContentScreen = () => {
     occasion.contents.map(content => ({
       ...content,
       occasionId: occasion._id,
-    }))
+    })),
   );
 
   // Show loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
+        <StatusBar
+          backgroundColor={AppColors.primary}
+          barStyle="light-content"
+        />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <BackIcon size={24} color={AppColors.white} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
+            <Text style={styles.headerTitle}>
+              {filters.categoryName || filters.occasionType}
+            </Text>
             <Text style={styles.headerSubtitle}>Loading content...</Text>
           </View>
         </View>
@@ -153,17 +207,67 @@ export const ContentScreen = () => {
       <StatusBar backgroundColor={AppColors.primary} barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <BackIcon size={24} color={AppColors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{filters.categoryName || filters.occasionType}</Text>
+          <Text style={styles.headerTitle}>
+            {filters.categoryName || filters.occasionType}
+          </Text>
           <Text style={styles.headerSubtitle}>
-            {filters.gotra && `${filters.gotra}${filters.subGotra ? ` - ${filters.subGotra}` : ''}`}
-            {filters.gender && ` • ${filters.gender === 'male' ? 'Male' : filters.gender === 'female' ? 'Female' : 'All'}`}
+            {filters.gotra &&
+              `${filters.gotra}${
+                filters.subGotra ? ` - ${filters.subGotra}` : ''
+              }`}
+            {filters.gender &&
+              ` • ${
+                filters.gender === 'male'
+                  ? 'Male'
+                  : filters.gender === 'female'
+                  ? 'Female'
+                  : 'All'
+              }`}
           </Text>
         </View>
       </View>
+
+      {/* Active Filters Display */}
+      {(filters.occasionType || filters.categoryName || filters.gotra || filters.gender) && (
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersTitle}>Active Filters:</Text>
+          <View style={styles.filterTags}>
+            {filters.occasionType && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Type: {filters.occasionType}</Text>
+              </View>
+            )}
+            {filters.categoryName && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Category: {filters.categoryName}</Text>
+              </View>
+            )}
+            {filters.gotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Gotra: {filters.gotra}</Text>
+              </View>
+            )}
+            {filters.subGotra && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Sub-Gotra: {filters.subGotra}</Text>
+              </View>
+            )}
+            {filters.gender && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>
+                  Gender: {filters.gender === 'male' ? 'Male' : filters.gender === 'female' ? 'Female' : 'All'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -194,19 +298,25 @@ export const ContentScreen = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[AppColors.primary]} />
-        }
-      >
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[AppColors.primary]}
+          />
+        }>
         <View style={styles.contentList}>
           {allContents.map((content, index) => (
             <TouchableOpacity
               key={`${content._id}-${index}`}
               style={styles.contentCard}
               onPress={() => handleOpenContent(content)}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               <View style={styles.contentHeader}>
-                <View style={[styles.iconContainer, { backgroundColor: AppColors.primary }]}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    {backgroundColor: AppColors.primary},
+                  ]}>
                   {renderContentIcon(content.type)}
                 </View>
               </View>
@@ -214,7 +324,7 @@ export const ContentScreen = () => {
               {content.type === 'image' && content.thumbnailUrl && (
                 <View style={styles.imagePreview}>
                   <Image
-                    source={{ uri: content.thumbnailUrl }}
+                    source={{uri: content.thumbnailUrl}}
                     style={styles.previewImage}
                     resizeMode="cover"
                   />
@@ -234,12 +344,12 @@ export const ContentScreen = () => {
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No Content Found</Text>
               <Text style={styles.emptyText}>
-                No content available for the selected filters. Try adjusting your filters.
+                No content available for the selected filters. Try adjusting
+                your filters.
               </Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => navigation.goBack()}
-              >
+                onPress={() => navigation.goBack()}>
                 <Text style={styles.retryButtonText}>Change Filters</Text>
               </TouchableOpacity>
             </View>
@@ -251,8 +361,7 @@ export const ContentScreen = () => {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        onRequestClose={closeModal}
-      >
+        onRequestClose={closeModal}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
@@ -264,16 +373,58 @@ export const ContentScreen = () => {
           </View>
 
           {modalType === 'pdf' && selectedContent && (
-            <WebView
-              source={{ uri: `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(selectedContent.url)}` }}
-              style={styles.webView}
-            />
+            <View style={styles.pdfContainer}>
+              {pdfLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={AppColors.primary} />
+                  <Text style={styles.loadingText}>Loading PDF...</Text>
+                </View>
+              )}
+              <Pdf
+                trustAllCerts={false}
+                source={{
+                  uri: selectedContent.url,
+                  cache: true,
+                }}
+                style={styles.pdf}
+                onLoadComplete={(numberOfPages, filePath) => {
+                  console.log('✅ PDF loaded successfully');
+                  console.log(`Number of pages: ${numberOfPages}`);
+                  setTotalPages(numberOfPages);
+                  setPdfLoading(false);
+                }}
+                onPageChanged={(page, numberOfPages) => {
+                  console.log(`Current page: ${page}/${numberOfPages}`);
+                  setCurrentPage(page);
+                }}
+                onError={error => {
+                  console.error('❌ PDF Error:', error);
+                  setPdfLoading(false);
+                  Alert.alert(
+                    'Error',
+                    'Could not load PDF. Please check your internet connection and try again.',
+                  );
+                }}
+                enablePaging={true}
+                horizontal={false}
+                fitPolicy={0}
+                spacing={10}
+                enableAntialiasing={true}
+              />
+              {!pdfLoading && totalPages > 0 && (
+                <View style={styles.pdfPageIndicator}>
+                  <Text style={styles.pdfPageText}>
+                    📖 Page {currentPage} / {totalPages}
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
 
           {modalType === 'image' && selectedContent && (
             <View style={styles.imageModalContent}>
               <Image
-                source={{ uri: selectedContent.url }}
+                source={{uri: selectedContent.url}}
                 style={styles.fullImage}
                 resizeMode="contain"
               />
@@ -361,7 +512,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -480,5 +631,77 @@ const styles = StyleSheet.create({
   fullImage: {
     width: '100%',
     height: '100%',
+  },
+  pdfContainer: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+  },
+  pdf: {
+    flex: 1,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.white,
+    zIndex: 10,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: AppColors.gray,
+  },
+  pdfPageIndicator: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  pdfPageText: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: AppColors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filtersContainer: {
+    backgroundColor: AppColors.white,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: AppColors.primary,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppColors.dark,
+    marginBottom: 8,
+  },
+  filterTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterTag: {
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  filterTagText: {
+    fontSize: 12,
+    color: AppColors.dark,
+    fontWeight: '500',
   },
 });

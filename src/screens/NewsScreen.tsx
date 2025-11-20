@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
-  FlatList,
   Image,
   TouchableOpacity,
   StyleSheet,
@@ -11,17 +10,20 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Modal,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
-import { moderateScale } from '@app/constants/scaleUtils';
+import Svg, {Path} from 'react-native-svg';
+import {moderateScale} from '@app/constants/scaleUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@app/navigators';
-import { useLanguage } from '@app/hooks/LanguageContext'; // Add this import
-import { BASE_URL } from '@app/constants/constant';
+import {useAuth} from '@app/navigators';
+import {useLanguage} from '@app/hooks/LanguageContext'; // Add this import
+import {BASE_URL} from '@app/constants/constant';
 import BannerComponent from '@app/navigators/BannerComponent';
-import { getAuthHeaders } from '@app/constants/apiUtils';
+import {getAuthHeaders, getCommunityId} from '@app/constants/apiUtils';
 
-const AppColors = {
+export const AppColors = {
   primary: '#7dd3c0',
   black: '#000000',
   white: '#ffffff',
@@ -62,47 +64,83 @@ interface NewsResponse {
 }
 
 // SVG Icon Components
-const SearchIcon = ({ size = 20, color = "#666" }) => (
+const SearchIcon = ({size = 20, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill={color}/>
+    <Path
+      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      fill={color}
+    />
   </Svg>
 );
 
-const CloseIcon = ({ size = 20, color = "#666" }) => (
+const CloseIcon = ({size = 20, color = '#666'}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill={color}/>
+    <Path
+      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      fill={color}
+    />
   </Svg>
 );
 
 const NewsScreen = () => {
-  const { user, token } = useAuth();
-  const { t } = useLanguage(); // Add this line
+  const {user, token} = useAuth();
+  const {t} = useLanguage(); // Add this line
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
-  const [filteredNews, setFilteredNews] = useState<NewsItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
-  // Search functionality
+  // Refs
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Debounce search query
   useEffect(() => {
-    filterNews();
-  }, [searchQuery, newsData]);
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
 
-  const filterNews = () => {
-    if (searchQuery.trim() === '') {
-      setFilteredNews(newsData);
-    } else {
-      const query = searchQuery.toLowerCase().trim();
-      const filtered = newsData.filter(news => 
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Search functionality - Use useMemo to prevent re-renders and focus loss
+  const filteredNews = React.useMemo(() => {
+    if (!debouncedSearchQuery || debouncedSearchQuery.trim() === '') {
+      return newsData;
+    }
+    const query = debouncedSearchQuery.toLowerCase().trim();
+    return newsData.filter(
+      news =>
         news.title.toLowerCase().includes(query) ||
         news.content.toLowerCase().includes(query) ||
         news.category.toLowerCase().includes(query) ||
-        `${news.author.firstName} ${news.author.lastName}`.toLowerCase().includes(query) ||
-        news.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-      setFilteredNews(filtered);
-    }
-  };
+        `${news.author.firstName} ${news.author.lastName}`
+          .toLowerCase()
+          .includes(query) ||
+        news.tags.some(tag => tag.toLowerCase().includes(query)),
+    );
+  }, [debouncedSearchQuery, newsData]);
+
+  // Search handlers
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+  }, []);
 
   const fetchNews = async (isRefresh = false) => {
     try {
@@ -112,24 +150,34 @@ const NewsScreen = () => {
         setLoading(true);
       }
       const headers = await getAuthHeaders();
+      const communityId = await getCommunityId();
 
-      const response = await fetch(`${BASE_URL}/api/news/`, {
-        method: 'GET',
-        headers,
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/news/community/${communityId}`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
       const result: NewsResponse = await response.json();
 
       console.log('result', result);
-      
+
       if (result.success) {
         setNewsData(result.data);
-        setFilteredNews(result.data);
       } else {
-        Alert.alert(t('Error') || 'Error', t('Failed to fetch news') || 'Failed to fetch news');
+        Alert.alert(
+          t('Error') || 'Error',
+          t('Failed to fetch news') || 'Failed to fetch news',
+        );
       }
     } catch (error) {
       console.error('Error fetching news:', error);
-      Alert.alert(t('Error') || 'Error', t('Network error. Please try again.') || 'Network error. Please try again.');
+      Alert.alert(
+        t('Error') || 'Error',
+        t('Network error. Please try again.') ||
+          'Network error. Please try again.',
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -173,15 +221,27 @@ const NewsScreen = () => {
     }
   };
 
-  const renderNewsItem = ({ item }: { item: NewsItem }) => (
-    <TouchableOpacity style={styles.newsCard} activeOpacity={0.7}>
+  const openNewsModal = (item: NewsItem) => {
+    setSelectedNews(item);
+    setShowModal(true);
+  };
+
+  const closeNewsModal = () => {
+    setShowModal(false);
+    setSelectedNews(null);
+  };
+
+  const renderNewsItem = ({item}: {item: NewsItem}) => (
+    <TouchableOpacity
+      style={styles.newsCard}
+      activeOpacity={0.7}
+      onPress={() => openNewsModal(item)}>
       {/* News Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ 
-            uri: item.imageUrl || 'https://plixlifefcstage-media.farziengineer.co/hosted/4_19-192d4aef12c7.jpg'
-          }}
-          style={styles.newsImage}
+          source={{uri: item.imageUrl}}
+          style={styles.newsItemImage}
+          resizeMode="contain"
         />
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryText}>{item.category}</Text>
@@ -193,10 +253,15 @@ const NewsScreen = () => {
         <Text style={styles.newsTitle} numberOfLines={2}>
           {item.title}
         </Text>
-        
-        <Text style={styles.newsContent} numberOfLines={3}>
-          {item.content}
-        </Text>
+
+        <View>
+          <Text style={styles.newsContent} numberOfLines={3}>
+            {item.content}
+          </Text>
+          {item.content.length > 150 && (
+            <Text style={styles.readMoreText}>...read more</Text>
+          )}
+        </View>
 
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
@@ -207,7 +272,9 @@ const NewsScreen = () => {
               </View>
             ))}
             {item.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{item.tags.length - 3} {t('more') || 'more'}</Text>
+              <Text style={styles.moreTagsText}>
+                +{item.tags.length - 3} {t('more') || 'more'}
+              </Text>
             )}
           </View>
         )}
@@ -217,14 +284,18 @@ const NewsScreen = () => {
           <View style={styles.authorContainer}>
             <View style={styles.authorAvatar}>
               <Text style={styles.avatarText}>
-                {`${item.author.firstName.charAt(0)}${item.author.lastName.charAt(0)}`}
+                {`${item.author.firstName.charAt(
+                  0,
+                )}${item.author.lastName.charAt(0)}`}
               </Text>
             </View>
             <View style={styles.authorInfo}>
               <Text style={styles.authorName}>
                 {`${item.author.firstName} ${item.author.lastName}`}
               </Text>
-              <Text style={styles.publishDate}>{getTimeAgo(item.createdAt)}</Text>
+              <Text style={styles.publishDate}>
+                {getTimeAgo(item.createdAt)}
+              </Text>
             </View>
           </View>
         </View>
@@ -235,55 +306,83 @@ const NewsScreen = () => {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        {searchQuery.trim() !== '' ? (t('No news matches your search') || 'No news matches your search') : (t('No news available') || 'No news available')}
+        {searchQuery.trim() !== ''
+          ? t('No news matches your search') || 'No news matches your search'
+          : t('No news available') || 'No news available'}
       </Text>
       <Text style={styles.emptySubText}>
-        {searchQuery.trim() !== '' ? (t('Try different keywords') || 'Try different keywords') : (t('Pull down to refresh') || 'Pull down to refresh')}
+        {searchQuery.trim() !== ''
+          ? t('Try different keywords') || 'Try different keywords'
+          : t('Pull down to refresh') || 'Pull down to refresh'}
       </Text>
       {searchQuery.trim() !== '' && (
-        <TouchableOpacity style={styles.clearSearchButton} onPress={() => setSearchQuery('')}>
-          <Text style={styles.clearSearchText}>{t('Clear Search') || 'Clear Search'}</Text>
+        <TouchableOpacity
+          style={styles.clearSearchButton}
+          onPress={() => setSearchQuery('')}>
+          <Text style={styles.clearSearchText}>
+            {t('Clear Search') || 'Clear Search'}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{t('Community News') || 'Community News'}</Text>
-      <Text style={styles.headerSubtitle}>{t('Stay updated with latest happenings') || 'Stay updated with latest happenings'}</Text>
+      <Text style={styles.headerTitle}>
+        {t('Community News') || 'Community News'}
+      </Text>
+      <Text style={styles.headerSubtitle}>
+        {t('Stay updated with latest happenings') ||
+          'Stay updated with latest happenings'}
+      </Text>
     </View>
-  );
+  ), [t]);
 
-  const renderSearchBar = () => (
+  const renderSearchBar = useCallback(() => (
     <View style={styles.searchContainer}>
       <View style={styles.searchInputContainer}>
         <SearchIcon size={20} color={AppColors.gray} />
         <TextInput
+          ref={searchInputRef}
           style={styles.searchInput}
-          placeholder={t('Search news by title, content, author, category...') || 'Search news by title, content, author, category...'}
+          placeholder={
+            t('Search news by title, content, author, category...') ||
+            'Search news by title, content, author, category...'
+          }
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={handleSearchChange}
           placeholderTextColor={AppColors.gray}
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoComplete="off"
+          underlineColorAndroid="transparent"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+          <TouchableOpacity
+            onPress={handleClearSearch}
+            style={styles.clearButton}>
             <CloseIcon size={20} color={AppColors.gray} />
           </TouchableOpacity>
         )}
       </View>
-      
+
       {/* Results Count */}
       {searchQuery.trim() !== '' && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsText}>
-            {filteredNews.length} {filteredNews.length !== 1 ? (t('articles') || 'articles') : (t('article') || 'article')} {t('found') || 'found'}
-            {filteredNews.length !== newsData.length && ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
+            {filteredNews.length}{' '}
+            {filteredNews.length !== 1
+              ? t('articles') || 'articles'
+              : t('article') || 'article'}{' '}
+            {t('found') || 'found'}
+            {filteredNews.length !== newsData.length &&
+              ` (${t('filtered from') || 'filtered from'} ${newsData.length})`}
           </Text>
         </View>
       )}
     </View>
-  );
+  ), [searchQuery, filteredNews.length, newsData.length, t, handleSearchChange, handleClearSearch]);
 
   if (loading) {
     return (
@@ -291,7 +390,9 @@ const NewsScreen = () => {
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={AppColors.teal} />
-          <Text style={styles.loadingText}>{t('Loading news...') || 'Loading news...'}</Text>
+          <Text style={styles.loadingText}>
+            {t('Loading news...') || 'Loading news...'}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -299,10 +400,8 @@ const NewsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={filteredNews}
-        renderItem={renderNewsItem}
-        keyExtractor={(item) => item._id}
+      <BannerComponent />
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -312,17 +411,107 @@ const NewsScreen = () => {
             colors={[AppColors.teal]}
             tintColor={AppColors.teal}
           />
-        }
-        ListHeaderComponent={() => (
-          <>
-            <BannerComponent />
-            {renderHeader()}
-            {renderSearchBar()}
-          </>
+        }>
+        {renderHeader()}
+        {renderSearchBar()}
+
+        {/* News List */}
+        {filteredNews.length === 0 ? (
+          renderEmptyComponent()
+        ) : (
+          filteredNews.map((item, index) => (
+            <View key={item._id}>
+              {renderNewsItem({item})}
+              {index < filteredNews.length - 1 && (
+                <View style={styles.separator} />
+              )}
+            </View>
+          ))
         )}
-        ListEmptyComponent={renderEmptyComponent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      </ScrollView>
+
+      {/* News Detail Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={closeNewsModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ScrollView
+              style={styles.modalContent}
+              showsVerticalScrollIndicator={false}>
+              {selectedNews && (
+                <>
+                  {/* Modal Header */}
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>News Details</Text>
+                    <TouchableOpacity
+                      onPress={closeNewsModal}
+                      style={styles.closeButton}>
+                      <CloseIcon size={24} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* News Image */}
+                  <Image
+                    source={{
+                      uri: selectedNews.imageUrl,
+                    }}
+                    style={styles.newsItemImage}
+                    resizeMode="contain"
+                  />
+
+                  {/* Category Badge */}
+                  <View style={styles.modalCategoryBadge}>
+                    <Text style={styles.modalCategoryText}>
+                      {selectedNews.category}
+                    </Text>
+                  </View>
+
+                  {/* Title */}
+                  <Text style={styles.modalTitle}>{selectedNews.title}</Text>
+
+                  {/* Content */}
+                  <Text style={styles.modalContentText}>
+                    {selectedNews.content}
+                  </Text>
+
+                  {/* Tags */}
+                  {selectedNews.tags && selectedNews.tags.length > 0 && (
+                    <View style={styles.modalTagsContainer}>
+                      {selectedNews.tags.map((tag, index) => (
+                        <View key={index} style={styles.modalTag}>
+                          <Text style={styles.modalTagText}>#{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Author Info */}
+                  <View style={styles.modalAuthorContainer}>
+                    <View style={styles.modalAuthorAvatar}>
+                      <Text style={styles.modalAvatarText}>
+                        {`${selectedNews.author.firstName.charAt(
+                          0,
+                        )}${selectedNews.author.lastName.charAt(0)}`}
+                      </Text>
+                    </View>
+                    <View style={styles.modalAuthorInfo}>
+                      <Text style={styles.modalAuthorName}>
+                        {`${selectedNews.author.firstName} ${selectedNews.author.lastName}`}
+                      </Text>
+                      <Text style={styles.modalPublishDate}>
+                        {getTimeAgo(selectedNews.createdAt)}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -353,7 +542,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: moderateScale(5),
   },
-  
+
   // Search Bar Styles
   searchContainer: {
     paddingHorizontal: moderateScale(15),
@@ -406,15 +595,16 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     fontWeight: '600',
   },
-  
+
   listContainer: {
-    paddingHorizontal: moderateScale(15),
+    // paddingHorizontal: moderateScale(15),
     paddingBottom: moderateScale(20),
   },
   newsCard: {
     backgroundColor: AppColors.white,
     borderRadius: moderateScale(15),
     marginVertical: moderateScale(8),
+    marginHorizontal: moderateScale(15),
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -427,6 +617,14 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+  },
+  newsItemImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
   },
   newsImage: {
     width: '100%',
@@ -555,6 +753,130 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: AppColors.gray,
     textAlign: 'center',
+  },
+  readMoreText: {
+    fontSize: moderateScale(12),
+    color: AppColors.primary,
+    fontStyle: 'italic',
+    marginTop: moderateScale(4),
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: Dimensions.get('window').height * 0.9,
+  },
+  modalContent: {
+    padding: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  closeButton: {
+    padding: moderateScale(5),
+  },
+  modalImage: {
+    width: '100%',
+    height: moderateScale(200),
+    resizeMode: 'cover',
+  },
+  modalCategoryBadge: {
+    position: 'absolute',
+    top: moderateScale(220),
+    left: moderateScale(15),
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(6),
+    borderRadius: moderateScale(15),
+  },
+  modalCategoryText: {
+    color: AppColors.white,
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+  },
+  modalTitle: {
+    fontSize: moderateScale(22),
+    fontWeight: 'bold',
+    color: AppColors.black,
+    marginTop: moderateScale(10),
+    marginHorizontal: moderateScale(15),
+    lineHeight: moderateScale(28),
+  },
+  modalContentText: {
+    fontSize: moderateScale(16),
+    color: AppColors.dark,
+    lineHeight: moderateScale(24),
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(15),
+  },
+  modalTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(15),
+  },
+  modalTag: {
+    backgroundColor: AppColors.lightGray,
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(5),
+    borderRadius: moderateScale(12),
+    marginRight: moderateScale(8),
+    marginBottom: moderateScale(8),
+  },
+  modalTagText: {
+    fontSize: moderateScale(12),
+    color: AppColors.primary,
+    fontWeight: '500',
+  },
+  modalAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: moderateScale(15),
+    marginTop: moderateScale(20),
+    marginBottom: moderateScale(20),
+    paddingTop: moderateScale(15),
+    borderTopWidth: 1,
+    borderTopColor: AppColors.lightGray,
+  },
+  modalAuthorAvatar: {
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: moderateScale(20),
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: moderateScale(12),
+  },
+  modalAvatarText: {
+    color: AppColors.white,
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+  },
+  modalAuthorInfo: {
+    flex: 1,
+  },
+  modalAuthorName: {
+    fontSize: moderateScale(16),
+    fontWeight: '600',
+    color: AppColors.black,
+  },
+  modalPublishDate: {
+    fontSize: moderateScale(12),
+    color: AppColors.gray,
+    marginTop: moderateScale(2),
   },
 });
 

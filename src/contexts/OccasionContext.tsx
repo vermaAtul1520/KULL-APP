@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
 // Filter state interface
 export interface OccasionFilters {
@@ -40,7 +40,7 @@ export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filters, setFilters] = useState<OccasionFilters>(initialFilters);
   const [occasions, setOccasions] = useState<any[]>([]);
 
-  const setOccasionType = (type: string) => {
+  const setOccasionType = useCallback((type: string) => {
     setFilters(prev => ({
       ...prev,
       occasionType: type,
@@ -51,9 +51,9 @@ export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }
       subGotra: null,
       gender: null,
     }));
-  };
+  }, []);
 
-  const setCategory = (id: string | null, name: string | null) => {
+  const setCategory = useCallback((id: string | null, name: string | null) => {
     setFilters(prev => ({
       ...prev,
       categoryId: id,
@@ -63,9 +63,9 @@ export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }
       subGotra: null,
       gender: null,
     }));
-  };
+  }, []);
 
-  const setGotraFilters = (gotra: string | null, subGotra: string | null) => {
+  const setGotraFilters = useCallback((gotra: string | null, subGotra: string | null) => {
     setFilters(prev => ({
       ...prev,
       gotra,
@@ -73,33 +73,45 @@ export const OccasionProvider: React.FC<{ children: ReactNode }> = ({ children }
       // Reset gender when gotra changes
       gender: null,
     }));
-  };
+  }, []);
 
-  const setGender = (gender: string | null) => {
+  const setGender = useCallback((gender: string | null) => {
     setFilters(prev => ({
       ...prev,
       gender,
     }));
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters(initialFilters);
     setOccasions([]);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      filters,
+      occasions,
+      setOccasions,
+      setOccasionType,
+      setCategory,
+      setGotraFilters,
+      setGender,
+      resetFilters,
+    }),
+    [
+      filters,
+      occasions,
+      setOccasions,
+      setOccasionType,
+      setCategory,
+      setGotraFilters,
+      setGender,
+      resetFilters,
+    ],
+  );
 
   return (
-    <OccasionContext.Provider
-      value={{
-        filters,
-        occasions,
-        setOccasions,
-        setOccasionType,
-        setCategory,
-        setGotraFilters,
-        setGender,
-        resetFilters,
-      }}
-    >
+    <OccasionContext.Provider value={value}>
       {children}
     </OccasionContext.Provider>
   );

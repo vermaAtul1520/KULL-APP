@@ -16,7 +16,7 @@ export interface OccasionCategory {
   __v: number;
 }
 
-export interface Content {
+export interface OccasionContent {
   _id: string;
   type: 'pdf' | 'video' | 'image';
   url: string;
@@ -34,7 +34,7 @@ export interface Occasion {
   gender?: string;
   gotra?: string;
   subGotra?: string;
-  contents: Content[];
+  contents: OccasionContent[];
   createdAt: string;
 }
 
@@ -97,7 +97,7 @@ export class OccasionApiService {
       }
      
       const data: CategoriesResponse = await response.json();
-       console.log("Fetched occasion categories:", data);
+
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch categories');
@@ -127,6 +127,8 @@ static async fetchOccasions(
   gender?: string
 ): Promise<OccasionsResponse> {
   try {
+
+
     const headers = await getAuthHeaders();
 
     if (!headers.Authorization) {
@@ -134,26 +136,35 @@ static async fetchOccasions(
     }
 
     // Build query parameters
-    const params = new URLSearchParams({
-      occasionType,
-    });
+    const params = new URLSearchParams({});
 
-    // Add category if provided (may be null when no categories exist)
-    if (categoryId) {
-      params.append('category', categoryId);
-    }
+    // Add required filters
+    if (occasionType) params.append('occasionType', occasionType);
+    if (categoryId) params.append('category', categoryId);
 
     // Add optional filters if provided
     if (gotra) params.append('gotra', gotra);
     if (subGotra) params.append('subGotra', subGotra);
     if (gender) params.append('gender', gender);
-    console.log('Fetching occasions with params:', params.toString());
+
     const url = `${BASE_URL}/api/occasions?${params.toString()}`;
+
+    console.log('=== API Request ===');
+    console.log('URL:', url);
+    console.log('Filters:', {
+      occasionType,
+      categoryId,
+      gotra,
+      subGotra,
+      gender,
+    });
 
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
+
+    console.log('Response status:', response.status);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -167,14 +178,36 @@ static async fetchOccasions(
 
     const data: OccasionsResponse = await response.json();
 
+    console.log('=== API Response ===');
+    console.log('Success:', data.success);
+    console.log('Total occasions:', data.total);
+    console.log('Returned occasions:', data.data.length);
+
+    // Log each occasion to verify filters are working
+    if (data.data.length > 0) {
+      console.log('First 3 occasions:');
+      data.data.slice(0, 3).forEach((occasion, index) => {
+        console.log(`  ${index + 1}.`, {
+          occasionType: occasion.occasionType,
+          category: occasion.category.name,
+          gotra: occasion.gotra,
+          subGotra: occasion.subGotra,
+          gender: occasion.gender,
+          contentsCount: occasion.contents.length,
+        });
+      });
+    } else {
+      console.log('⚠️ No occasions found matching the filters');
+    }
+
     if (!data.success) {
       throw new Error(data.message || 'Failed to fetch occasions');
     }
 
-    // No contentType or language filtering here, just return data
     return data;
   } catch (error) {
-    console.error('OccasionApiService.fetchOccasions error:', error);
+    console.error('=== API Error ===');
+    console.error(error);
     throw error;
   }
 }
@@ -188,7 +221,7 @@ static async fetchOccasions(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.fetchCategories();
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
 
         // Don't retry on auth errors
@@ -225,7 +258,7 @@ static async fetchOccasions(
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.fetchOccasions(occasionType, categoryId, gotra, subGotra, gender);
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
 
         // Don't retry on auth errors
